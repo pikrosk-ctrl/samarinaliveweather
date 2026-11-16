@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Ορογραφική Ροή & Νέφωση — Σμόλικας / Σαμαρίνα</title>
+    <title>3D Δορυφορική Ροή & Νέφωση — Σμόλικας / Σαμαρίνα</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -28,7 +28,7 @@
             top: 14px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(15, 23, 42, 0.82);
+            background: rgba(15, 23, 42, 0.84);
             border: 1px solid rgba(56, 189, 248, 0.35);
             backdrop-filter: blur(8px);
             padding: 10px 20px;
@@ -39,7 +39,7 @@
             max-width: 92vw;
         }
         .hud-top h1 {
-            font-size: 0.98rem;
+            font-size: 0.96rem;
             color: #e0f2fe;
             letter-spacing: 0.3px;
         }
@@ -48,18 +48,36 @@
             color: #94a3b8;
             margin-top: 3px;
         }
+        .badges-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 6px;
+        }
         .live-pill {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            margin-top: 6px;
             padding: 3px 10px;
             border-radius: 999px;
             background: rgba(16, 185, 129, 0.15);
             border: 1px solid rgba(16, 185, 129, 0.45);
             color: #34d399;
-            font-size: 0.72rem;
+            font-size: 0.71rem;
             font-weight: 700;
+        }
+        .dem-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 999px;
+            background: rgba(56, 189, 248, 0.14);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            color: #7dd3fc;
+            font-size: 0.71rem;
+            font-weight: 600;
         }
         .live-dot {
             width: 7px;
@@ -74,8 +92,8 @@
             position: fixed;
             top: 14px;
             right: 14px;
-            width: 265px;
-            background: rgba(15, 23, 42, 0.85);
+            width: 270px;
+            background: rgba(15, 23, 42, 0.86);
             border: 1px solid #334155;
             backdrop-filter: blur(8px);
             padding: 12px 14px;
@@ -101,8 +119,8 @@
             position: fixed;
             bottom: 14px;
             left: 14px;
-            width: 270px;
-            background: rgba(15, 23, 42, 0.86);
+            width: 275px;
+            background: rgba(15, 23, 42, 0.88);
             border: 1px solid #334155;
             backdrop-filter: blur(8px);
             padding: 12px 14px;
@@ -172,7 +190,7 @@
             position: fixed;
             bottom: 14px;
             right: 14px;
-            background: rgba(15, 23, 42, 0.85);
+            background: rgba(15, 23, 42, 0.86);
             border: 1px solid #334155;
             backdrop-filter: blur(8px);
             padding: 10px 14px;
@@ -193,15 +211,15 @@
         .marker-label {
             position: fixed;
             transform: translate(-50%, -100%);
-            background: rgba(15, 23, 42, 0.88);
-            border: 1px solid rgba(148, 163, 184, 0.4);
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.45);
             padding: 4px 9px;
             border-radius: 6px;
             font-size: 0.72rem;
             pointer-events: none;
             white-space: nowrap;
             z-index: 10;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.55);
         }
         .marker-label b { color: #f8fafc; display: block; }
         .marker-label span { color: #38bdf8; font-size: 0.66rem; }
@@ -210,7 +228,7 @@
 
         @media (max-width: 768px) {
             .hud-top { top: 44px; padding: 7px 12px; }
-            .hud-top h1 { font-size: 0.82rem; }
+            .hud-top h1 { font-size: 0.8rem; }
             .hud-top p { display: none; }
             .hud-stats {
                 top: auto;
@@ -236,10 +254,13 @@
     <!-- Top Title -->
     <div class="hud-top">
         <h1>3D Ορογραφική Ροή & Νέφωση — Σμόλικας / Σαμαρίνα</h1>
-        <p>Περιστροφή: Αριστερό κλικ • Ζουμ: Ροδέλα • Μετακίνηση: Δεξί κλικ</p>
-        <div class="live-pill">
-            <span class="live-dot"></span>
-            <span id="live-status-text">Σύνδεση με ISAMAR38...</span>
+        <p>Περιστροφή: Αριστερό κλικ • Ζουμ: Ροδέλα • Μετακίνηση: Δεξί κλικ • Βορράς (N) ↑</p>
+        <div class="badges-row">
+            <div class="live-pill">
+                <span class="live-dot"></span>
+                <span id="live-status-text">Σύνδεση με ISAMAR38...</span>
+            </div>
+            <div class="dem-pill" id="dem-status-text">🛰️ Φόρτωση δορυφορικού DEM...</div>
         </div>
     </div>
 
@@ -291,13 +312,13 @@
     <div class="hud-legend">
         <div class="leg-item"><span class="dot" style="background:#38bdf8;"></span> Ήπια ροή αέρα</div>
         <div class="leg-item"><span class="dot" style="background:#f59e0b;"></span> Ορογραφική επιτάχυνση</div>
-        <div class="leg-item"><span class="dot" style="background:#ef4444;"></span> Ισχυρές ριπές κορυφής</div>
+        <div class="leg-item"><span class="dot" style="background:#ef4444;"></span> Ισχυρές ριπές / Υπήνεμος στρόβιλος</div>
         <div class="leg-item"><span class="dot" style="background:#f8fafc;"></span> Χιονοκάλυψη (≤ 0.5°C WB)</div>
     </div>
 
     <!-- 3D Projected Labels -->
     <div id="lbl-peak" class="marker-label"><b>▲ Κορυφή Σμόλικα</b><span>2.637 μ.</span></div>
-    <div id="lbl-saddle" class="marker-label"><b>▲ Διάσελο Βαθύλακκου</b><span>2.150 μ.</span></div>
+    <div id="lbl-saddle" class="marker-label"><b>▲ Διάσελο Βαθύλακκου</b><span>~2.150 μ.</span></div>
     <div id="lbl-samarina" class="marker-label samarina"><b>🏠 Σαμαρίνα (ISAMAR38)</b><span>1.450 μ.</span></div>
 
     <!-- Three.js & OrbitControls -->
@@ -308,141 +329,191 @@
         const WU_STATION_ID = "ISAMAR38";
         const WU_API_KEY = "5c94ee0c13f240ec94ee0c13f2b0ecd9";
 
-        // --- Procedural Fractal & Ridged Noise for Realistic Alpine Terrain ---
+        // Geographic Bounding Box covering Smolikas Summit (West) to Samarina (East)
+        const GEO_BOUNDS = {
+            latMin: 40.055, // South
+            latMax: 40.145, // North
+            lonMin: 20.905, // West (Smolikas)
+            lonMax: 21.055  // East (Samarina & Koutsouro)
+        };
+        const TERRAIN_SIZE = 90; // World units (-45 to +45)
+        const SEGMENTS = 220;
+        const DEM_GRID_N = 55;   // 55x55 = 3,025 real satellite elevation points
+        const DEM_CACHE_KEY = "smolikas_real_dem_55x55_v1";
+
+        let realDemGrid = null;
+        let minDemElev = 1050;
+        let maxDemElev = 2637;
+
+        // Convert real GPS (lat, lon) to 3D Scene (x, z) where +X = East, -Z = North
+        function latLonToSceneXZ(lat, lon) {
+            const u = (lon - GEO_BOUNDS.lonMin) / (GEO_BOUNDS.lonMax - GEO_BOUNDS.lonMin);
+            const v = (lat - GEO_BOUNDS.latMin) / (GEO_BOUNDS.latMax - GEO_BOUNDS.latMin);
+            const x = (u - 0.5) * TERRAIN_SIZE;
+            const z = (0.5 - v) * TERRAIN_SIZE;
+            return { x, z };
+        }
+
+        // Bilinear interpolation over the 55x55 Real Satellite DEM
+        function sampleRealDem(x, z) {
+            const u = Math.max(0, Math.min(1, (x / TERRAIN_SIZE) + 0.5));
+            const v = Math.max(0, Math.min(1, 0.5 - (z / TERRAIN_SIZE)));
+
+            const fx = u * (DEM_GRID_N - 1);
+            const fz = v * (DEM_GRID_N - 1);
+            const ix = Math.min(DEM_GRID_N - 2, Math.floor(fx));
+            const iz = Math.min(DEM_GRID_N - 2, Math.floor(fz));
+            const tx = fx - ix;
+            const tz = fz - iz;
+
+            const e00 = realDemGrid[iz * DEM_GRID_N + ix];
+            const e10 = realDemGrid[iz * DEM_GRID_N + (ix + 1)];
+            const e01 = realDemGrid[(iz + 1) * DEM_GRID_N + ix];
+            const e11 = realDemGrid[(iz + 1) * DEM_GRID_N + (ix + 1)];
+
+            const top = e00 + (e10 - e00) * tx;
+            const bot = e01 + (e11 - e01) * tx;
+            return top + (bot - top) * tz;
+        }
+
+        // --- Procedural Noise (for micro-detail & offline fallback) ---
         function hash2D(ix, iz) {
             const n = Math.sin(ix * 127.1 + iz * 311.7) * 43758.5453123;
             return n - Math.floor(n);
         }
-
         function valueNoise(x, z) {
-            const ix = Math.floor(x);
-            const iz = Math.floor(z);
-            const fx = x - ix;
-            const fz = z - iz;
+            const ix = Math.floor(x), iz = Math.floor(z);
+            const fx = x - ix, fz = z - iz;
             const ux = fx * fx * (3.0 - 2.0 * fx);
             const uz = fz * fz * (3.0 - 2.0 * fz);
-
-            const a = hash2D(ix, iz);
-            const b = hash2D(ix + 1, iz);
-            const c = hash2D(ix, iz + 1);
-            const d = hash2D(ix + 1, iz + 1);
-
+            const a = hash2D(ix, iz), b = hash2D(ix + 1, iz);
+            const c = hash2D(ix, iz + 1), d = hash2D(ix + 1, iz + 1);
             return a + (b - a) * ux + (c - a) * uz + (a - b - c + d) * ux * uz;
         }
-
-        function fbm(x, z, octaves = 5) {
-            let val = 0;
-            let amp = 0.5;
-            let freq = 1.0;
+        function fbm(x, z, octaves = 4) {
+            let val = 0, amp = 0.5, freq = 1.0;
             for (let i = 0; i < octaves; i++) {
                 val += amp * valueNoise(x * freq, z * freq);
-                freq *= 2.05;
-                amp *= 0.48;
+                freq *= 2.05; amp *= 0.48;
             }
             return val;
         }
-
-        function ridgedNoise(x, z, octaves = 5) {
-            let val = 0;
-            let amp = 0.5;
-            let freq = 1.0;
-            let weight = 1.0;
+        function ridgedNoise(x, z, octaves = 4) {
+            let val = 0, amp = 0.5, freq = 1.0, weight = 1.0;
             for (let i = 0; i < octaves; i++) {
                 let n = 1.0 - Math.abs(valueNoise(x * freq, z * freq) * 2.0 - 1.0);
                 n = n * n * weight;
                 weight = Math.max(0.0, Math.min(1.0, n * 1.8));
-                val += n * amp;
-                freq *= 2.15;
-                amp *= 0.5;
+                val += n * amp; freq *= 2.15; amp *= 0.5;
             }
             return val;
         }
 
-        // --- Smolikas Realistic Geomorphology (Meters: 1200m to 2637m) ---
-        // World coords: X = East (+), Z = South (+), size = 90 x 90 units (~14km x 14km)
-        function getElevationMeters(x, z) {
-            // Base valley floor around 1220m
+        function fallbackElevation(x, z) {
             let elev = 1220;
-
-            // 1. Main Smolikas Massif (West-Northwest of Samarina, Peak at x=-8, z=-4 -> 2637m)
-            const dxPeak = (x + 8.0) / 17.5;
-            const dzPeak = (z + 4.0) / 14.5;
-            // Rotate ridge slightly NW-SE like real Smolikas
-            const rx = dxPeak * 0.88 - dzPeak * 0.47;
-            const rz = dxPeak * 0.47 + dzPeak * 0.88;
-            const distPeak = Math.sqrt(rx * rx * 0.85 + rz * rz * 1.25);
-            const mainMassif = 1360 * Math.exp(-Math.pow(distPeak, 1.55));
-
-            // 2. Sharp Summit Spire + Eastern Cirque (Drakolimni glacial amphitheater)
-            const summitDist = Math.sqrt(Math.pow((x + 8.0) / 5.2, 2) + Math.pow((z + 4.0) / 4.8, 2));
-            const summitSpire = 145 * Math.exp(-summitDist * summitDist * 1.6);
-
-            // Glacial cirque carve on NE side of summit
-            const cirqueDist = Math.sqrt(Math.pow((x + 3.5) / 4.5, 2) + Math.pow((z + 7.5) / 4.2, 2));
-            const cirqueCarve = -140 * Math.exp(-cirqueDist * cirqueDist * 1.5);
-
-            // 3. Secondary Peak: Bogdani / Mosia ridge to the SW (2239m)
-            const dxBog = (x + 21.0) / 12.0;
-            const dzBog = (z - 9.0) / 11.0;
-            const bogdani = 840 * Math.exp(-(dxBog * dxBog + dzBog * dzBog) * 1.2);
-
-            // 4. Saddle of Vathylakkos (x=4.5, z=-1.5 -> ~2150m) connecting Smolikas to eastern ridges
-            const dxSad = (x - 4.5) / 9.5;
-            const dzSad = (z + 1.5) / 8.5;
-            const saddleRidge = 780 * Math.exp(-(dxSad * dxSad + dzSad * dzSad) * 1.15);
-
-            // 5. Eastern Ridge (Koutsouro / Gourgoulios) framing Samarina valley
-            const dxEast = (x - 22.0) / 13.5;
-            const dzEast = (z + 6.0) / 16.0;
-            const eastRidge = 720 * Math.exp(-(dxEast * dxEast + dzEast * dzEast) * 1.2);
-
-            // 6. Samarina Valley & Ravine (x=13.5, z=6.5 -> ~1450m)
-            const dxSam = (x - 13.5) / 8.5;
-            const dzSam = (z - 6.5) / 10.5;
-            const valleyCarve = -290 * Math.exp(-(dxSam * dxSam + dzSam * dzSam) * 1.35);
-
-            // Combine macro topography
-            elev += mainMassif + summitSpire + cirqueCarve + bogdani + saddleRidge + eastRidge + valleyCarve;
-
-            // 7. Alpine Ridges, Gullies (Couloirs) & Rocky Crags
+            const pPeak = latLonToSceneXZ(40.0908, 20.9261);
+            const pSam = latLonToSceneXZ(40.1050, 21.0180);
+            const distPeak = Math.sqrt(Math.pow((x - pPeak.x) / 17.5, 2) + Math.pow((z - pPeak.z) / 14.5, 2));
+            elev += 1417 * Math.exp(-Math.pow(distPeak, 1.55));
+            const distSam = Math.sqrt(Math.pow((x - pSam.x) / 9.0, 2) + Math.pow((z - pSam.z) / 10.5, 2));
+            elev -= 260 * Math.exp(-(distSam * distSam) * 1.3);
             const reliefMask = Math.max(0.15, Math.min(1.0, (elev - 1250) / 950));
-            const ridges = ridgedNoise(x * 0.11 + 3.1, z * 0.11 - 1.7, 5);
-            const microCrags = fbm(x * 0.35, z * 0.35, 4);
+            elev += (ridgedNoise(x * 0.11 + 3.1, z * 0.11 - 1.7, 5) - 0.38) * 210 * reliefMask;
+            return Math.max(1150, Math.min(2637, elev));
+        }
 
-            // Carve radial gullies down the flanks
-            const angle = Math.atan2(z + 4.0, x + 8.0);
-            const gullyWave = Math.sin(angle * 11.0 + fbm(x * 0.15, z * 0.15, 3) * 4.5);
-            const gullies = gullyWave * 48 * reliefMask;
-
-            elev += (ridges - 0.38) * 230 * reliefMask;
-            elev += (microCrags - 0.5) * 42 * reliefMask;
-            elev += gullies;
-
-            // Calibrate exact key landmarks so physics & labels match reality
-            // Peak at (-8, -4) -> ~2637m, Samarina at (13.5, 6.5) -> ~1450m
-            elev = Math.max(1180, Math.min(2637, elev));
-            return elev;
+        function getElevationMeters(x, z) {
+            if (realDemGrid) {
+                const base = sampleRealDem(x, z);
+                // Add subtle high-frequency rock micro-relief between 90m DEM postings
+                const micro = (ridgedNoise(x * 0.45, z * 0.45, 3) - 0.45) * 18;
+                return base + micro;
+            }
+            return fallbackElevation(x, z);
         }
 
         function elevToSceneY(elevMeters) {
-            // Vertical exaggeration ~1.5x for dramatic yet authentic alpine relief
-            return ((elevMeters - 1200) / 1437) * 24.5;
+            return ((elevMeters - 1050) / 1587) * 24.5;
+        }
+
+        // --- Fetch Real Satellite Elevation Grid (Copernicus / SRTM via Open-Meteo) ---
+        async function loadRealSmolikasDEM() {
+            const statusEl = document.getElementById('dem-status-text');
+            try {
+                const cached = localStorage.getItem(DEM_CACHE_KEY);
+                if (cached) {
+                    const parsed = JSON.parse(cached);
+                    if (Array.isArray(parsed) && parsed.length === DEM_GRID_N * DEM_GRID_N) {
+                        realDemGrid = new Float32Array(parsed);
+                        statusEl.innerText = "🛰️ Πραγματικό Δορυφορικό Ανάγλυφο (DEM)";
+                        rebuildTerrainGeometry();
+                        return;
+                    }
+                }
+            } catch (e) {}
+
+            try {
+                statusEl.innerText = "🛰️ Λήψη δορυφορικού DEM Σμόλικα...";
+                const lats = [];
+                const lons = [];
+                for (let iz = 0; iz < DEM_GRID_N; iz++) {
+                    const lat = GEO_BOUNDS.latMin + (iz / (DEM_GRID_N - 1)) * (GEO_BOUNDS.latMax - GEO_BOUNDS.latMin);
+                    for (let ix = 0; ix < DEM_GRID_N; ix++) {
+                        const lon = GEO_BOUNDS.lonMin + (ix / (DEM_GRID_N - 1)) * (GEO_BOUNDS.lonMax - GEO_BOUNDS.lonMin);
+                        lats.push(lat.toFixed(5));
+                        lons.push(lon.toFixed(5));
+                    }
+                }
+
+                // Open-Meteo supports batching up to 100 coordinates per request
+                const BATCH = 100;
+                const allElevs = [];
+                const requests = [];
+
+                for (let start = 0; start < lats.length; start += BATCH) {
+                    const latChunk = lats.slice(start, start + BATCH).join(',');
+                    const lonChunk = lons.slice(start, start + BATCH).join(',');
+                    const url = `https://api.open-meteo.com/v1/elevation?latitude=${latChunk}&longitude=${lonChunk}`;
+                    requests.push(fetch(url).then(r => r.json()));
+                }
+
+                const responses = await Promise.all(requests);
+                for (const resp of responses) {
+                    if (resp && Array.isArray(resp.elevation)) {
+                        allElevs.push(...resp.elevation);
+                    }
+                }
+
+                if (allElevs.length === DEM_GRID_N * DEM_GRID_N) {
+                    realDemGrid = new Float32Array(allElevs);
+                    try {
+                        localStorage.setItem(DEM_CACHE_KEY, JSON.stringify(allElevs));
+                    } catch (e) {}
+                    statusEl.innerText = "🛰️ Πραγματικό Δορυφορικό Ανάγλυφο (DEM)";
+                    rebuildTerrainGeometry();
+                } else {
+                    statusEl.innerText = "⛰️ Τοπογραφικό Μοντέλο Σμόλικα";
+                }
+            } catch (err) {
+                statusEl.innerText = "⛰️ Τοπογραφικό Μοντέλο Σμόλικα";
+            }
         }
 
         // --- Three.js Scene Setup ---
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x070d19);
-        scene.fog = new THREE.FogExp2(0x091120, 0.0085);
+        scene.fog = new THREE.FogExp2(0x091120, 0.008);
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 400);
-        camera.position.set(28, 25, 38);
+        // Camera positioned SE looking NW toward Samarina (foreground) and Smolikas massif (background)
+        camera.position.set(36, 26, 36);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.12;
+        renderer.toneMappingExposure = 1.15;
         container.appendChild(renderer.domElement);
 
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -451,14 +522,14 @@
         controls.maxPolarAngle = Math.PI * 0.47;
         controls.minDistance = 14;
         controls.maxDistance = 95;
-        controls.target.set(0, 6.5, 0);
+        controls.target.set(-2, 7.5, 0);
 
         // --- Alpine Lighting ---
         const hemiLight = new THREE.HemisphereLight(0x93c5fd, 0x1e293b, 0.65);
         scene.add(hemiLight);
 
-        const sunLight = new THREE.DirectionalLight(0xfff7ed, 1.35);
-        sunLight.position.set(38, 52, 28);
+        const sunLight = new THREE.DirectionalLight(0xfff7ed, 1.4);
+        sunLight.position.set(42, 54, 30);
         scene.add(sunLight);
 
         const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.45);
@@ -466,8 +537,6 @@
         scene.add(rimLight);
 
         // --- High-Resolution Terrain Mesh (220x220) ---
-        const TERRAIN_SIZE = 90;
-        const SEGMENTS = 220;
         const terrainGeo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, SEGMENTS, SEGMENTS);
         terrainGeo.rotateX(-Math.PI / 2);
 
@@ -475,16 +544,6 @@
         const vertexCount = posAttr.count;
         const elevations = new Float32Array(vertexCount);
         const colors = new Float32Array(vertexCount * 3);
-
-        for (let i = 0; i < vertexCount; i++) {
-            const x = posAttr.getX(i);
-            const z = posAttr.getZ(i);
-            const elev = getElevationMeters(x, z);
-            elevations[i] = elev;
-            posAttr.setY(i, elevToSceneY(elev));
-        }
-        terrainGeo.computeVertexNormals();
-        const normAttr = terrainGeo.attributes.normal;
 
         const terrainMat = new THREE.MeshStandardMaterial({
             vertexColors: true,
@@ -496,41 +555,63 @@
         const terrainMesh = new THREE.Mesh(terrainGeo, terrainMat);
         scene.add(terrainMesh);
 
-        // Subtle topographic contour grid overlay
         const gridHelper = new THREE.GridHelper(TERRAIN_SIZE, 30, 0x1e293b, 0x0f172a);
         gridHelper.position.y = -0.1;
         scene.add(gridHelper);
 
-        // --- Landmark Pins ---
-        function createPin(x, z, colorHex) {
-            const elev = getElevationMeters(x, z);
-            const y = elevToSceneY(elev);
-            const group = new THREE.Group();
-            group.position.set(x, y, z);
+        // --- Real GPS Landmarks ---
+        const coordsPeak = latLonToSceneXZ(40.0908, 20.9261);     // Κορυφή Σμόλικα (2.637μ)
+        const coordsSaddle = latLonToSceneXZ(40.0975, 20.9685);   // Διάσελο Βαθύλακκου (~2.150μ)
+        const coordsSamarina = latLonToSceneXZ(40.1050, 21.0180); // Σαμαρίνα ISAMAR38 (1.450μ)
 
+        function createPin(x, z, colorHex) {
+            const group = new THREE.Group();
             const lineGeo = new THREE.BufferGeometry().setFromPoints([
                 new THREE.Vector3(0, 0, 0),
-                new THREE.Vector3(0, 2.8, 0)
+                new THREE.Vector3(0, 3.0, 0)
             ]);
             const lineMat = new THREE.LineBasicMaterial({ color: colorHex });
             group.add(new THREE.Line(lineGeo, lineMat));
 
             const dotGeo = new THREE.SphereGeometry(0.32, 16, 16);
             const dotMat = new THREE.MeshBasicMaterial({ color: colorHex });
-            const dot = new THREE.Mesh(dotGeo, dotMat);
-            group.add(dot);
+            group.add(new THREE.Mesh(dotGeo, dotMat));
 
             scene.add(group);
-            return { x, y: y + 3.0, z };
+            return { group, x, y: 10, z };
         }
 
-        const pinPeak = createPin(-8.0, -4.0, 0x38bdf8);
-        const pinSaddle = createPin(4.5, -1.5, 0xf59e0b);
-        const pinSamarina = createPin(13.5, 6.5, 0x10b981);
+        const pinPeak = createPin(coordsPeak.x, coordsPeak.z, 0x38bdf8);
+        const pinSaddle = createPin(coordsSaddle.x, coordsSaddle.z, 0xf59e0b);
+        const pinSamarina = createPin(coordsSamarina.x, coordsSamarina.z, 0x10b981);
+
+        function updatePinHeights() {
+            [pinPeak, pinSaddle, pinSamarina].forEach(p => {
+                const elev = getElevationMeters(p.x, p.z);
+                const y = elevToSceneY(elev);
+                p.group.position.set(p.x, y, p.z);
+                p.y = y + 3.2;
+            });
+        }
+
+        function rebuildTerrainGeometry() {
+            for (let i = 0; i < vertexCount; i++) {
+                const x = posAttr.getX(i);
+                const z = posAttr.getZ(i);
+                const elev = getElevationMeters(x, z);
+                elevations[i] = elev;
+                posAttr.setY(i, elevToSceneY(elev));
+            }
+            posAttr.needsUpdate = true;
+            terrainGeo.computeVertexNormals();
+            updatePinHeights();
+            updateTerrainColors(state ? state.snowlineMeters : 2400);
+        }
 
         // --- Dynamic Terrain Coloring (Forest, Alpine Meadow, Ophiolite Rock, Snow) ---
         function updateTerrainColors(snowlineMeters) {
-            const cForest = new THREE.Color(0x163326);     // Βαθύ πράσινο μαύρης πεύκης & ρόμπολου
+            const normAttr = terrainGeo.attributes.normal;
+            const cForest = new THREE.Color(0x163326);     // Δάσος μαύρης πεύκης & ρόμπολου
             const cForestHigh = new THREE.Color(0x234732); // Αραιό δάσος
             const cMeadow = new THREE.Color(0x4b5335);     // Αλπικό λιβάδι
             const cRockDark = new THREE.Color(0x272d38);   // Σκούρος οφιόλιθος Σμόλικα
@@ -543,11 +624,10 @@
                 const x = posAttr.getX(i);
                 const z = posAttr.getZ(i);
                 const elev = elevations[i];
-                const ny = normAttr.getY(i); // 1 = flat, <0.65 = steep cliff
+                const ny = normAttr.getY(i);
                 const slope = 1.0 - ny;
                 const texNoise = fbm(x * 0.45, z * 0.45, 3);
 
-                // Base geological & vegetation layer
                 if (elev < 1680) {
                     tmp.copy(cForest).lerp(cForestHigh, texNoise);
                 } else if (elev < 1960) {
@@ -558,14 +638,14 @@
                     tmp.copy(cMeadow).lerp(cRockDark, t);
                 }
 
-                // Steep cliffs expose bare dark ophiolite rock at any altitude
-                if (slope > 0.24) {
-                    const rockBlend = Math.min(1, (slope - 0.24) / 0.22);
+                // Steep cliffs expose bare dark ophiolite rock
+                if (slope > 0.22) {
+                    const rockBlend = Math.min(1, (slope - 0.22) / 0.20);
                     const rockTone = tmp.clone().copy(cRockDark).lerp(cRockLight, texNoise);
                     tmp.lerp(rockTone, rockBlend);
                 }
 
-                // Snow accumulation above snowline (clings to gullies, sheds off vertical cliffs)
+                // Snow clings to gullies and sheds off steep cliffs
                 const localSnowline = snowlineMeters + (slope * 260) - ((texNoise - 0.5) * 95);
                 if (elev > localSnowline) {
                     const snowDepth = Math.min(1, (elev - localSnowline) / 110);
@@ -585,9 +665,9 @@
         const cloudGroup = new THREE.Group();
         scene.add(cloudGroup);
         const cloudParticles = [];
-        const cloudGeo = new THREE.SphereGeometry(2.6, 12, 10);
+        const cloudGeo = new THREE.SphereGeometry(2.7, 12, 10);
 
-        for (let i = 0; i < 65; i++) {
+        for (let i = 0; i < 75; i++) {
             const mat = new THREE.MeshLambertMaterial({
                 color: 0xe2e8f0,
                 transparent: true,
@@ -596,33 +676,33 @@
             });
             const m = new THREE.Mesh(cloudGeo, mat);
             const angle = Math.random() * Math.PI * 2;
-            const rad = 4 + Math.random() * 26;
-            m.position.set(Math.cos(angle) * rad - 4, 15, Math.sin(angle) * rad - 2);
-            m.scale.set(1.6 + Math.random() * 1.8, 0.38 + Math.random() * 0.25, 1.4 + Math.random() * 1.6);
+            const rad = 3 + Math.random() * 34;
+            m.position.set(Math.cos(angle) * rad, 15, Math.sin(angle) * rad);
+            m.scale.set(1.7 + Math.random() * 1.9, 0.36 + Math.random() * 0.25, 1.5 + Math.random() * 1.7);
             cloudGroup.add(m);
             cloudParticles.push({
                 mesh: m,
-                baseX: m.position.x,
-                baseZ: m.position.z,
-                phase: Math.random() * Math.PI * 2
+                phase: Math.random() * Math.PI * 2,
+                baseDensity: 0.0
             });
         }
 
-        // --- Wind Stream Particles & Precipitation ---
-        const WIND_COUNT = 550;
+        // --- Wind Stream Particles & Orographic Precipitation ---
+        const WIND_COUNT = 600;
         const windGeo = new THREE.BufferGeometry();
         const windPos = new Float32Array(WIND_COUNT * 3);
         const windCol = new Float32Array(WIND_COUNT * 3);
         const windData = [];
 
         for (let i = 0; i < WIND_COUNT; i++) {
-            const x = (Math.random() - 0.5) * 80;
-            const z = (Math.random() - 0.5) * 80;
-            const y = 3 + Math.random() * 22;
-            windPos[i * 3] = x;
-            windPos[i * 3 + 1] = y;
-            windPos[i * 3 + 2] = z;
-            windData.push({ speedOffset: 0.75 + Math.random() * 0.5, altOffset: 0.8 + Math.random() * 4.5 });
+            windPos[i * 3] = (Math.random() - 0.5) * 82;
+            windPos[i * 3 + 1] = 3 + Math.random() * 22;
+            windPos[i * 3 + 2] = (Math.random() - 0.5) * 82;
+            windData.push({
+                speedOffset: 0.75 + Math.random() * 0.5,
+                altOffset: 0.8 + Math.random() * 4.5,
+                phase: Math.random() * Math.PI * 2
+            });
         }
         windGeo.setAttribute('position', new THREE.BufferAttribute(windPos, 3));
         windGeo.setAttribute('color', new THREE.BufferAttribute(windCol, 3));
@@ -637,13 +717,13 @@
         scene.add(windPoints);
 
         // Precipitation Particles (Snow / Rain)
-        const PRECIP_COUNT = 700;
+        const PRECIP_COUNT = 800;
         const precipGeo = new THREE.BufferGeometry();
         const precipPos = new Float32Array(PRECIP_COUNT * 3);
         for (let i = 0; i < PRECIP_COUNT; i++) {
-            precipPos[i * 3] = (Math.random() - 0.5) * 75;
+            precipPos[i * 3] = (Math.random() - 0.5) * 78;
             precipPos[i * 3 + 1] = Math.random() * 28;
-            precipPos[i * 3 + 2] = (Math.random() - 0.5) * 75;
+            precipPos[i * 3 + 2] = (Math.random() - 0.5) * 78;
         }
         precipGeo.setAttribute('position', new THREE.BufferAttribute(precipPos, 3));
         const precipMat = new THREE.PointsMaterial({
@@ -664,8 +744,12 @@
             rain: 0.0,
             lclMeters: 1700,
             snowlineMeters: 2400,
-            wetBulb: 6.7
+            wetBulb: 6.7,
+            baseCloudOpacity: 0.1
         };
+
+        // Initial terrain build (immediately shows terrain, then upgrades smoothly when DEM finishes)
+        rebuildTerrainGeometry();
 
         function calcWetBulb(temp, hum) {
             const safeHum = Math.max(1, Math.min(100, hum));
@@ -693,29 +777,24 @@
             const dir = parseFloat(document.getElementById('sl-dir').value);
             const rain = parseFloat(document.getElementById('sl-rain').value);
 
-            // Relative humidity from T and Td
             const eActual = 6.112 * Math.exp((17.67 * dew) / (dew + 243.5));
             const eSat = 6.112 * Math.exp((17.67 * temp) / (temp + 243.5));
             const hum = Math.min(100, Math.max(10, (eActual / eSat) * 100));
             const wb = calcWetBulb(temp, hum);
 
-            // LCL (Espy's formula: 125m per °C of dewpoint depression above 1450m)
             const spread = Math.max(0, temp - dew);
             const lclMeters = Math.round(1450 + spread * 125);
-
-            // Snowline based on Wet-Bulb lapse rate (~6.5°C/km)
             const snowlineMeters = Math.round(1450 + ((wb - 0.5) / 6.5) * 1000);
+            const baseCloudOpacity = rain > 0 ? 0.36 : (spread <= 2.5 ? 0.28 : (lclMeters < 2450 ? 0.16 : 0.04));
 
-            state = { temp, dew, wind, dir, rain, lclMeters, snowlineMeters, wetBulb: wb };
+            state = { temp, dew, wind, dir, rain, lclMeters, snowlineMeters, wetBulb: wb, baseCloudOpacity };
 
-            // Update Sliders UI
             document.getElementById('lbl-temp').innerText = `${temp.toFixed(1)}°C`;
             document.getElementById('lbl-dew').innerText = `${dew.toFixed(1)}°C`;
             document.getElementById('lbl-wind').innerText = `${wind} km/h`;
             document.getElementById('lbl-dir').innerText = `${dir}°`;
             document.getElementById('lbl-rain').innerText = `${rain.toFixed(1)} mm/h`;
 
-            // Update Telemetry Panel
             document.getElementById('val-temp').innerText = `${temp.toFixed(1)} °C`;
             document.getElementById('val-dew').innerText = `${dew.toFixed(1)} °C`;
             document.getElementById('val-wb').innerText = `${wb.toFixed(1)} °C`;
@@ -742,20 +821,15 @@
                 precipEl.className = 'stat-v warm';
             }
 
-            // Update 3D Snow Cover
             updateTerrainColors(snowlineMeters);
 
-            // Update Cloud Base Height & Opacity
-            const cloudY = elevToSceneY(Math.max(1420, Math.min(2750, lclMeters)));
-            const cloudDensity = rain > 0 ? 0.42 : (spread <= 2.5 ? 0.32 : (lclMeters < 2400 ? 0.18 : 0.04));
+            const cloudY = elevToSceneY(Math.max(1420, Math.min(2780, lclMeters)));
             cloudParticles.forEach(cp => {
-                cp.mesh.position.y = cloudY + Math.sin(cp.phase) * 0.6;
-                cp.mesh.material.opacity = cloudDensity;
+                cp.mesh.position.y = cloudY + Math.sin(cp.phase) * 0.65;
             });
 
-            // Update Precipitation Particles
             if (rain > 0) {
-                precipMat.opacity = Math.min(0.9, 0.35 + rain * 0.05);
+                precipMat.opacity = Math.min(0.92, 0.35 + rain * 0.05);
                 if (wb <= 0.5) {
                     precipMat.color.setHex(0xf8fafc);
                     precipMat.size = 0.42;
@@ -780,7 +854,7 @@
             if (type === 'snow') {
                 document.getElementById('sl-temp').value = -1.5;
                 document.getElementById('sl-dew').value = -2.0;
-                document.getElementById('sl-wind').value = 32;
+                document.getElementById('sl-wind').value = 34;
                 document.getElementById('sl-dir').value = 225;
                 document.getElementById('sl-rain').value = 4.5;
             } else if (type === 'blizzard') {
@@ -821,7 +895,6 @@
             }
         }
 
-        // --- Project 3D Landmarks to 2D Screen Labels ---
         function updateLabels() {
             const items = [
                 { el: document.getElementById('lbl-peak'), pos: pinPeak },
@@ -843,6 +916,14 @@
             });
         }
 
+        // Compute terrain slope along wind direction (positive = windward upslope, negative = leeward downslope)
+        function getOrographicLiftFactor(x, z, vx, vz) {
+            const d = 1.5;
+            const eAhead = getElevationMeters(x + vx * d, z + vz * d);
+            const eBehind = getElevationMeters(x - vx * d, z - vz * d);
+            return (eAhead - eBehind) / (2 * d); // meters rise per scene unit
+        }
+
         // --- Animation Loop ---
         const clock = new THREE.Clock();
         function animate() {
@@ -850,7 +931,7 @@
             const dt = Math.min(0.05, clock.getDelta());
             const elapsed = clock.getElapsedTime();
 
-            // Wind vector from meteorological direction (0° = from North (+Z), 90° = from East (-X))
+            // Meteorological direction: 0° = from North (+Z), 90° = from East (-X), 270° = from West (+X)
             const rad = (state.dir * Math.PI) / 180;
             const vx = -Math.sin(rad);
             const vz = Math.cos(rad);
@@ -864,31 +945,36 @@
                 let y = posArr[i * 3 + 1];
                 let z = posArr[i * 3 + 2];
 
+                const lift = getOrographicLiftFactor(x, z, vx, vz);
+                const isLeeward = lift < -8 && state.wind >= 25;
+
+                // Lee-side rotor turbulence when strong wind crosses ridges
+                const turbX = isLeeward ? Math.sin(elapsed * 4 + windData[i].phase) * 0.25 : 0;
+                const turbZ = isLeeward ? Math.cos(elapsed * 3.5 + windData[i].phase) * 0.25 : 0;
+
                 const step = speedScale * windData[i].speedOffset * dt;
-                x += vx * step;
-                z += vz * step;
+                x += (vx + turbX) * step;
+                z += (vz + turbZ) * step;
 
-                if (x > 40) x = -40;
-                if (x < -40) x = 40;
-                if (z > 40) z = -40;
-                if (z < -40) z = 40;
+                if (x > 41) x = -41;
+                if (x < -41) x = 41;
+                if (z > 41) z = -41;
+                if (z < -41) z = 41;
 
-                // Terrain following & orographic lift
                 const groundElev = getElevationMeters(x, z);
                 const groundY = elevToSceneY(groundElev);
                 const targetY = Math.max(y, groundY + windData[i].altOffset);
-                y += (targetY - y) * 0.14;
-                if (y > groundY + 12) y -= 0.04;
+                y += (targetY - y) * 0.15;
+                if (y > groundY + 11) y -= isLeeward ? 0.14 : 0.04;
 
                 posArr[i * 3] = x;
                 posArr[i * 3 + 1] = y;
                 posArr[i * 3 + 2] = z;
 
-                // Color by orographic acceleration & altitude
-                const effectiveSpeed = state.wind * (1 + (groundElev - 1450) / 1500);
-                if (effectiveSpeed >= 55) {
+                const effectiveSpeed = state.wind * (1 + (groundElev - 1450) / 1450);
+                if (effectiveSpeed >= 55 || isLeeward) {
                     colArr[i * 3] = 0.94; colArr[i * 3 + 1] = 0.27; colArr[i * 3 + 2] = 0.27; // Red
-                } else if (effectiveSpeed >= 28) {
+                } else if (effectiveSpeed >= 28 || lift > 12) {
                     colArr[i * 3] = 0.96; colArr[i * 3 + 1] = 0.62; colArr[i * 3 + 2] = 0.04; // Amber
                 } else {
                     colArr[i * 3] = 0.22; colArr[i * 3 + 1] = 0.74; colArr[i * 3 + 2] = 0.97; // Sky Blue
@@ -897,17 +983,21 @@
             windGeo.attributes.position.needsUpdate = true;
             windGeo.attributes.color.needsUpdate = true;
 
-            // Drift clouds gently with wind
+            // Drift clouds & thicken on windward upslopes (orographic condensation)
             cloudParticles.forEach(cp => {
                 cp.mesh.position.x += vx * (speedScale * 0.12) * dt;
                 cp.mesh.position.z += vz * (speedScale * 0.12) * dt;
-                if (cp.mesh.position.x > 25) cp.mesh.position.x = -25;
-                if (cp.mesh.position.x < -25) cp.mesh.position.x = 25;
-                if (cp.mesh.position.z > 25) cp.mesh.position.z = -25;
-                if (cp.mesh.position.z < -25) cp.mesh.position.z = 25;
+                if (cp.mesh.position.x > 34) cp.mesh.position.x = -34;
+                if (cp.mesh.position.x < -34) cp.mesh.position.x = 34;
+                if (cp.mesh.position.z > 34) cp.mesh.position.z = -34;
+                if (cp.mesh.position.z < -34) cp.mesh.position.z = 34;
+
+                const lift = getOrographicLiftFactor(cp.mesh.position.x, cp.mesh.position.z, vx, vz);
+                const orographicBoost = Math.max(-0.14, Math.min(0.24, lift * 0.012));
+                cp.mesh.material.opacity = Math.max(0.0, Math.min(0.62, state.baseCloudOpacity + orographicBoost));
             });
 
-            // Animate Snow / Rain falling
+            // Animate Snow / Rain falling (concentrated on windward slopes)
             if (state.rain > 0) {
                 const pArr = precipGeo.attributes.position.array;
                 const fallSpeed = state.wetBulb <= 0.5 ? 4.5 : 14.0;
@@ -916,9 +1006,17 @@
                     pArr[i * 3 + 1] -= fallSpeed * dt;
                     pArr[i * 3 + 2] += vz * (speedScale * 0.25) * dt;
                     if (pArr[i * 3 + 1] < 0) {
-                        pArr[i * 3] = (Math.random() - 0.5) * 70;
+                        // Respawn biased toward windward slopes
+                        let rx = (Math.random() - 0.5) * 74;
+                        let rz = (Math.random() - 0.5) * 74;
+                        const lift = getOrographicLiftFactor(rx, rz, vx, vz);
+                        if (lift < -5 && Math.random() < 0.65) {
+                            rx -= vx * 18;
+                            rz -= vz * 18;
+                        }
+                        pArr[i * 3] = rx;
                         pArr[i * 3 + 1] = 24 + Math.random() * 6;
-                        pArr[i * 3 + 2] = (Math.random() - 0.5) * 70;
+                        pArr[i * 3 + 2] = rz;
                     }
                 }
                 precipGeo.attributes.position.needsUpdate = true;
@@ -936,6 +1034,7 @@
         });
 
         // Init
+        loadRealSmolikasDEM();
         syncLiveWeather();
         setInterval(syncLiveWeather, 300000);
         animate();
