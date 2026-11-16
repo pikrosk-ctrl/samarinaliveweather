@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ο καιρός στη Σαμαρίνα (1.450μ.) - ISAMAR38</title>
+    <title>Καιρός & Χιόνια Σαμαρίνας (1.450μ.) - ISAMAR38</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -876,6 +876,9 @@
                 const topAlert = document.getElementById('topAlert');
                 topAlert.className = 'alert-box';
                 let diagText = '';
+                const frostNote = minTemp24 <= 0
+                    ? ` Προσοχή σε παγετό τη νύχτα/πρωί (έως ${minTemp24.toFixed(1)}°C).`
+                    : ' Ήπιες συνθήκες για το επόμενο 24ωρο.';
 
                 if (estSnowCm24 > 0.3 || ((totalPrecip24 > 1.0 || trend <= -1.5) && (dew <= 0.5 || minTemp24 <= 1.0))) {
                     topAlert.classList.add('alert-snow');
@@ -888,9 +891,21 @@
                 } else if (spread <= 1.5 && wind < 6) {
                     topAlert.innerText = `🌫️ ΟΜΙΧΛΗ / ΧΑΜΗΛΗ ΝΕΦΩΣΗ`;
                     diagText = `🌫️ <b>Κορεσμένη ατμόσφαιρα:</b> Θερμοκρασία (${temp.toFixed(1)}°C) και Σημείο Δρόσου (${dew.toFixed(1)}°C) απέχουν μόλις ${spread.toFixed(1)}°C — αναμένεται ομίχλη ή χαμηλά νέφη.`;
+                } else if (press < 1013) {
+                    if (trend <= -1.2) {
+                        topAlert.classList.add('alert-storm');
+                        topAlert.innerText = `🌥️ ΠΤΩΣΗ ΠΙΕΣΗΣ (${press.toFixed(0)} hPa)`;
+                        diagText = `🌥️ <b>Χαμηλές πιέσεις σε πτώση (${press.toFixed(1)} hPa):</b> Μεταβλητός καιρός με νεφώσεις και πιθανότητα τοπικών φαινομένων.${frostNote}`;
+                    } else {
+                        topAlert.innerText = `⛅ ΧΑΜΗΛΕΣ ΠΙΕΣΕΙΣ (${press.toFixed(0)} hPa)`;
+                        diagText = `⛅ <b>Χαμηλές πιέσεις (Υβριδικό):</b> Το βαρόμετρο είναι στα ${press.toFixed(1)} hPa (άστατος/νεφελώδης καιρός χωρίς αξιόλογο υετό).${frostNote}`;
+                    }
+                } else if (press < 1018) {
+                    topAlert.innerText = `🌤️ ΚΑΝΟΝΙΚΕΣ ΠΙΕΣΕΙΣ (${press.toFixed(0)} hPa)`;
+                    diagText = `🌤️ <b>Σχετικά σταθερός καιρός (Υβριδικό):</b> Κανονικές βαρομετρικές πιέσεις (${press.toFixed(1)} hPa) χωρίς αξιόλογο υετό.${frostNote}`;
                 } else {
                     topAlert.innerText = `☀️ ΣΤΑΘΕΡΟΣ ΚΑΙΡΟΣ (${press.toFixed(0)} hPa)`;
-                    diagText = `☀️ <b>Αίθριες συνθήκες (Υβριδικό):</b> Υψηλές πιέσεις (${press.toFixed(1)} hPa) χωρίς αξιόλογο υετό. ${minTemp24 <= 0 ? 'Προσοχή σε παγετό τη νύχτα/πρωί (έως ' + minTemp24.toFixed(1) + '°C).' : 'Ήπιες συνθήκες για το επόμενο 24ωρο.'}`;
+                    diagText = `☀️ <b>Αίθριες συνθήκες (Υβριδικό):</b> Υψηλές πιέσεις (${press.toFixed(1)} hPa) χωρίς αξιόλογο υετό.${frostNote}`;
                 }
 
                 document.getElementById('smartDiagnosis').innerHTML = diagText;
