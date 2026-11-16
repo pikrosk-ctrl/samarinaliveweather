@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ο καιρός στη Σαμαρίνα (1.450μ.) - ISAMAR38</title>
+    <title>Καιρός & Χιόνια Σαμαρίνας (1.450μ.) - ISAMAR38</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -155,7 +155,7 @@
         }
         .s-label { font-size: 0.78rem; color: #94a3b8; }
         .s-val { font-size: 1.25rem; font-weight: bold; color: #38bdf8; margin-top: 3px; }
-        .s-sub { font-size: 0.75rem; color: #cbd5e1; margin-top: 2px; }
+        .s-sub { font-size: 0.74rem; color: #cbd5e1; margin-top: 2px; }
         .extremes-bar {
             display: flex;
             flex-wrap: wrap;
@@ -335,7 +335,7 @@
                     <div class="s-tile">
                         <div class="s-label">Θερμοκρασία</div>
                         <div class="s-val" id="stTemp">--°C</div>
-                        <div class="s-sub" id="stDew">Σημ. Δρόσου: --°C</div>
+                        <div class="s-sub" id="stDew">Σ.Δ.: --°C | Υγρό: --°C</div>
                     </div>
                     <div class="s-tile">
                         <div class="s-label">Πίεση</div>
@@ -440,7 +440,7 @@
     </div>
 
     <div class="footer-bar">
-        Σαμαρίνα Live Weather Dashboard (1.450μ.) • Αυτόνομος & Υβριδικός Αλγόριθμος: Bresser 5-in-1 (ISAMAR38) + Open-Meteo (ICON / ECMWF)
+        Σαμαρίνα Live Weather Dashboard (1.450μ.) • Αυτόνομος & Υβριδικός Αλγόριθμος (Stull Wet-Bulb): Bresser 5-in-1 (ISAMAR38) + Open-Meteo (ICON / ECMWF)
     </div>
 
     <script>
@@ -449,6 +449,23 @@
         const STATS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ_y9OVAjf5gRIJN7ZKm_OuR_fP5UFcu2YWX3XNU7PRxSouu3L2-kPh6Rk1u3VP-pdBjOTIo22t3mN/pub?gid=409751746&single=true&output=csv";
         const OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast?latitude=40.105&longitude=21.018&elevation=1450&hourly=temperature_2m,precipitation,precipitation_probability,snowfall,freezing_level_height,weather_code&models=best_match&timezone=Europe%2FAthens&forecast_days=2";
         let weatherChartInstance = null;
+
+        function calcWetBulb(temp, hum) {
+            const safeHum = Math.max(1, Math.min(100, hum));
+            const tw = temp * Math.atan(0.151977 * Math.sqrt(safeHum + 8.313659))
+                     + Math.atan(temp + safeHum)
+                     - Math.atan(safeHum - 1.676331)
+                     + 0.00391838 * Math.pow(safeHum, 1.5) * Math.atan(0.023101 * safeHum)
+                     - 4.686035;
+            return Number(tw.toFixed(1));
+        }
+
+        function estimateFutureWetBulb(predTemp, initialDew) {
+            const eActual = 6.112 * Math.exp((17.67 * initialDew) / (initialDew + 243.5));
+            const eSat = 6.112 * Math.exp((17.67 * predTemp) / (predTemp + 243.5));
+            const estRh = Math.min(100, Math.max(15, (eActual / eSat) * 100));
+            return calcWetBulb(predTemp, estRh);
+        }
 
         function parseCSVLine(line) {
             const result = [];
@@ -568,6 +585,7 @@
 
             const pressTempDelta = trend * 0.25 * (hrs / 12);
             const predT = Number((temp + diurnalDelta + advectionDelta + pressTempDelta).toFixed(1));
+            const predTw = estimateFutureWetBulb(predT, dew);
 
             let precipScore = 0;
             if (press <= 1004) precipScore += 45;
@@ -595,8 +613,8 @@
             }
 
             let snowCm = 0;
-            if (predT <= 1.2 && predPr > 0) {
-                const ratio = predT <= -4.0 ? 1.5 : (predT <= -1.5 ? 1.2 : 0.85);
+            if (predPr > 0 && predTw <= 0.5) {
+                const ratio = predTw <= -3.5 ? 1.5 : (predTw <= -1.0 ? 1.2 : 0.9);
                 snowCm = Number((predPr * ratio).toFixed(1));
             }
 
@@ -605,7 +623,7 @@
             else if (press >= 1018 && Math.abs(trend) < 0.8) prob += 3;
             prob = Math.max(54, Math.min(97, Math.round(prob)));
 
-            return { temp: predT, precip: predPr, snowCm: snowCm, prob: prob };
+            return { temp: predT, wetBulb: predTw, precip: predPr, snowCm: snowCm, prob: prob };
         }
 
         function predictHybrid(hrs, temp, dew, press, trend, wind, dir, omData) {
@@ -614,6 +632,7 @@
             if (!omData || !omData.hourly || !omData.hourly.time) {
                 return {
                     temp: localPred.temp,
+                    wetBulb: localPred.wetBulb,
                     station: localPred,
                     precip: localPred.precip,
                     snowCm: localPred.snowCm,
@@ -635,6 +654,7 @@
             if (idxTarget === -1) {
                 return {
                     temp: localPred.temp,
+                    wetBulb: localPred.wetBulb,
                     station: localPred,
                     precip: localPred.precip,
                     snowCm: localPred.snowCm,
@@ -657,14 +677,15 @@
             const wModel = 1 - wStation;
 
             const hybridTemp = Number(((localPred.temp * wStation) + (correctedModelTemp * wModel)).toFixed(1));
+            const hybridTw = estimateFutureWetBulb(hybridTemp, dew);
 
             const modelPrecip = omData.hourly.precipitation[idxTarget] || 0;
             const freezingLvl = omData.hourly.freezing_level_height[idxTarget] || (1450 + (hybridTemp / 6.5) * 1000);
             const hybridPrecip = Number(((localPred.precip * wStation) + (modelPrecip * wModel)).toFixed(1));
 
             let hybridSnowCm = 0;
-            if (hybridPrecip > 0 && hybridTemp <= 1.2 && freezingLvl <= 1650) {
-                const ratio = hybridTemp <= -4.0 ? 1.5 : (hybridTemp <= -1.5 ? 1.2 : 0.9);
+            if (hybridPrecip > 0 && hybridTw <= 0.5 && freezingLvl <= 1750) {
+                const ratio = hybridTw <= -3.5 ? 1.5 : (hybridTw <= -1.0 ? 1.2 : 0.9);
                 hybridSnowCm = Number((hybridPrecip * ratio).toFixed(1));
             }
 
@@ -673,6 +694,7 @@
 
             return {
                 temp: hybridTemp,
+                wetBulb: hybridTw,
                 station: localPred,
                 precip: hybridPrecip,
                 snowCm: hybridSnowCm,
@@ -715,6 +737,7 @@
                 const rate = obs.metric.precipRate;
                 const chill = obs.metric.windChill;
                 const spread = temp - dew;
+                const wetBulb = calcWetBulb(temp, hum);
 
                 let trend = 0;
                 try {
@@ -727,7 +750,7 @@
                 } catch (err) { trend = 0; }
 
                 document.getElementById('stTemp').innerText = `${temp.toFixed(1)}°C`;
-                document.getElementById('stDew').innerText = `Σημ. Δρόσου: ${dew.toFixed(1)}°C`;
+                document.getElementById('stDew').innerText = `Σ.Δ.: ${dew.toFixed(1)}°C | Υγρό: ${wetBulb.toFixed(1)}°C`;
                 document.getElementById('stPress').innerText = `${press.toFixed(1)} hPa`;
                 document.getElementById('stTrend').innerText = `Τάση 3ωρου: ${trend >= 0 ? '+' : ''}${trend.toFixed(1)} hPa`;
                 document.getElementById('stHum').innerText = `${hum}%`;
@@ -783,7 +806,7 @@
                     const tLabel = futureDate.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
 
                     const pred = hrs === 0
-                        ? { temp: Number(temp.toFixed(1)), station: { temp: Number(temp.toFixed(1)) }, precip: Number((rate || 0).toFixed(1)), snowCm: 0, prob: 100 }
+                        ? { temp: Number(temp.toFixed(1)), wetBulb: wetBulb, station: { temp: Number(temp.toFixed(1)), wetBulb: wetBulb }, precip: Number((rate || 0).toFixed(1)), snowCm: 0, prob: 100 }
                         : predictHybrid(hrs, temp, dew, press, trend, wind, dir, omData);
 
                     if (hrs > 0) {
@@ -820,7 +843,7 @@
 
                     const hProbClass = pred.prob >= 85 ? 'prob-high' : (pred.prob >= 72 ? 'prob-med' : 'prob-low');
                     let hIcon = '🌤️';
-                    if (pred.snowCm > 0 || (pred.precip > 0 && pred.temp <= 1.2)) hIcon = '❄️';
+                    if (pred.snowCm > 0 || (pred.precip > 0 && pred.wetBulb <= 0.5)) hIcon = '❄️';
                     else if (pred.precip > 0) hIcon = '🌧️';
                     else if (pred.temp <= 0) hIcon = '🥶';
 
@@ -841,7 +864,7 @@
 
                     const sProbClass = st.prob >= 85 ? 'prob-high' : (st.prob >= 72 ? 'prob-med' : 'prob-low');
                     let sIcon = '🌤️';
-                    if (st.snowCm > 0 || (st.precip > 0 && st.temp <= 1.2)) sIcon = '❄️';
+                    if (st.snowCm > 0 || (st.precip > 0 && st.wetBulb <= 0.5)) sIcon = '❄️';
                     else if (st.precip > 0) sIcon = '🌧️';
                     else if (st.temp <= 0) sIcon = '🥶';
 
@@ -858,7 +881,7 @@
 
                 const roadEl = document.getElementById('roadStatus');
                 roadEl.className = 'alert-box';
-                if (estSnowCm24 >= 2.0 || (rate > 0 && temp <= 1.0)) {
+                if (estSnowCm24 >= 2.0 || (rate > 0 && wetBulb <= 0.5)) {
                     roadEl.classList.add('road-danger');
                     roadEl.innerText = '⛓️ Δρόμος: Απαραίτητες αλυσίδες';
                 } else if (temp <= 0.5 && (hum >= 80 || rain > 0 || totalPrecip24 > 0.5)) {
@@ -880,10 +903,10 @@
                     ? ` Προσοχή σε παγετό τη νύχτα/πρωί (έως ${minTemp24.toFixed(1)}°C).`
                     : ' Ήπιες συνθήκες για το επόμενο 24ωρο.';
 
-                if (estSnowCm24 > 0.3 || ((totalPrecip24 > 1.0 || trend <= -1.5) && (dew <= 0.5 || minTemp24 <= 1.0))) {
+                if (estSnowCm24 > 0.3 || ((totalPrecip24 > 1.0 || trend <= -1.5) && (wetBulb <= 0.5 || minTemp24 <= 1.0))) {
                     topAlert.classList.add('alert-snow');
                     topAlert.innerText = `❄️ ΣΥΝΑΓΕΡΜΟΣ ΧΙΟΝΟΠΤΩΣΗΣ (24h)`;
-                    diagText = `❄️ <b>Ευνοϊκές συνθήκες χιονιού (Υβριδικό):</b> Ο σταθμός μετρά ${temp.toFixed(1)}°C (Σημ. Δρόσου ${dew.toFixed(1)}°C) και ο συνδυασμός ISAMAR38 + ICON/ECMWF εκτιμά ελάχιστη ${minTemp24.toFixed(1)}°C και νέο χιόνι ~${estSnowCm24.toFixed(1)} cm το επόμενο 24ωρο.`;
+                    diagText = `❄️ <b>Ευνοϊκές συνθήκες χιονιού (Υβριδικό):</b> Ο σταθμός μετρά ${temp.toFixed(1)}°C (Υγρό Θερμ. ${wetBulb.toFixed(1)}°C, Σ.Δ. ${dew.toFixed(1)}°C) και ο συνδυασμός ISAMAR38 + ICON/ECMWF εκτιμά ελάχιστη ${minTemp24.toFixed(1)}°C και νέο χιόνι ~${estSnowCm24.toFixed(1)} cm το επόμενο 24ωρο.`;
                 } else if (trend <= -1.5 && isSoutherly) {
                     topAlert.classList.add('alert-storm');
                     topAlert.innerText = `🌧️ ΕΡΧΕΤΑΙ ΕΠΙΔΕΙΝΩΣΗ (ΠΤΩΣΗ ΠΙΕΣΗΣ)`;
