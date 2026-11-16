@@ -180,6 +180,30 @@
             line-height: 1.4;
             color: #e0f2fe;
         }
+        .hazard-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #1e293b;
+        }
+        .hazard-item {
+            padding: 7px 10px;
+            border-radius: 6px;
+            font-size: 0.83rem;
+            line-height: 1.35;
+        }
+        .hazard-danger {
+            background: rgba(127, 29, 29, 0.55);
+            border-left: 3px solid #ef4444;
+            color: #fee2e2;
+        }
+        .hazard-warn {
+            background: rgba(120, 53, 15, 0.55);
+            border-left: 3px solid #f59e0b;
+            color: #fef3c7;
+        }
         .forecast-cards {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -467,6 +491,65 @@
             return calcWetBulb(predTemp, estRh);
         }
 
+        function getMountainHazards({ temp, wetBulb, hum, wind, gust, rain, rate, chill, spread, estSnowCm24 }) {
+            const hazards = [];
+
+            if (temp <= 0.0 && (wind >= 30 || gust >= 45) && (rate > 0 || rain > 0 || estSnowCm24 > 1)) {
+                hazards.push({
+                    id: "snowstorm",
+                    level: "danger",
+                    badge: "🌨️ ΧΙΟΝΟΘΥΕΛΛΑ / ΑΝΕΜΟΣΟΥΡΙΑ",
+                    detail: `Ισχυρές ριπές (${gust} km/h) με ${temp.toFixed(1)}°C σηκώνουν χιόνι — κίνδυνος μηδενικής ορατότητας και κλειστών σημείων στον δρόμο.`
+                });
+            }
+
+            if (rate >= 1.5 && temp >= -0.8 && temp <= 0.8 && hum >= 90) {
+                hazards.push({
+                    id: "wet_snow",
+                    level: "warn",
+                    badge: "🌲 ΒΑΡΥ ΥΓΡΟ ΧΙΟΝΙ",
+                    detail: `Έντονος υετός (${rate} mm/h) οριακά στους ${temp.toFixed(1)}°C — αυξημένο φορτίο χιονιού σε δέντρα και καλώδια.`
+                });
+            }
+
+            if (temp > 0 && temp <= 1.8 && rain > 0 && spread >= 3.0 && wind < 10) {
+                hazards.push({
+                    id: "black_ice",
+                    level: "warn",
+                    badge: "🧊 ΚΙΝΔΥΝΟΣ ΜΑΥΡΟΥ ΠΑΓΟΥ",
+                    detail: `Βρεγμένο οδόστρωμα (${rain} mm) με ξαστεριά και άπνοια — η άσφαλτος παγώνει παρότι ο αέρας είναι στους ${temp.toFixed(1)}°C.`
+                });
+            }
+
+            if (chill <= -10.0) {
+                const severe = chill <= -15.0;
+                hazards.push({
+                    id: "extreme_chill",
+                    level: severe ? "danger" : "warn",
+                    badge: severe ? `🥶 ΑΚΡΑΙΟ ΨΥΧΟΣ (${chill.toFixed(0)}°C)` : `🥶 ΙΣΧΥΡΟ WIND CHILL (${chill.toFixed(0)}°C)`,
+                    detail: `Ο συνδυασμός ${temp.toFixed(1)}°C και ανέμου ${wind} km/h δημιουργεί αίσθηση ${chill.toFixed(1)}°C — υψηλός κίνδυνος υποθερμίας σε εκτεθειμένα σημεία.`
+                });
+            }
+
+            if (gust >= 60) {
+                hazards.push({
+                    id: "gale_gusts",
+                    level: "danger",
+                    badge: `💨 ΘΥΕΛΛΩΔΕΙΣ ΡΙΠΕΣ (${gust} km/h)`,
+                    detail: `Καταγράφονται πολύ ισχυρές ριπές ανέμου (${gust} km/h) στη Σαμαρίνα — προσοχή σε κλαδιά και εκτεθειμένα σημεία.`
+                });
+            } else if (temp >= 18 && hum <= 35 && gust >= 35 && rain === 0) {
+                hazards.push({
+                    id: "fire_wind",
+                    level: "warn",
+                    badge: "🔥 ΥΨΗΛΟΣ ΚΙΝΔΥΝΟΣ ΠΥΡΚΑΓΙΑΣ",
+                    detail: `Ξηρή ατμόσφαιρα (Υγρασία ${hum}%) με ριπές ${gust} km/h — συνθήκες ταχείας εξάπλωσης φωτιάς στο δάσος.`
+                });
+            }
+
+            return hazards;
+        }
+
         function parseCSVLine(line) {
             const result = [];
             let current = '';
@@ -732,6 +815,7 @@
                 const press = obs.metric.pressure;
                 const hum = obs.humidity;
                 const wind = obs.metric.windSpeed;
+                const gust = obs.metric.windGust || wind;
                 const dir = obs.winddir;
                 const rain = obs.metric.precipTotal;
                 const rate = obs.metric.precipRate;
@@ -762,7 +846,7 @@
                 document.getElementById('stChill').innerText = `${chill.toFixed(1)}°C`;
                 document.getElementById('lastUpdate').innerText = `Ενημ.: ${new Date().toLocaleTimeString('el-GR', {hour:'2-digit', minute:'2-digit'})}`;
 
-                let minDayT = temp, maxDayT = temp, maxDayGust = obs.metric.windGust || wind;
+                let minDayT = temp, maxDayT = temp, maxDayGust = gust;
                 let minDayTime = "", maxDayTime = "";
                 try {
                     const dayUrl = `https://api.weather.com/v2/pws/observations/all/1day?stationId=${WU_STATION_ID}&format=json&units=m&numericPrecision=decimal&apiKey=${WU_API_KEY}`;
@@ -879,14 +963,24 @@
                     `;
                 }
 
+                const hazards = getMountainHazards({ temp, wetBulb, hum, wind, gust, rain, rate, chill, spread, estSnowCm24 });
+                const hasSnowstorm = hazards.some(h => h.id === "snowstorm");
+                const hasBlackIce = hazards.some(h => h.id === "black_ice");
+
                 const roadEl = document.getElementById('roadStatus');
                 roadEl.className = 'alert-box';
-                if (estSnowCm24 >= 2.0 || (rate > 0 && wetBulb <= 0.5)) {
+                if (hasSnowstorm) {
+                    roadEl.classList.add('road-danger');
+                    roadEl.innerText = '🌨️ Δρόμος: Ανεμοσούρια / Αλυσίδες';
+                } else if (estSnowCm24 >= 2.0 || (rate > 0 && wetBulb <= 0.5)) {
                     roadEl.classList.add('road-danger');
                     roadEl.innerText = '⛓️ Δρόμος: Απαραίτητες αλυσίδες';
                 } else if (temp <= 0.5 && (hum >= 80 || rain > 0 || totalPrecip24 > 0.5)) {
                     roadEl.classList.add('road-danger');
                     roadEl.innerText = '🧊 Δρόμος: Υψηλός κίνδυνος πάγου';
+                } else if (hasBlackIce) {
+                    roadEl.classList.add('road-danger');
+                    roadEl.innerText = '🧊 Δρόμος: Κίνδυνος μαύρου πάγου';
                 } else if (temp <= 2.5 || minTemp24 <= 0.5) {
                     roadEl.classList.add('road-warn');
                     roadEl.innerText = '⚠️ Δρόμος: Πιθανός παγετός τη νύχτα';
@@ -899,11 +993,13 @@
                 const topAlert = document.getElementById('topAlert');
                 topAlert.className = 'alert-box';
                 let diagText = '';
+                let hasSnowAlert = false;
                 const frostNote = minTemp24 <= 0
                     ? ` Προσοχή σε παγετό τη νύχτα/πρωί (έως ${minTemp24.toFixed(1)}°C).`
                     : ' Ήπιες συνθήκες για το επόμενο 24ωρο.';
 
                 if (estSnowCm24 > 0.3 || ((totalPrecip24 > 1.0 || trend <= -1.5) && (wetBulb <= 0.5 || minTemp24 <= 1.0))) {
+                    hasSnowAlert = true;
                     topAlert.classList.add('alert-snow');
                     topAlert.innerText = `❄️ ΣΥΝΑΓΕΡΜΟΣ ΧΙΟΝΟΠΤΩΣΗΣ (24h)`;
                     diagText = `❄️ <b>Ευνοϊκές συνθήκες χιονιού (Υβριδικό):</b> Ο σταθμός μετρά ${temp.toFixed(1)}°C (Υγρό Θερμ. ${wetBulb.toFixed(1)}°C, Σ.Δ. ${dew.toFixed(1)}°C) και ο συνδυασμός ISAMAR38 + ICON/ECMWF εκτιμά ελάχιστη ${minTemp24.toFixed(1)}°C και νέο χιόνι ~${estSnowCm24.toFixed(1)} cm το επόμενο 24ωρο.`;
@@ -931,7 +1027,20 @@
                     diagText = `☀️ <b>Αίθριες συνθήκες (Υβριδικό):</b> Υψηλές πιέσεις (${press.toFixed(1)} hPa) χωρίς αξιόλογο υετό.${frostNote}`;
                 }
 
-                document.getElementById('smartDiagnosis').innerHTML = diagText;
+                const dangerHazard = hazards.find(h => h.level === "danger");
+                if (dangerHazard && !hasSnowAlert) {
+                    topAlert.className = 'alert-box ' + (dangerHazard.id === "snowstorm" ? 'alert-snow' : 'alert-storm');
+                    topAlert.innerText = dangerHazard.badge;
+                }
+
+                let hazardsHtml = '';
+                if (hazards.length > 0) {
+                    hazardsHtml = '<div class="hazard-list">' + hazards.map(h =>
+                        `<div class="hazard-item ${h.level === 'danger' ? 'hazard-danger' : 'hazard-warn'}"><b>${h.badge}:</b> ${h.detail}</div>`
+                    ).join('') + '</div>';
+                }
+
+                document.getElementById('smartDiagnosis').innerHTML = diagText + hazardsHtml;
 
                 const ctx = document.getElementById('weatherChart').getContext('2d');
                 if (weatherChartInstance) {
