@@ -650,6 +650,14 @@
             return arr[(val % 16)];
         }
 
+        function getForecastIcon(precip, snowCm, wetBulb, temp, isActiveRainNow) {
+            if (snowCm >= 0.3 || ((precip >= 0.5 || isActiveRainNow) && wetBulb <= 0.5)) return '❄️';
+            if (precip >= 0.5 || isActiveRainNow) return '🌧️';
+            if (precip >= 0.1) return '⛅';
+            if (temp <= 0) return '🥶';
+            return '🌤️';
+        }
+
         function predictFromStation(hrs, temp, dew, hum, press, trend, wind, dir, activeRate) {
             const now = new Date();
             const currentHour = now.getHours() + (now.getMinutes() / 60);
@@ -773,7 +781,7 @@
             // 2. Ανεξάρτητα βάρη ΥΕΤΟΥ / ΧΙΟΝΙΟΥ (Υψηλότερο βάρος στο μοντέλο ICON/ECMWF)
             let wPrecipStation = 0.15;
             if (activeRate > 0 && hrs <= 3) {
-                wPrecipStation = 0.80; // Εξαίρεση: αν βρέχει ήδη στον σταθμό
+                wPrecipStation = 0.80;
             } else if (hrs <= 3) {
                 wPrecipStation = 0.35;
             } else if (hrs <= 6) {
@@ -992,12 +1000,10 @@
                     const tStr = futureDate.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
                     const pred = predictHybrid(hrs, temp, dew, hum, press, trend, wind, dir, rate, omData);
                     const st = pred.station;
+                    const activeNow = (rate > 0 && hrs <= 3);
 
                     const hProbClass = pred.prob >= 85 ? 'prob-high' : (pred.prob >= 72 ? 'prob-med' : 'prob-low');
-                    let hIcon = '🌤️';
-                    if (pred.snowCm > 0 || (pred.precip > 0 && pred.wetBulb <= 0.5)) hIcon = '❄️';
-                    else if (pred.precip > 0 || (rate > 0 && hrs <= 3)) hIcon = '🌧️';
-                    else if (pred.temp <= 0) hIcon = '🥶';
+                    const hIcon = getForecastIcon(pred.precip, pred.snowCm, pred.wetBulb, pred.temp, activeNow);
 
                     const weightLabel = pred.isHybrid
                         ? `<div class="f-weight">Θερμ: ${pred.wTempStationPct}% Στ. | Υετός: ${100 - pred.wPrecipStationPct}% Μοντ.</div>`
@@ -1015,10 +1021,7 @@
                     `;
 
                     const sProbClass = st.prob >= 85 ? 'prob-high' : (st.prob >= 72 ? 'prob-med' : 'prob-low');
-                    let sIcon = '🌤️';
-                    if (st.snowCm > 0 || (st.precip > 0 && st.wetBulb <= 0.5)) sIcon = '❄️';
-                    else if (st.precip > 0 || (rate > 0 && hrs <= 3)) sIcon = '🌧️';
-                    else if (st.temp <= 0) sIcon = '🥶';
+                    const sIcon = getForecastIcon(st.precip, st.snowCm, st.wetBulb, st.temp, activeNow);
 
                     stationGrid.innerHTML += `
                         <div class="f-card-solo">
