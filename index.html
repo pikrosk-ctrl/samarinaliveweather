@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ο καιρός στη Σαμαρίνα (1.450μ.) - ISAMAR38</title>
+    <title>Καιρός & Χιόνια Σαμαρίνας (1.450μ.) - ISAMAR38</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -96,6 +96,28 @@
             flex-wrap: wrap;
         }
         .live-badge { color: #ef4444; font-weight: bold; }
+        .cam-header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .fw-link-btn {
+            background: #0f172a;
+            color: #38bdf8;
+            border: 1px solid #334155;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.15s;
+        }
+        .fw-link-btn:hover {
+            background: #0284c7;
+            color: #ffffff;
+            border-color: #38bdf8;
+        }
         .cam-wrapper {
             flex: 1;
             position: relative;
@@ -201,7 +223,6 @@
         .prob-med { color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); }
         .prob-low { color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.35); }
 
-        /* Διπλό Scoreboard Επαλήθευσης */
         .scoreboard-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -219,12 +240,8 @@
             flex-direction: column;
             gap: 8px;
         }
-        .sb-col.sb-station {
-            border-top: 3px solid #10b981;
-        }
-        .sb-col.sb-hybrid {
-            border-top: 3px solid #38bdf8;
-        }
+        .sb-col.sb-station { border-top: 3px solid #10b981; }
+        .sb-col.sb-hybrid { border-top: 3px solid #38bdf8; }
         .sb-header {
             display: flex;
             justify-content: space-between;
@@ -244,35 +261,14 @@
             padding: 7px 10px;
             border-radius: 6px;
         }
-        .sb-row-primary {
-            border-left: 3px solid #10b981;
-        }
-        .sb-hybrid .sb-row-primary {
-            border-left: 3px solid #38bdf8;
-        }
-        .sb-label {
-            font-size: 0.78rem;
-            color: #cbd5e1;
-            font-weight: 600;
-        }
-        .sb-sub {
-            font-size: 0.7rem;
-            color: #94a3b8;
-            margin-top: 2px;
-        }
-        .sb-score {
-            text-align: right;
-        }
-        .sb-pct {
-            font-size: 1.15rem;
-            font-weight: bold;
-        }
+        .sb-row-primary { border-left: 3px solid #10b981; }
+        .sb-hybrid .sb-row-primary { border-left: 3px solid #38bdf8; }
+        .sb-label { font-size: 0.78rem; color: #cbd5e1; font-weight: 600; }
+        .sb-sub { font-size: 0.7rem; color: #94a3b8; margin-top: 2px; }
+        .sb-score { text-align: right; }
+        .sb-pct { font-size: 1.15rem; font-weight: bold; }
         .sb-station .sb-pct { color: #34d399; }
         .sb-hybrid .sb-pct { color: #38bdf8; }
-        .sb-mae {
-            font-size: 0.72rem;
-            color: #e2e8f0;
-        }
 
         .chart-container {
             position: relative;
@@ -317,10 +313,15 @@
         <div class="panel">
             <div class="panel-header">
                 <span><span class="live-badge">● LIVE</span> ΚΑΜΕΡΑ ΣΑΜΑΡΙΝΑ ΧΩΡΙΟ</span>
-                <span id="clock" style="font-size:0.82rem; color:#94a3b8;"></span>
+                <div class="cam-header-right">
+                    <a href="https://www.forecastweather.gr/kameres/makedonias/samarina-grevenon-chorio.html" target="_blank" rel="noopener" class="fw-link-btn">🎞️ Timelapse / ForecastWeather ↗</a>
+                    <span id="clock" style="font-size:0.82rem; color:#94a3b8;"></span>
+                </div>
             </div>
             <div class="cam-wrapper">
-                <img id="liveCamImg" class="cam-img" src="https://www.forecastweather.gr/images/photo_camera/photo_41.jpg" alt="Κάμερα Σαμαρίνα Χωριό">
+                <a href="https://www.forecastweather.gr/kameres/makedonias/samarina-grevenon-chorio.html" target="_blank" rel="noopener" title="Άνοιγμα κάμερας & timelapse στο ForecastWeather.gr" style="display:flex; width:100%; height:100%; align-items:center; justify-content:center;">
+                    <img id="liveCamImg" class="cam-img" src="https://www.forecastweather.gr/images/photo_camera/photo_41.jpg" alt="Κάμερα Σαμαρίνα Χωριό">
+                </a>
             </div>
         </div>
 
