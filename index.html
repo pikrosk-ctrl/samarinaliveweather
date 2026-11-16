@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ο καιρός στη Σαμαρίνα (1.450μ.) - ISAMAR38</title>
+    <title>Καιρός & Χιόνια Σαμαρίνας (1.450μ.) - ISAMAR38</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -650,7 +650,7 @@
             return arr[(val % 16)];
         }
 
-        function predictFromStation(hrs, temp, dew, press, trend, wind, dir) {
+        function predictFromStation(hrs, temp, dew, hum, press, trend, wind, dir) {
             const now = new Date();
             const currentHour = now.getHours() + (now.getMinutes() / 60);
             const targetHour = (currentHour + hrs) % 24;
@@ -671,28 +671,33 @@
             const predTw = estimateFutureWetBulb(predT, dew);
 
             let precipScore = 0;
-            if (press <= 1004) precipScore += 45;
-            else if (press <= 1010) precipScore += 30;
-            else if (press <= 1015) precipScore += 15;
-            else if (press >= 1022) precipScore -= 25;
+            if (press <= 1004) precipScore += 40;
+            else if (press <= 1010) precipScore += 25;
+            else if (press <= 1015) precipScore += 10;
+            else if (press >= 1022) precipScore -= 30;
 
-            if (trend <= -2.5) precipScore += 40;
-            else if (trend <= -1.2) precipScore += 25;
-            else if (trend <= -0.5) precipScore += 10;
+            if (trend <= -2.5) precipScore += 35;
+            else if (trend <= -1.2) precipScore += 20;
+            else if (trend <= -0.5) precipScore += 8;
             else if (trend >= 1.2) precipScore -= 25;
 
             if (spread <= 1.5) precipScore += 25;
             else if (spread <= 3.0) precipScore += 12;
-            else if (spread > 6.5) precipScore -= 20;
+            else if (spread > 5.5) precipScore -= 25;
 
-            if (isSoutherly || (dir >= 250 && dir <= 300)) precipScore += 12;
+            if (isSoutherly || (dir >= 250 && dir <= 300)) precipScore += 10;
+
+            // Δικλείδα σταθερότητας (damping): Απαιτείται υγρασία > 75% για να επιτραπεί υετός
+            if (hum < 75 && hrs <= 6) {
+                precipScore -= 30;
+            }
 
             const timeDecay = Math.max(0.75, 1 - (hrs / 120));
             precipScore = Math.round(precipScore * timeDecay);
 
             let predPr = 0;
-            if (precipScore >= 55) {
-                predPr = Number(((precipScore - 45) * 0.08).toFixed(1));
+            if (precipScore >= 60) {
+                predPr = Number(((precipScore - 50) * 0.07).toFixed(1));
             }
 
             let snowCm = 0;
@@ -709,8 +714,8 @@
             return { temp: predT, wetBulb: predTw, precip: predPr, snowCm: snowCm, prob: prob };
         }
 
-        function predictHybrid(hrs, temp, dew, press, trend, wind, dir, omData) {
-            const localPred = predictFromStation(hrs, temp, dew, press, trend, wind, dir);
+        function predictHybrid(hrs, temp, dew, hum, press, trend, wind, dir, omData) {
+            const localPred = predictFromStation(hrs, temp, dew, hum, press, trend, wind, dir);
 
             if (!omData || !omData.hourly || !omData.hourly.time) {
                 return {
@@ -919,7 +924,7 @@
 
                     const pred = hrs === 0
                         ? { temp: Number(temp.toFixed(1)), wetBulb: wetBulb, station: { temp: Number(temp.toFixed(1)), wetBulb: wetBulb }, precip: Number((rate || 0).toFixed(1)), snowCm: 0, prob: 100 }
-                        : predictHybrid(hrs, temp, dew, press, trend, wind, dir, omData);
+                        : predictHybrid(hrs, temp, dew, hum, press, trend, wind, dir, omData);
 
                     if (hrs > 0) {
                         totalPrecip24 += pred.precip;
@@ -950,7 +955,7 @@
                 for (let hrs = 3; hrs <= 24; hrs += 3) {
                     const futureDate = new Date(baseDate.getTime() + hrs * 3600 * 1000);
                     const tStr = futureDate.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
-                    const pred = predictHybrid(hrs, temp, dew, press, trend, wind, dir, omData);
+                    const pred = predictHybrid(hrs, temp, dew, hum, press, trend, wind, dir, omData);
                     const st = pred.station;
 
                     const hProbClass = pred.prob >= 85 ? 'prob-high' : (pred.prob >= 72 ? 'prob-med' : 'prob-low');
