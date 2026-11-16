@@ -328,7 +328,7 @@
             <div id="roadStatus" class="alert-box">🛣️ Έλεγχος δρόμου...</div>
             <div id="topAlert" class="alert-box">Έλεγχος συνθηκών...</div>
             <div class="visitor-badge" title="Συνολικές επισκέψεις σελίδας">
-                <img src="https://visitor-badge.laobi.icu/badge?page_id=samarinaliveweather&left_color=%230f172a&right_color=%230284c7&left_text=%CE%95%CF%80%CE%B9%CF%83%CE%BA%CE%AD%CF%88%CE%B5%CE%B9%CF%82" alt="Επισκέψεις">
+                <img src="https://visitor-badge.laobi.icu/badge?page_id=samarinaliveweather&left_color=%230f172a&right_color=%230284c7&left_text=%CE%95%CF%80%CE%B9%CF%83%CE%BA%CE% વિદ્યાર્થી%CE%B5%CE%B9%CF%82" alt="Επισκέψεις">
             </div>
         </div>
     </div>
@@ -687,7 +687,6 @@
 
             if (isSoutherly || (dir >= 250 && dir <= 300)) precipScore += 10;
 
-            // Δικλείδα σταθερότητας (damping): Απαιτείται υγρασία > 75% για να επιτραπεί υετός
             if (hum < 75 && hrs <= 6) {
                 precipScore -= 30;
             }
@@ -833,7 +832,7 @@
                 const spread = temp - dew;
                 const wetBulb = calcWetBulb(temp, hum);
 
-                let trend = 0;
+                let rawTrend = 0;
                 let trendFoundFromHistory = false;
 
                 if (dayData && dayData.observations && dayData.observations.length > 0) {
@@ -855,7 +854,7 @@
                     });
 
                     if (closestObs !== null) {
-                        trend = Number((press - closestObs).toFixed(1));
+                        rawTrend = Number((press - closestObs).toFixed(1));
                         trendFoundFromHistory = true;
                     }
                 }
@@ -867,8 +866,24 @@
                         hist.push({ t: nowTs, p: press });
                         hist = hist.filter(x => (nowTs - x.t) <= 3 * 3600 * 1000);
                         localStorage.setItem('isamar38_p', JSON.stringify(hist));
-                        trend = Number((press - hist[0].p).toFixed(1));
-                    } catch (err) { trend = 0; }
+                        rawTrend = Number((press - hist[0].p).toFixed(1));
+                    } catch (err) { rawTrend = 0; }
+                }
+
+                // Smooth Trend Filter (Rolling Average Moving Average over last hour)
+                let trend = rawTrend;
+                try {
+                    let trendHistory = JSON.parse(localStorage.getItem('isamar38_trend_history') || '[]');
+                    const nowTs = Date.now();
+                    trendHistory.push({ t: nowTs, val: rawTrend });
+                    trendHistory = trendHistory.filter(x => (nowTs - x.t) <= 60 * 60 * 1000); // keep last 1 hour
+                    localStorage.setItem('isamar38_trend_history', JSON.stringify(trendHistory));
+                    if (trendHistory.length > 0) {
+                        const sum = trendHistory.reduce((acc, x) => acc + x.val, 0);
+                        trend = Number((sum / trendHistory.length).toFixed(1));
+                    }
+                } catch (e) {
+                    trend = rawTrend;
                 }
 
                 document.getElementById('stTemp').innerText = `${temp.toFixed(1)}°C`;
