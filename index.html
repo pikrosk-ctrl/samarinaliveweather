@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ο Καιρός στη Σαμαρίνα (1.450μ.) - ISAMAR38</title>
+    <title>Ο καιρός στη Σαμαρίνα (1.450μ.) - ISAMAR38</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -233,7 +233,7 @@
         .f-temp { font-size: 1.05rem; font-weight: bold; color: #38bdf8; }
         .f-card-solo .f-temp { color: #34d399; }
         .f-snow { font-size: 0.74rem; color: #bae6fd; margin-top: 2px; }
-        .f-weight { font-size: 0.65rem; color: #64748b; margin-top: 2px; }
+        .f-weight { font-size: 0.62rem; color: #64748b; margin-top: 2px; line-height: 1.25; }
         .f-prob {
             display: inline-block;
             margin-top: 4px;
@@ -687,7 +687,6 @@
 
             if (isSoutherly || (dir >= 250 && dir <= 300)) precipScore += 10;
 
-            // Παράκαμψη φίλτρου υγρασίας αν ο σταθμός δείχνει ήδη ενεργό υετό τώρα
             if (activeRate > 0) {
                 precipScore += 45;
             } else if (hum < 75 && hrs <= 6) {
@@ -729,7 +728,8 @@
                     precip: localPred.precip,
                     snowCm: localPred.snowCm,
                     prob: localPred.prob,
-                    wStationPct: 100,
+                    wTempStationPct: 100,
+                    wPrecipStationPct: 100,
                     isHybrid: false
                 };
             }
@@ -751,7 +751,8 @@
                     precip: localPred.precip,
                     snowCm: localPred.snowCm,
                     prob: localPred.prob,
-                    wStationPct: 100,
+                    wTempStationPct: 100,
+                    wPrecipStationPct: 100,
                     isHybrid: false
                 };
             }
@@ -761,19 +762,33 @@
             const decayedBias = initialBias * Math.max(0, 1 - (hrs / 24));
             const correctedModelTemp = omData.hourly.temperature_2m[idxTarget] + decayedBias;
 
-            let wStation = 0.5;
-            if (hrs <= 3) wStation = 0.80;
-            else if (hrs <= 6) wStation = 0.55;
-            else if (hrs <= 12) wStation = 0.35;
-            else wStation = 0.20;
-            const wModel = 1 - wStation;
+            // 1. Ανεξάρτητα βάρη ΘΕΡΜΟΚΡΑΣΙΑΣ (Υψηλό βάρος στον σταθμό ISAMAR38)
+            let wTempStation = 0.25;
+            if (hrs <= 3) wTempStation = 0.85;
+            else if (hrs <= 6) wTempStation = 0.65;
+            else if (hrs <= 12) wTempStation = 0.40;
+            else wTempStation = 0.25;
+            const wTempModel = 1 - wTempStation;
 
-            const hybridTemp = Number(((localPred.temp * wStation) + (correctedModelTemp * wModel)).toFixed(1));
+            // 2. Ανεξάρτητα βάρη ΥΕΤΟΥ / ΧΙΟΝΙΟΥ (Υψηλότερο βάρος στο μοντέλο ICON/ECMWF)
+            let wPrecipStation = 0.15;
+            if (activeRate > 0 && hrs <= 3) {
+                wPrecipStation = 0.80; // Εξαίρεση: αν βρέχει ήδη στον σταθμό
+            } else if (hrs <= 3) {
+                wPrecipStation = 0.35;
+            } else if (hrs <= 6) {
+                wPrecipStation = 0.25;
+            } else {
+                wPrecipStation = 0.15;
+            }
+            const wPrecipModel = 1 - wPrecipStation;
+
+            const hybridTemp = Number(((localPred.temp * wTempStation) + (correctedModelTemp * wTempModel)).toFixed(1));
             const hybridTw = estimateFutureWetBulb(hybridTemp, dew);
 
             const modelPrecip = omData.hourly.precipitation[idxTarget] || 0;
             const freezingLvl = omData.hourly.freezing_level_height[idxTarget] || (1450 + (hybridTemp / 6.5) * 1000);
-            const hybridPrecip = Number(((localPred.precip * wStation) + (modelPrecip * wModel)).toFixed(1));
+            const hybridPrecip = Number(((localPred.precip * wPrecipStation) + (modelPrecip * wPrecipModel)).toFixed(1));
 
             let hybridSnowCm = 0;
             if (hybridPrecip > 0 && hybridTw <= 0.5 && freezingLvl <= 1750) {
@@ -782,7 +797,7 @@
             }
 
             const agreementBonus = Math.abs(localPred.temp - correctedModelTemp) <= 1.2 ? 4 : -4;
-            const hybridProb = Math.max(55, Math.min(98, Math.round((localPred.prob * wStation) + (Math.max(65, 92 - hrs) * wModel) + agreementBonus)));
+            const hybridProb = Math.max(55, Math.min(98, Math.round((localPred.prob * wTempStation) + (Math.max(65, 92 - hrs) * wTempModel) + agreementBonus)));
 
             return {
                 temp: hybridTemp,
@@ -791,7 +806,8 @@
                 precip: hybridPrecip,
                 snowCm: hybridSnowCm,
                 prob: hybridProb,
-                wStationPct: Math.round(wStation * 100),
+                wTempStationPct: Math.round(wTempStation * 100),
+                wPrecipStationPct: Math.round(wPrecipStation * 100),
                 isHybrid: true
             };
         }
@@ -980,11 +996,11 @@
                     const hProbClass = pred.prob >= 85 ? 'prob-high' : (pred.prob >= 72 ? 'prob-med' : 'prob-low');
                     let hIcon = '🌤️';
                     if (pred.snowCm > 0 || (pred.precip > 0 && pred.wetBulb <= 0.5)) hIcon = '❄️';
-                    else if (pred.precip > 0 || rate > 0) hIcon = '🌧️';
+                    else if (pred.precip > 0 || (rate > 0 && hrs <= 3)) hIcon = '🌧️';
                     else if (pred.temp <= 0) hIcon = '🥶';
 
                     const weightLabel = pred.isHybrid
-                        ? `<div class="f-weight">Βάρος: ${pred.wStationPct}% Στ. / ${100 - pred.wStationPct}% Μοντ.</div>`
+                        ? `<div class="f-weight">Θερμ: ${pred.wTempStationPct}% Στ. | Υετός: ${100 - pred.wPrecipStationPct}% Μοντ.</div>`
                         : '';
 
                     hybridGrid.innerHTML += `
@@ -1001,7 +1017,7 @@
                     const sProbClass = st.prob >= 85 ? 'prob-high' : (st.prob >= 72 ? 'prob-med' : 'prob-low');
                     let sIcon = '🌤️';
                     if (st.snowCm > 0 || (st.precip > 0 && st.wetBulb <= 0.5)) sIcon = '❄️';
-                    else if (st.precip > 0 || rate > 0) sIcon = '🌧️';
+                    else if (st.precip > 0 || (rate > 0 && hrs <= 3)) sIcon = '🌧️';
                     else if (st.temp <= 0) sIcon = '🥶';
 
                     stationGrid.innerHTML += `
