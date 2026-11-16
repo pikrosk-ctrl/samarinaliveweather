@@ -49,6 +49,25 @@
         .road-ok { background: #065f46; color: #d1fae5; border: 1px solid #10b981; }
         .road-warn { background: #78350f; color: #fef3c7; border: 1px solid #f59e0b; }
         .road-danger { background: #7f1d1d; color: #fee2e2; border: 1px solid #ef4444; }
+        .btn-3d-launch {
+            background: linear-gradient(135deg, #0284c7, #0ea5e9);
+            color: #ffffff;
+            border: 1px solid #38bdf8;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.88rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 0 12px rgba(14, 165, 233, 0.35);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .btn-3d-launch:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 0 18px rgba(56, 189, 248, 0.65);
+        }
         .visitor-badge {
             display: inline-flex;
             align-items: center;
@@ -325,6 +344,7 @@
             <span>Σταθμός: Bresser 5-in-1 (ISAMAR38) | Κάμερα: Σαμαρίνα Χωριό | Υβριδική & Αυτόνομη Πρόγνωση</span>
         </div>
         <div class="top-badges">
+            <button onclick="openSmolikas3D()" class="btn-3d-launch">🏔️ 3D Ροή Αέρα Σμόλικα</button>
             <div id="roadStatus" class="alert-box">🛣️ Έλεγχος δρόμου...</div>
             <div id="topAlert" class="alert-box">Έλεγχος συνθηκών...</div>
             <div class="visitor-badge" title="Συνολικές επισκέψεις σελίδας">
@@ -467,7 +487,30 @@
         Σαμαρίνα Live Weather Dashboard (1.450μ.) • Αυτόνομος & Υβριδικός Αλγόριθμος (Stull Wet-Bulb): Bresser 5-in-1 (ISAMAR38) + Open-Meteo (ICON / ECMWF)
     </div>
 
+    <!-- Modal για 3D Ροή Αέρα Σμόλικα -->
+    <div id="modal-3d" onclick="if(event.target===this) closeSmolikas3D()" style="display:none; position:fixed; inset:0; background:rgba(2,6,23,0.88); z-index:9999; align-items:center; justify-content:center; padding:16px; backdrop-filter:blur(4px);">
+        <div style="position:relative; width:100%; max-width:1320px; height:88vh; background:#060a12; border:1px solid #334155; border-radius:12px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.8);">
+            <button onclick="closeSmolikas3D()" style="position:absolute; top:12px; left:12px; z-index:10000; background:#ef4444; color:#fff; border:none; padding:7px 14px; border-radius:6px; font-weight:700; font-size:12px; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.5);">
+                ✕ Κλείσιμο 3D
+            </button>
+            <iframe id="iframe-3d" src="" style="width:100%; height:100%; border:none;"></iframe>
+        </div>
+    </div>
+
     <script>
+        function openSmolikas3D() {
+            const modal = document.getElementById('modal-3d');
+            const iframe = document.getElementById('iframe-3d');
+            if (!iframe.src) iframe.src = 'smolikas-3d.html';
+            modal.style.display = 'flex';
+        }
+        function closeSmolikas3D() {
+            document.getElementById('modal-3d').style.display = 'none';
+        }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeSmolikas3D();
+        });
+
         const WU_STATION_ID = "ISAMAR38";
         const WU_API_KEY = "5c94ee0c13f240ec94ee0c13f2b0ecd9";
         const STATS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ_y9OVAjf5gRIJN7ZKm_OuR_fP5UFcu2YWX3XNU7PRxSouu3L2-kPh6Rk1u3VP-pdBjOTIo22t3mN/pub?gid=409751746&single=true&output=csv";
@@ -770,7 +813,6 @@
             const decayedBias = initialBias * Math.max(0, 1 - (hrs / 24));
             const correctedModelTemp = omData.hourly.temperature_2m[idxTarget] + decayedBias;
 
-            // 1. Ανεξάρτητα βάρη ΘΕΡΜΟΚΡΑΣΙΑΣ (Υψηλό βάρος στον σταθμό ISAMAR38)
             let wTempStation = 0.25;
             if (hrs <= 3) wTempStation = 0.85;
             else if (hrs <= 6) wTempStation = 0.65;
@@ -778,7 +820,6 @@
             else wTempStation = 0.25;
             const wTempModel = 1 - wTempStation;
 
-            // 2. Ανεξάρτητα βάρη ΥΕΤΟΥ / ΧΙΟΝΙΟΥ (Υψηλότερο βάρος στο μοντέλο ICON/ECMWF)
             let wPrecipStation = 0.15;
             if (activeRate > 0 && hrs <= 3) {
                 wPrecipStation = 0.80;
