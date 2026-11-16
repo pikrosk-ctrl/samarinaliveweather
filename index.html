@@ -200,58 +200,80 @@
         .prob-high { color: #34d399; border: 1px solid rgba(52, 211, 153, 0.35); }
         .prob-med { color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); }
         .prob-low { color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.35); }
-        .verify-grid {
+
+        /* Διπλό Scoreboard Επαλήθευσης */
+        .scoreboard-grid {
             display: grid;
-            grid-template-columns: 1.45fr 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 10px;
-            align-items: stretch;
         }
         @media (max-width: 600px) {
-            .verify-grid { grid-template-columns: 1fr; }
+            .scoreboard-grid { grid-template-columns: 1fr; }
         }
-        .v-card {
+        .sb-col {
             background: #0f172a;
-            padding: 10px 12px;
             border-radius: 8px;
+            padding: 10px 12px;
             border: 1px solid #334155;
-            border-left: 3px solid #64748b;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            gap: 8px;
         }
-        .v-card.v-primary {
-            background: linear-gradient(135deg, #0f172a 0%, #102a38 100%);
-            border: 1px solid rgba(16, 185, 129, 0.55);
-            border-left: 5px solid #10b981;
-            box-shadow: 0 0 14px rgba(16, 185, 129, 0.14);
-            padding: 12px 14px;
+        .sb-col.sb-station {
+            border-top: 3px solid #10b981;
         }
-        .v-card.v-secondary {
-            opacity: 0.88;
+        .sb-col.sb-hybrid {
+            border-top: 3px solid #38bdf8;
         }
-        .v-top-row {
+        .sb-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-        .v-badge-main {
-            background: rgba(16, 185, 129, 0.18);
-            color: #34d399;
-            border: 1px solid rgba(52, 211, 153, 0.4);
-            font-size: 0.65rem;
+            font-size: 0.8rem;
             font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 4px;
-            letter-spacing: 0.3px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #1e293b;
         }
-        .v-horizon { font-size: 0.8rem; color: #cbd5e1; font-weight: 600; }
-        .v-card.v-primary .v-horizon { color: #f1f5f9; font-size: 0.85rem; }
-        .v-acc { font-size: 1.05rem; font-weight: bold; color: #94a3b8; margin: 4px 0; }
-        .v-card.v-primary .v-acc { font-size: 1.45rem; color: #34d399; margin: 5px 0; }
-        .v-mae { font-size: 0.76rem; color: #cbd5e1; }
-        .v-card.v-primary .v-mae { font-size: 0.82rem; color: #e2e8f0; }
+        .sb-station .sb-header { color: #34d399; }
+        .sb-hybrid .sb-header { color: #38bdf8; }
+        .sb-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1e293b;
+            padding: 7px 10px;
+            border-radius: 6px;
+        }
+        .sb-row-primary {
+            border-left: 3px solid #10b981;
+        }
+        .sb-hybrid .sb-row-primary {
+            border-left: 3px solid #38bdf8;
+        }
+        .sb-label {
+            font-size: 0.78rem;
+            color: #cbd5e1;
+            font-weight: 600;
+        }
+        .sb-sub {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+        .sb-score {
+            text-align: right;
+        }
+        .sb-pct {
+            font-size: 1.15rem;
+            font-weight: bold;
+        }
+        .sb-station .sb-pct { color: #34d399; }
+        .sb-hybrid .sb-pct { color: #38bdf8; }
+        .sb-mae {
+            font-size: 0.72rem;
+            color: #e2e8f0;
+        }
+
         .chart-container {
             position: relative;
             height: 220px;
@@ -367,22 +389,31 @@
 
             <div class="panel">
                 <div class="panel-header">
-                    <span>🎯 ΕΠΑΛΗΘΕΥΣΗ ΑΚΡΙΒΕΙΑΣ ΣΤΑΘΜΟΥ (ΚΥΡΙΟΣ ΔΕΙΚΤΗΣ +12h)</span>
+                    <span>🏆 ΔΙΠΛΟ SCOREBOARD ΑΚΡΙΒΕΙΑΣ: ΣΤΑΘΜΟΣ vs ΥΒΡΙΔΙΚΟ</span>
                     <span id="verifySample" style="font-size:0.78rem; color:#38bdf8;">Φόρτωση...</span>
                 </div>
-                <div class="verify-grid" id="verifyGrid">
-                    <div class="v-card v-primary">
-                        <div class="v-top-row">
-                            <div class="v-horizon">Πρόγνωση Σταθμού +12h</div>
-                            <span class="v-badge-main">⭐ ΚΥΡΙΟΣ ΔΕΙΚΤΗΣ</span>
+                <div class="scoreboard-grid" id="verifyGrid">
+                    <div class="sb-col sb-station">
+                        <div class="sb-header"><span>📡 ΜΟΝΟ ΣΤΑΘΜΟΣ</span><span>ISAMAR38</span></div>
+                        <div class="sb-row sb-row-primary">
+                            <div><div class="sb-label">+12h Nowcasting</div><div class="sb-sub">Φόρτωση...</div></div>
+                            <div class="sb-score"><div class="sb-pct">--%</div></div>
                         </div>
-                        <div class="v-acc" style="color:#38bdf8; font-size:1.05rem;">Συλλογή δεδομένων...</div>
-                        <div class="v-mae">Άμεση πρόγνωση (Nowcasting ISAMAR38)</div>
+                        <div class="sb-row">
+                            <div><div class="sb-label">+24h Τάση</div><div class="sb-sub">Φόρτωση...</div></div>
+                            <div class="sb-score"><div class="sb-pct" style="font-size:0.95rem;">--%</div></div>
+                        </div>
                     </div>
-                    <div class="v-card v-secondary">
-                        <div class="v-horizon">Τάση +24h (Δευτερεύον)</div>
-                        <div class="v-acc" style="color:#94a3b8; font-size:0.9rem;">Συλλογή δεδομένων...</div>
-                        <div class="v-mae">Μακροπρόθεσμη εκτίμηση</div>
+                    <div class="sb-col sb-hybrid">
+                        <div class="sb-header"><span>❄️ ΥΒΡΙΔΙΚΟ ΜΟΝΤΕΛΟ</span><span>+ ICON/ECMWF</span></div>
+                        <div class="sb-row sb-row-primary">
+                            <div><div class="sb-label">+12h Υβριδικό</div><div class="sb-sub">Αναμονή 12ώρου...</div></div>
+                            <div class="sb-score"><div class="sb-pct">--%</div></div>
+                        </div>
+                        <div class="sb-row">
+                            <div><div class="sb-label">+24h Υβριδικό</div><div class="sb-sub">Αναμονή 24ώρου...</div></div>
+                            <div class="sb-score"><div class="sb-pct" style="font-size:0.95rem;">--%</div></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -437,6 +468,37 @@
             return result;
         }
 
+        function renderScoreRow(title, statsObj, isPrimary, fallbackText) {
+            const rowClass = isPrimary ? "sb-row sb-row-primary" : "sb-row";
+            const pctSize = isPrimary ? "1.15rem" : "0.95rem";
+            if (!statsObj || statsObj.count < 1 || isNaN(statsObj.mae)) {
+                const countInfo = statsObj && statsObj.count > 0 ? ` (${statsObj.count}ώρ.)` : '';
+                return `
+                    <div class="${rowClass}">
+                        <div>
+                            <div class="sb-label">${title}</div>
+                            <div class="sb-sub">${fallbackText}${countInfo}</div>
+                        </div>
+                        <div class="sb-score">
+                            <div class="sb-pct" style="font-size:0.85rem; color:#94a3b8;">Αναμονή</div>
+                        </div>
+                    </div>
+                `;
+            }
+            const precipTxt = !isNaN(statsObj.precipPct) ? ` • Υετός ${statsObj.precipPct}%` : '';
+            return `
+                <div class="${rowClass}">
+                    <div>
+                        <div class="sb-label">${title} (${statsObj.count}ώρ.)</div>
+                        <div class="sb-sub">Απόκλ.: <b>±${statsObj.mae.toFixed(2)}°C</b>${precipTxt}</div>
+                    </div>
+                    <div class="sb-score">
+                        <div class="sb-pct" style="font-size:${pctSize};">${statsObj.accPct}%</div>
+                    </div>
+                </div>
+            `;
+        }
+
         async function loadVerificationStats() {
             if (!STATS_CSV_URL) return;
             try {
@@ -448,71 +510,34 @@
                 }
 
                 const lines = csvText.trim().split(/\r?\n/);
-                const grid = document.getElementById('verifyGrid');
-                let card12Html = '';
-                let card24Html = '';
+                const map = {};
 
                 for (let r = 1; r < lines.length; r++) {
                     const cols = parseCSVLine(lines[r]);
                     const horizon = cols[0]?.replace(/"/g, '').trim();
-                    if (horizon !== "+12h" && horizon !== "+24h") continue;
-
-                    const count = parseInt(cols[1]) || 0;
-                    const mae = parseFloat((cols[2] || '').replace(',', '.'));
-                    const accPct = parseInt(cols[3]);
-                    const precipPct = parseInt(cols[4]);
-
-                    if (horizon === "+12h") {
-                        if (count < 1 || isNaN(mae)) {
-                            card12Html = `
-                                <div class="v-card v-primary">
-                                    <div class="v-top-row">
-                                        <div class="v-horizon">Πρόγνωση Σταθμού +12h</div>
-                                        <span class="v-badge-main">⭐ ΚΥΡΙΟΣ ΔΕΙΚΤΗΣ</span>
-                                    </div>
-                                    <div class="v-acc" style="color:#38bdf8; font-size:1.05rem;">Συλλογή (${count}/12h)</div>
-                                    <div class="v-mae">Άμεση πρόγνωση (Nowcasting ISAMAR38)</div>
-                                </div>
-                            `;
-                        } else {
-                            const precipLine = !isNaN(precipPct) ? ` • Υετός: <b>${precipPct}%</b>` : '';
-                            card12Html = `
-                                <div class="v-card v-primary">
-                                    <div class="v-top-row">
-                                        <div class="v-horizon">Πρόγνωση +12h (${count} ώρες)</div>
-                                        <span class="v-badge-main">⭐ ΚΥΡΙΟΣ ΔΕΙΚΤΗΣ</span>
-                                    </div>
-                                    <div class="v-acc">${accPct}% Ακρίβεια</div>
-                                    <div class="v-mae">Απόκλιση Θερμ.: <b>±${mae.toFixed(2)}°C</b>${precipLine}</div>
-                                </div>
-                            `;
-                        }
-                    } else if (horizon === "+24h") {
-                        if (count < 1 || isNaN(mae)) {
-                            card24Html = `
-                                <div class="v-card v-secondary">
-                                    <div class="v-horizon">Τάση +24h (Δευτερεύον)</div>
-                                    <div class="v-acc" style="color:#94a3b8; font-size:0.92rem;">Συλλογή (${count}/24h)</div>
-                                    <div class="v-mae">Μακροπρόθεσμη εκτίμηση</div>
-                                </div>
-                            `;
-                        } else {
-                            const precipLine = !isNaN(precipPct) ? ` • Υετός: <b>${precipPct}%</b>` : '';
-                            card24Html = `
-                                <div class="v-card v-secondary">
-                                    <div class="v-horizon">Τάση +24h (${count} ώρες)</div>
-                                    <div class="v-acc" style="color:#cbd5e1;">${accPct}% Ακρίβεια</div>
-                                    <div class="v-mae">Απόκλιση: <b>±${mae.toFixed(2)}°C</b>${precipLine}</div>
-                                </div>
-                            `;
-                        }
-                    }
+                    if (!horizon) continue;
+                    map[horizon] = {
+                        count: parseInt(cols[1]) || 0,
+                        mae: parseFloat((cols[2] || '').replace(',', '.')),
+                        accPct: parseInt(cols[3]),
+                        precipPct: parseInt(cols[4])
+                    };
                 }
 
-                if (card12Html || card24Html) {
-                    grid.innerHTML = card12Html + card24Html;
-                    document.getElementById('verifySample').innerText = "100% Δεδομένα ISAMAR38";
-                }
+                const grid = document.getElementById('verifyGrid');
+                grid.innerHTML = `
+                    <div class="sb-col sb-station">
+                        <div class="sb-header"><span>📡 ΜΟΝΟ ΣΤΑΘΜΟΣ</span><span>ISAMAR38</span></div>
+                        ${renderScoreRow("⭐ +12h Nowcasting", map["+12h"], true, "Συλλογή 12ώρου")}
+                        ${renderScoreRow("+24h Τάση", map["+24h"], false, "Συλλογή 24ώρου")}
+                    </div>
+                    <div class="sb-col sb-hybrid">
+                        <div class="sb-header"><span>❄️ ΥΒΡΙΔΙΚΟ ΜΟΝΤΕΛΟ</span><span>+ ICON/ECMWF</span></div>
+                        ${renderScoreRow("⭐ +12h Υβριδικό", map["+12h_HYB"], true, "Έλεγχος σε +12h")}
+                        ${renderScoreRow("+24h Υβριδικό", map["+24h_HYB"], false, "Έλεγχος σε +24h")}
+                    </div>
+                `;
+                document.getElementById('verifySample').innerText = "Ζωντανή Σύγκριση Ακρίβειας";
             } catch (err) {
                 document.getElementById('verifySample').innerText = "Αναμονή στατιστικών";
             }
@@ -792,7 +817,6 @@
                     const pred = predictHybrid(hrs, temp, dew, press, trend, wind, dir, omData);
                     const st = pred.station;
 
-                    // 1. Κάρτα Υβριδικής Πρόγνωσης
                     const hProbClass = pred.prob >= 85 ? 'prob-high' : (pred.prob >= 72 ? 'prob-med' : 'prob-low');
                     let hIcon = '🌤️';
                     if (pred.snowCm > 0 || (pred.precip > 0 && pred.temp <= 1.2)) hIcon = '❄️';
@@ -814,7 +838,6 @@
                         </div>
                     `;
 
-                    // 2. Κάρτα Αυτόνομης Πρόγνωσης Σταθμού (Μόνο ISAMAR38)
                     const sProbClass = st.prob >= 85 ? 'prob-high' : (st.prob >= 72 ? 'prob-med' : 'prob-low');
                     let sIcon = '🌤️';
                     if (st.snowCm > 0 || (st.precip > 0 && st.temp <= 1.2)) sIcon = '❄️';
