@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ο καιρός στη Σαμαρίνα (1.450μ.) - ISAMAR38</title>
+    <title>Ο Καιρός στη Σαμαρίνα (1.450μ.) - ISAMAR38</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -328,7 +328,7 @@
             <div id="roadStatus" class="alert-box">🛣️ Έλεγχος δρόμου...</div>
             <div id="topAlert" class="alert-box">Έλεγχος συνθηκών...</div>
             <div class="visitor-badge" title="Συνολικές επισκέψεις σελίδας">
-                <img src="https://visitor-badge.laobi.icu/badge?page_id=samarinaliveweather&left_color=%230f172a&right_color=%230284c7&left_text=%CE%95%CF%80%CE%B9%CF%83%CE%BA%CE% વિદ્યાર્થી%CE%B5%CE%B9%CF%82" alt="Επισκέψεις">
+                <img src="https://visitor-badge.laobi.icu/badge?page_id=samarinaliveweather&left_color=%230f172a&right_color=%230284c7&left_text=%CE%95%CF%80%CE%B9%CF%83%CE%BA%CE%AD%CF%88%CE%B5%CE%B9%CF%82" alt="Επισκέψεις">
             </div>
         </div>
     </div>
@@ -650,7 +650,7 @@
             return arr[(val % 16)];
         }
 
-        function predictFromStation(hrs, temp, dew, hum, press, trend, wind, dir) {
+        function predictFromStation(hrs, temp, dew, hum, press, trend, wind, dir, activeRate) {
             const now = new Date();
             const currentHour = now.getHours() + (now.getMinutes() / 60);
             const targetHour = (currentHour + hrs) % 24;
@@ -687,7 +687,10 @@
 
             if (isSoutherly || (dir >= 250 && dir <= 300)) precipScore += 10;
 
-            if (hum < 75 && hrs <= 6) {
+            // Παράκαμψη φίλτρου υγρασίας αν ο σταθμός δείχνει ήδη ενεργό υετό τώρα
+            if (activeRate > 0) {
+                precipScore += 45;
+            } else if (hum < 75 && hrs <= 6) {
                 precipScore -= 30;
             }
 
@@ -695,8 +698,9 @@
             precipScore = Math.round(precipScore * timeDecay);
 
             let predPr = 0;
-            if (precipScore >= 60) {
-                predPr = Number(((precipScore - 50) * 0.07).toFixed(1));
+            if (precipScore >= 50 || activeRate > 0) {
+                const basePr = precipScore >= 50 ? ((precipScore - 40) * 0.07) : 0.2;
+                predPr = Number(Math.max(basePr, activeRate * 0.5).toFixed(1));
             }
 
             let snowCm = 0;
@@ -706,15 +710,16 @@
             }
 
             let prob = 96 - (hrs * 1.2);
+            if (activeRate > 0) prob += 8;
             if (Math.abs(trend) >= 1.8) prob -= 6;
             else if (press >= 1018 && Math.abs(trend) < 0.8) prob += 3;
-            prob = Math.max(54, Math.min(97, Math.round(prob)));
+            prob = Math.max(54, Math.min(98, Math.round(prob)));
 
             return { temp: predT, wetBulb: predTw, precip: predPr, snowCm: snowCm, prob: prob };
         }
 
-        function predictHybrid(hrs, temp, dew, hum, press, trend, wind, dir, omData) {
-            const localPred = predictFromStation(hrs, temp, dew, hum, press, trend, wind, dir);
+        function predictHybrid(hrs, temp, dew, hum, press, trend, wind, dir, activeRate, omData) {
+            const localPred = predictFromStation(hrs, temp, dew, hum, press, trend, wind, dir, activeRate);
 
             if (!omData || !omData.hourly || !omData.hourly.time) {
                 return {
@@ -870,13 +875,12 @@
                     } catch (err) { rawTrend = 0; }
                 }
 
-                // Smooth Trend Filter (Rolling Average Moving Average over last hour)
                 let trend = rawTrend;
                 try {
                     let trendHistory = JSON.parse(localStorage.getItem('isamar38_trend_history') || '[]');
                     const nowTs = Date.now();
                     trendHistory.push({ t: nowTs, val: rawTrend });
-                    trendHistory = trendHistory.filter(x => (nowTs - x.t) <= 60 * 60 * 1000); // keep last 1 hour
+                    trendHistory = trendHistory.filter(x => (nowTs - x.t) <= 60 * 60 * 1000);
                     localStorage.setItem('isamar38_trend_history', JSON.stringify(trendHistory));
                     if (trendHistory.length > 0) {
                         const sum = trendHistory.reduce((acc, x) => acc + x.val, 0);
@@ -939,7 +943,7 @@
 
                     const pred = hrs === 0
                         ? { temp: Number(temp.toFixed(1)), wetBulb: wetBulb, station: { temp: Number(temp.toFixed(1)), wetBulb: wetBulb }, precip: Number((rate || 0).toFixed(1)), snowCm: 0, prob: 100 }
-                        : predictHybrid(hrs, temp, dew, hum, press, trend, wind, dir, omData);
+                        : predictHybrid(hrs, temp, dew, hum, press, trend, wind, dir, rate, omData);
 
                     if (hrs > 0) {
                         totalPrecip24 += pred.precip;
@@ -970,13 +974,13 @@
                 for (let hrs = 3; hrs <= 24; hrs += 3) {
                     const futureDate = new Date(baseDate.getTime() + hrs * 3600 * 1000);
                     const tStr = futureDate.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
-                    const pred = predictHybrid(hrs, temp, dew, hum, press, trend, wind, dir, omData);
+                    const pred = predictHybrid(hrs, temp, dew, hum, press, trend, wind, dir, rate, omData);
                     const st = pred.station;
 
                     const hProbClass = pred.prob >= 85 ? 'prob-high' : (pred.prob >= 72 ? 'prob-med' : 'prob-low');
                     let hIcon = '🌤️';
                     if (pred.snowCm > 0 || (pred.precip > 0 && pred.wetBulb <= 0.5)) hIcon = '❄️';
-                    else if (pred.precip > 0) hIcon = '🌧️';
+                    else if (pred.precip > 0 || rate > 0) hIcon = '🌧️';
                     else if (pred.temp <= 0) hIcon = '🥶';
 
                     const weightLabel = pred.isHybrid
@@ -997,7 +1001,7 @@
                     const sProbClass = st.prob >= 85 ? 'prob-high' : (st.prob >= 72 ? 'prob-med' : 'prob-low');
                     let sIcon = '🌤️';
                     if (st.snowCm > 0 || (st.precip > 0 && st.wetBulb <= 0.5)) sIcon = '❄️';
-                    else if (st.precip > 0) sIcon = '🌧️';
+                    else if (st.precip > 0 || rate > 0) sIcon = '🌧️';
                     else if (st.temp <= 0) sIcon = '🥶';
 
                     stationGrid.innerHTML += `
@@ -1046,7 +1050,16 @@
                     ? ` Προσοχή σε παγετό τη νύχτα/πρωί (έως ${minTemp24.toFixed(1)}°C).`
                     : ' Ήπιες συνθήκες για το επόμενο 24ωρο.';
 
-                if (estSnowCm24 > 0.3 || ((totalPrecip24 > 1.0 || trend <= -1.5) && (wetBulb <= 0.5 || minTemp24 <= 1.0))) {
+                if (rate > 0 && wetBulb <= 0.5) {
+                    hasSnowAlert = true;
+                    topAlert.classList.add('alert-snow');
+                    topAlert.innerText = `❄️ ΕΝΕΡΓΗ ΧΙΟΝΟΠΤΩΣΗ`;
+                    diagText = `❄️ <b>Χιόνι σε εξέλιξη:</b> Ο σταθμός καταγράφει ενεργό υετό με θερμοκρασία ${temp.toFixed(1)}°C και υγρό θερμόμετρο στους ${wetBulb.toFixed(1)}°C.`;
+                } else if (rate > 0) {
+                    topAlert.classList.add('alert-storm');
+                    topAlert.innerText = `🌧️ ΕΝΕΡΓΗ ΒΡΟΧΟΠΤΩΣΗ`;
+                    diagText = `🌧️ <b>Βροχή σε εξέλιξη:</b> Ο σταθμός καταγράφει ρυθμό υετού ${rate} mm/h.`;
+                } else if (estSnowCm24 > 0.3 || ((totalPrecip24 > 1.0 || trend <= -1.5) && (wetBulb <= 0.5 || minTemp24 <= 1.0))) {
                     hasSnowAlert = true;
                     topAlert.classList.add('alert-snow');
                     topAlert.innerText = `❄️ ΣΥΝΑΓΕΡΜΟΣ ΧΙΟΝΟΠΤΩΣΗΣ (24h)`;
@@ -1076,7 +1089,7 @@
                 }
 
                 const dangerHazard = hazards.find(h => h.level === "danger");
-                if (dangerHazard && !hasSnowAlert) {
+                if (dangerHazard && !hasSnowAlert && rate === 0) {
                     topAlert.className = 'alert-box ' + (dangerHazard.id === "snowstorm" ? 'alert-snow' : 'alert-storm');
                     topAlert.innerText = dangerHazard.badge;
                 }
