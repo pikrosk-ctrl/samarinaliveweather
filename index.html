@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ο καιρός στη Σαμαρίνα (1.450μ.) - ISAMAR38</title>
+    <title>Καιρός & Χιόνια Σαμαρίνας (1.450μ.) - ISAMAR38</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -800,11 +800,16 @@
         async function updateDashboard() {
             try {
                 const wuUrl = `https://api.weather.com/v2/pws/observations/current?stationId=${WU_STATION_ID}&format=json&units=m&numericPrecision=decimal&apiKey=${WU_API_KEY}`;
-                const [wuRes, omRes] = await Promise.all([
+                const dayUrl = `https://api.weather.com/v2/pws/observations/all/1day?stationId=${WU_STATION_ID}&format=json&units=m&numericPrecision=decimal&apiKey=${WU_API_KEY}`;
+
+                const [wuRes, dayRes, omRes] = await Promise.all([
                     fetch(wuUrl),
+                    fetch(dayUrl).catch(() => null),
                     fetch(OPEN_METEO_URL).catch(() => null)
                 ]);
+
                 const wuData = await wuRes.json();
+                const dayData = dayRes && dayRes.ok ? await dayRes.json() : null;
                 const omData = omRes && omRes.ok ? await omRes.json() : null;
                 const obs = wuData.observations[0];
 
@@ -824,14 +829,42 @@
                 const wetBulb = calcWetBulb(temp, hum);
 
                 let trend = 0;
-                try {
-                    let hist = JSON.parse(localStorage.getItem('isamar38_p') || '[]');
-                    const nowTs = Date.now();
-                    hist.push({ t: nowTs, p: press });
-                    hist = hist.filter(x => (nowTs - x.t) <= 3 * 3600 * 1000);
-                    localStorage.setItem('isamar38_p', JSON.stringify(hist));
-                    trend = press - hist[0].p;
-                } catch (err) { trend = 0; }
+                let trendFoundFromHistory = false;
+
+                if (dayData && dayData.observations && dayData.observations.length > 0) {
+                    const currentEpoch = obs.epoch || Math.floor(Date.now() / 1000);
+                    const targetEpoch = currentEpoch - (3 * 3600);
+                    let closestObs = null;
+                    let minDiff = Infinity;
+
+                    dayData.observations.forEach(o => {
+                        const oEpoch = o.epoch || (o.obsTimeUtc ? Math.floor(new Date(o.obsTimeUtc).getTime() / 1000) : null);
+                        const oPress = o.metric ? (o.metric.pressureMax ?? o.metric.pressureMin ?? o.metric.pressure) : null;
+                        if (oEpoch && oPress !== null) {
+                            const diff = Math.abs(oEpoch - targetEpoch);
+                            if (diff <= 5400 && diff < minDiff) {
+                                minDiff = diff;
+                                closestObs = oPress;
+                            }
+                        }
+                    });
+
+                    if (closestObs !== null) {
+                        trend = Number((press - closestObs).toFixed(1));
+                        trendFoundFromHistory = true;
+                    }
+                }
+
+                if (!trendFoundFromHistory) {
+                    try {
+                        let hist = JSON.parse(localStorage.getItem('isamar38_p') || '[]');
+                        const nowTs = Date.now();
+                        hist.push({ t: nowTs, p: press });
+                        hist = hist.filter(x => (nowTs - x.t) <= 3 * 3600 * 1000);
+                        localStorage.setItem('isamar38_p', JSON.stringify(hist));
+                        trend = Number((press - hist[0].p).toFixed(1));
+                    } catch (err) { trend = 0; }
+                }
 
                 document.getElementById('stTemp').innerText = `${temp.toFixed(1)}°C`;
                 document.getElementById('stDew').innerText = `Σ.Δ.: ${dew.toFixed(1)}°C | Υγρό: ${wetBulb.toFixed(1)}°C`;
@@ -848,23 +881,18 @@
 
                 let minDayT = temp, maxDayT = temp, maxDayGust = gust;
                 let minDayTime = "", maxDayTime = "";
-                try {
-                    const dayUrl = `https://api.weather.com/v2/pws/observations/all/1day?stationId=${WU_STATION_ID}&format=json&units=m&numericPrecision=decimal&apiKey=${WU_API_KEY}`;
-                    const dayRes = await fetch(dayUrl);
-                    const dayData = await dayRes.json();
-                    if (dayData.observations && dayData.observations.length > 0) {
-                        minDayT = Infinity; maxDayT = -Infinity; maxDayGust = 0;
-                        dayData.observations.forEach(o => {
-                            const tVal = o.metric.tempLow !== undefined ? o.metric.tempLow : o.metric.tempAvg;
-                            const tHigh = o.metric.tempHigh !== undefined ? o.metric.tempHigh : o.metric.tempAvg;
-                            const gVal = o.metric.windgustHigh || o.metric.windspeedHigh || 0;
-                            const timeLabel = o.obsTimeLocal ? o.obsTimeLocal.slice(11, 16) : "";
-                            if (tVal < minDayT) { minDayT = tVal; minDayTime = timeLabel ? ` (${timeLabel})` : ""; }
-                            if (tHigh > maxDayT) { maxDayT = tHigh; maxDayTime = timeLabel ? ` (${timeLabel})` : ""; }
-                            if (gVal > maxDayGust) { maxDayGust = gVal; }
-                        });
-                    }
-                } catch (err) {}
+                if (dayData && dayData.observations && dayData.observations.length > 0) {
+                    minDayT = Infinity; maxDayT = -Infinity; maxDayGust = 0;
+                    dayData.observations.forEach(o => {
+                        const tVal = o.metric.tempLow !== undefined ? o.metric.tempLow : o.metric.tempAvg;
+                        const tHigh = o.metric.tempHigh !== undefined ? o.metric.tempHigh : o.metric.tempAvg;
+                        const gVal = o.metric.windgustHigh || o.metric.windspeedHigh || 0;
+                        const timeLabel = o.obsTimeLocal ? o.obsTimeLocal.slice(11, 16) : "";
+                        if (tVal < minDayT) { minDayT = tVal; minDayTime = timeLabel ? ` (${timeLabel})` : ""; }
+                        if (tHigh > maxDayT) { maxDayT = tHigh; maxDayTime = timeLabel ? ` (${timeLabel})` : ""; }
+                        if (gVal > maxDayGust) { maxDayGust = gVal; }
+                    });
+                }
 
                 const fl = (omData && omData.hourly && omData.hourly.freezing_level_height && omData.hourly.freezing_level_height[0])
                     ? Math.round(omData.hourly.freezing_level_height[0])
