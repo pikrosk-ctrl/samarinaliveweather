@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D Ροή Αέρα & Νεφών — Σμόλικας & Σαμαρίνα (ISAMAR38)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #060a12;
+      color: #e2e8f0;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+    #canvas-container {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+    .hud-panel {
+      position: absolute;
+      z-index: 10;
+      background: rgba(11, 18, 32, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      backdrop-filter: blur(8px);
+      border-radius: 10px;
+      padding: 12px 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    }
+    #header-hud {
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      min-width: 320px;
+    }
+    #header-hud h1 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #38bdf8;
+      letter-spacing: 0.4px;
+    }
+    #header-hud .sub {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 3px;
+    }
+    #live-badge {
+      display: inline-block;
+      margin-top: 5px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 10px;
+      font-weight: 700;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+    #telemetry-hud {
+      top: 14px;
+      right: 14px;
+      width: 260px;
+      font-size: 12px;
+    }
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+    }
+    .metric-row:last-child { border-bottom: none; }
+    .metric-label { color: #94a3b8; }
+    .metric-val { font-weight: 700; color: #f8fafc; }
+    .metric-val.highlight { color: #38bdf8; }
+    .metric-val.snow { color: #a5f3fc; }
+
+    #controls-hud {
+      bottom: 14px;
+      left: 14px;
+      width: 290px;
+      font-size: 11px;
+    }
+    #controls-hud h3 {
+      font-size: 12px;
+      color: #38bdf8;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .slider-group { margin-bottom: 7px; }
+    .slider-group label {
+      display: flex;
+      justify-content: space-between;
+      color: #cbd5e1;
+      margin-bottom: 2px;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: #0ea5e9;
+      cursor: pointer;
+    }
+    .preset-btns {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .preset-btns button {
+      flex: 1;
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid #334155;
+      padding: 5px 6px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .preset-btns button:hover {
+      background: #0ea5e9;
+      color: #fff;
+      border-color: #38bdf8;
+    }
+
+    #legend-hud {
+      bottom: 14px;
+      right: 14px;
+      font-size: 11px;
+      width: 220px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+      color: #cbd5e1;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .label-3d {
+      position: absolute;
+      z-index: 5;
+      pointer-events: none;
+      background: rgba(6, 10, 18, 0.78);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      color: #f8fafc;
+      padding: 3px 7px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      transform: translate(-50%, -100%);
+      white-space: nowrap;
+    }
+    .label-3d span {
+      display: block;
+      font-size: 9px;
+      color: #38bdf8;
+      font-weight: 400;
+    }
+    @media (max-width: 768px) {
+      #controls-hud { width: 220px; padding: 8px 10px; }
+      #telemetry-hud { width: 200px; top: 68px; }
+      #legend-hud { display: none; }
+    }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+
+  <div id="canvas-container"></div>
+
+  <!-- 3D Ετικέτες Χώρου -->
+  <div id="lbl-smolikas" class="label-3d">🏔️ Κορυφή Σμόλικα<span>2.637 μ.</span></div>
+  <div id="lbl-samarina" class="label-3d">🏘️ Σαμαρίνα (ISAMAR38)<span>1.450 μ.</span></div>
+  <div id="lbl-vathylakkos" class="label-3d">⛰️ Διάσελο Βαθύλακκου<span>2.150 μ.</span></div>
+
+  <!-- Πάνω Κέντρο: Τίτλος -->
+  <div id="header-hud" class="hud-panel">
+    <h1>3D Ορογραφική Ροή & Νέφωση — Σμόλικας / Σαμαρίνα</h1>
+    <div class="sub">Περιστροφή: Αριστερό κλικ • Ζουμ: Ροδέλα • Μετακίνηση: Δεξί κλικ</div>
+    <div id="live-badge">● Σύνδεση με ISAMAR38...</div>
+  </div>
+
+  <!-- Πάνω Δεξιά: Τηλεμετρία & Θερμοδυναμική -->
+  <div id="telemetry-hud" class="hud-panel">
+    <div class="metric-row"><span class="metric-label">Θερμοκρασία (1.450μ):</span><span id="val-temp" class="metric-val">8.7 °C</span></div>
+    <div class="metric-row"><span class="metric-label">Σημείο Δρόσου (Σ.Δ.):</span><span id="val-dew" class="metric-val">6.3 °C</span></div>
+    <div class="metric-row"><span class="metric-label">Υγρό Θερμόμετρο:</span><span id="val-wb" class="metric-val highlight">7.2 °C</span></div>
+    <div class="metric-row"><span class="metric-label">Άνεμος / Διεύθυνση:</span><span id="val-wind" class="metric-val">12 km/h (ΝΔ)</span></div>
+    <div class="metric-row"><span class="metric-label">Βάση Νεφών (LCL):</span><span id="val-lcl" class="metric-val highlight">1.750 μ.</span></div>
+    <div class="metric-row"><span class="metric-label">Όριο Χιονόπτωσης:</span><span id="val-snowline" class="metric-val snow">2.560 μ.</span></div>
+    <div class="metric-row"><span class="metric-label">Φαινόμενα Χωριού:</span><span id="val-precip-type" class="metric-val">Ξηρός Καιρός</span></div>
+  </div>
+
+  <!-- Κάτω Αριστερά: Προσομοίωση & Σενάρια -->
+  <div id="controls-hud" class="hud-panel">
+    <h3>
+      <span>Παράμετροι & Προσομοίωση</span>
+      <button id="btn-live-sync" style="background:#0ea5e9;border:none;color:#fff;padding:2px 7px;border-radius:4px;font-size:10px;cursor:pointer;">Live</button>
+    </h3>
+    <div class="slider-group">
+      <label><span>Θερμοκρασία (°C)</span><span id="lbl-in-temp">8.7°C</span></label>
+      <input type="range" id="in-temp" min="-12" max="25" step="0.1" value="8.7">
+    </div>
+    <div class="slider-group">
+      <label><span>Σημείο Δρόσου (°C)</span><span id="lbl-in-dew">6.3°C</span></label>
+      <input type="range" id="in-dew" min="-15" max="20" step="0.1" value="6.3">
+    </div>
+    <div class="slider-group">
+      <label><span>Ταχύτητα Ανέμου (km/h)</span><span id="lbl-in-wspeed">12 km/h</span></label>
+      <input type="range" id="in-wspeed" min="0" max="80" step="1" value="12">
+    </div>
+    <div class="slider-group">
+      <label><span>Διεύθυνση Ανέμου (°)</span><span id="lbl-in-wdir">225°</span></label>
+      <input type="range" id="in-wdir" min="0" max="360" step="5" value="225">
+    </div>
+    <div class="slider-group">
+      <label><span>Ένταση Υετού (mm/h)</span><span id="lbl-in-precip">0.0 mm/h</span></label>
+      <input type="range" id="in-precip" min="0" max="15" step="0.2" value="0">
+    </div>
+    <div class="preset-btns">
+      <button id="preset-snow">❄️ Χιονιάς ΝΔ</button>
+      <button id="preset-nw">💨 Ισχυρός ΒΔ</button>
+      <button id="preset-fog">🌫️ Ομίχλη</button>
+    </div>
+  </div>
+
+  <!-- Κάτω Δεξιά: Υπόμνημα -->
+  <div id="legend-hud" class="hud-panel">
+    <div class="legend-item"><span class="dot" style="background:#38bdf8;"></span> Ήπια ροή αέρα</div>
+    <div class="legend-item"><span class="dot" style="background:#f59e0b;"></span> Ορογραφική επιτάχυνση</div>
+    <div class="legend-item"><span class="dot" style="background:#ef4444;"></span> Ισχυρές ριπές κορυφής</div>
+    <div class="legend-item"><span class="dot" style="background:#f8fafc;"></span> Χιονοκάλυψη (&le; 0.5°C WB)</div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // =========================================================================
+    // 1. ΡΥΘΜΙΣΕΙΣ ΣΤΑΘΜΟΥ ISAMAR38 (ΣΑΜΑΡΙΝΑ)
+    // =========================================================================
+    const WU_API_KEY = '5c94ee0c13f240ec94ee0c13f2b0ecd9';
+    const STATION_ID = 'ISAMAR38';
+    const SAMARINA_ALT = 1450; // μέτρα
+    const SMOLIKAS_ALT = 2637; // μέτρα
+
+    const state = {
+      temp: 8.7,
+      dew: 6.3,
+      windSpeed: 12,
+      windDir: 225,
+      precip: 0.0,
+      wetBulb: 7.2,
+      lclAlt: 1750,
+      snowlineAlt: 2560
+    };
+
+    // =========================================================================
+    // 2. ΑΡΧΙΚΟΠΟΙΗΣΗ ΣΚΗΝΗΣ THREE.JS
+    // =========================================================================
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x060a12);
+    scene.fog = new THREE.FogExp2(0x060a12, 0.0042);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    // Προοπτική από ΝΑ (Σαμαρίνα) προς ΒΔ (Σμόλικας)
+    camera.position.set(78, 56, 82);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.maxPolarAngle = Math.PI / 2 - 0.04;
+    controls.minDistance = 25;
+    controls.maxDistance = 190;
+    controls.target.set(-5, 16, -5);
+
+    // Φωτισμός
+    const ambientLight = new THREE.AmbientLight(0x64748b, 1.3);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xf8fafc, 1.8);
+    dirLight.position.set(60, 95, 40);
+    scene.add(dirLight);
+
+    const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.7);
+    rimLight.position.set(-70, 40, -60);
+    scene.add(rimLight);
+
+    // =========================================================================
+    // 3. ΥΨΟΜΕΤΡΙΚΟ ΑΝΑΓΛΥΦΟ ΣΜΟΛΙΚΑ - ΣΑΜΑΡΙΝΑΣ (PROCEDURAL DEM)
+    // =========================================================================
+    const TERRAIN_SIZE = 140;
+    const SEGMENTS = 140;
+
+    // Συνάρτηση υψομέτρου (σε πραγματικά μέτρα: 1000m - 2637m)
+    function getElevationMeters(x, z) {
+      // Κύριος όγκος Σμόλικα (ΒΔ: x = -28, z = -26) -> 2637m
+      const dSmolikas = Math.hypot((x + 28) * 0.95, (z + 26) * 1.1);
+      const peakSmolikas = 1520 * Math.exp(-(dSmolikas * dSmolikas) / 1450);
+
+      // Δευτερεύουσα κορυφή / Διάσελο Βαθύλακκου (x = -12, z = -38) -> ~2200m
+      const dVathylakkos = Math.hypot(x + 12, z + 38);
+      const peakVath = 980 * Math.exp(-(dVathylakkos * dVathylakkos) / 900);
+
+      // Ανατολική ράχη προς Σαμαρίνα / Γόμαρα (x = 18, z = -15)
+      const dRidge = Math.hypot(x - 18, z + 15);
+      const ridge = 620 * Math.exp(-(dRidge * dRidge) / 1100);
+
+      // Κοιλάδα / Ρέμα Σαμαρίνας (διαγώνιο αυλάκι ανάμεσα σε Σμόλικα και χωριό)
+      const valleyDist = Math.abs((x - 5) + (z - 12) * 0.7);
+      const valleyCut = -240 * Math.exp(-(valleyDist * valleyDist) / 180);
+
+      // Πλαγιά Σαμαρίνας (ΝΑ: x = 24, z = 22) -> ~1450m
+      const dSamarina = Math.hypot(x - 24, z - 22);
+      const samarinaSlope = 360 * Math.exp(-(dSamarina * dSamarina) / 1600);
+
+      // Μικρο-τραχύτητα βράχων/χαραδρών
+      const micro = 38 * Math.sin(x * 0.22) * Math.cos(z * 0.22) + 18 * Math.sin(x * 0.5 + z * 0.4);
+
+      const alt = 1120 + peakSmolikas + peakVath + ridge + samarinaSlope + valleyCut + micro;
+      return Math.max(980, Math.min(2637, alt));
+    }
+
+    function altToSceneY(meters) {
+      return (meters - 950) * 0.024;
+    }
+
+    const terrainGeo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, SEGMENTS, SEGMENTS);
+    terrainGeo.rotateX(-Math.PI / 2);
+
+    const posAttr = terrainGeo.attributes.position;
+    const colors = new Float32Array(posAttr.count * 3);
+    terrainGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    for (let i = 0; i < posAttr.count; i++) {
+      const x = posAttr.getX(i);
+      const z = posAttr.getZ(i);
+      const alt = getElevationMeters(x, z);
+      posAttr.setY(i, altToSceneY(alt));
+    }
+    terrainGeo.computeVertexNormals();
+
+    const terrainMat = new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 0.88,
+      metalness: 0.08,
+      flatShading: false
+    });
+
+    const terrainMesh = new THREE.Mesh(terrainGeo, terrainMat);
+    scene.add(terrainMesh);
+
+    // Δυναμικός χρωματισμός εδάφους & χιονιού ανάλογα με το Snowline
+    function updateTerrainSnow() {
+      const colAttr = terrainGeo.attributes.color;
+      const cValley = new THREE.Color(0x132a24); // Δάσος μαύρης πεύκης / ρόμπολου
+      const cAlpine = new THREE.Color(0x334155); // Αλπικό λιβάδι / βράχος
+      const cRock   = new THREE.Color(0x475569); // Κορυφογραμμή
+      const cSnow   = new THREE.Color(0xf1f5f9); // Χιόνι
+
+      for (let i = 0; i < posAttr.count; i++) {
+        const x = posAttr.getX(i);
+        const z = posAttr.getZ(i);
+        const alt = getElevationMeters(x, z);
+
+        let baseColor = cValley.clone();
+        if (alt > 1750) {
+          const t = Math.min(1, (alt - 1750) / 450);
+          baseColor.lerp(cAlpine, t);
+        }
+        if (alt > 2200) {
+          const t = Math.min(1, (alt - 2200) / 437);
+          baseColor.lerp(cRock, t);
+        }
+
+        // Εφαρμογή χιονιού πάνω από το όριο χιονόπτωσης (με ομαλή μετάβαση 120μ.)
+        if (alt >= state.snowlineAlt - 60) {
+          const snowFactor = Math.min(1, Math.max(0, (alt - (state.snowlineAlt - 60)) / 140));
+          baseColor.lerp(cSnow, snowFactor * 0.92);
+        }
+
+        colAttr.setXYZ(i, baseColor.r, baseColor.g, baseColor.b);
+      }
+      colAttr.needsUpdate = true;
+    }
+
+    // Δείκτης Σαμαρίνας (ISAMAR38) & Κορυφής Σμόλικα
+    function createMarker(x, z, colorHex) {
+      const alt = getElevationMeters(x, z);
+      const y = altToSceneY(alt);
+      const group = new THREE.Group();
+      group.position.set(x, y, z);
+
+      const dot = new THREE.Mesh(
+        new THREE.SphereGeometry(0.9, 16, 16),
+        new THREE.MeshBasicMaterial({ color: colorHex })
+      );
+      const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.12, 0.12, 4.5, 8),
+        new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.7 })
+      );
+      pole.position.y = 2.25;
+      group.add(dot, pole);
+      scene.add(group);
+      return new THREE.Vector3(x, y + 4.8, z);
+    }
+
+    const posSmolikas = createMarker(-28, -26, 0x38bdf8);
+    const posSamarina = createMarker(24, 22, 0x10b981);
+    const posVathylakkos = createMarker(-12, -38, 0xf59e0b);
+
+    // =========================================================================
+    // 4. ΟΓΚΟΜΕΤΡΙΚΑ ΣΥΝΝΕΦΑ (ΒΑΣΗ LCL)
+    // =========================================================================
+    const cloudGroup = new THREE.Group();
+    scene.add(cloudGroup);
+
+    function createCloudTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 128;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      const grad = ctx.createRadialGradient(64, 64, 8, 64, 64, 60);
+      grad.addColorStop(0, 'rgba(226, 232, 240, 0.55)');
+      grad.addColorStop(0.5, 'rgba(148, 163, 184, 0.22)');
+      grad.addColorStop(1, 'rgba(148, 163, 184, 0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 128, 128);
+      return new THREE.CanvasTexture(canvas);
+    }
+
+    const cloudTex = createCloudTexture();
+    const clouds = [];
+    const CLOUD_COUNT = 55;
+
+    for (let i = 0; i < CLOUD_COUNT; i++) {
+      const mat = new THREE.SpriteMaterial({
+        map: cloudTex,
+        transparent: true,
+        opacity: 0.45,
+        depthWrite: false
+      });
+      const sprite = new THREE.Sprite(mat);
+      sprite.position.set(
+        (Math.random() - 0.5) * 120,
+        25,
+        (Math.random() - 0.5) * 120
+      );
+      const scale = 18 + Math.random() * 24;
+      sprite.scale.set(scale, scale * 0.55, 1);
+      cloudGroup.add(sprite);
+      clouds.push({
+        sprite,
+        offsetY: Math.random() * 6,
+        speedFactor: 0.7 + Math.random() * 0.6
+      });
+    }
+
+    // =========================================================================
+    // 5. ΜΗΧΑΝΗ ΡΕΥΜΑΤΩΝ ΑΕΡΑ (1.100 ΣΩΜΑΤΙΔΙΑ ΜΕ ΟΡΟΓΡΑΦΙΚΗ ΕΚΤΡΟΠΗ)
+    // =========================================================================
+    const PARTICLE_COUNT = 1100;
+    const pPositions = new Float32Array(PARTICLE_COUNT * 3);
+    const pColors = new Float32Array(PARTICLE_COUNT * 3);
+    const pLife = new Float32Array(PARTICLE_COUNT);
+
+    function resetParticle(i) {
+      pPositions[i * 3]     = (Math.random() - 0.5) * TERRAIN_SIZE;
+      pPositions[i * 3 + 2] = (Math.random() - 0.5) * TERRAIN_SIZE;
+      const groundY = altToSceneY(getElevationMeters(pPositions[i * 3], pPositions[i * 3 + 2]));
+      pPositions[i * 3 + 1] = groundY + 1.2 + Math.random() * 18;
+      pLife[i] = Math.random();
+    }
+
+    for (let i = 0; i < PARTICLE_COUNT; i++) resetParticle(i);
+
+    const windGeo = new THREE.BufferGeometry();
+    windGeo.setAttribute('position', new THREE.BufferAttribute(pPositions, 3));
+    windGeo.setAttribute('color', new THREE.BufferAttribute(pColors, 3));
+
+    const windMat = new THREE.PointsMaterial({
+      size: 0.75,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.85
+    });
+    const windParticles = new THREE.Points(windGeo, windMat);
+    scene.add(windParticles);
+
+    // =========================================================================
+    // 6. ΥΕΤΟΣ (ΒΡΟΧΗ & ΧΙΟΝΙ ΣΕ ΠΡΑΓΜΑΤΙΚΟ ΧΡΟΝΟ)
+    // =========================================================================
+    const PRECIP_COUNT = 1400;
+    const prPositions = new Float32Array(PRECIP_COUNT * 3);
+    const prColors = new Float32Array(PRECIP_COUNT * 3);
+
+    for (let i = 0; i < PRECIP_COUNT; i++) {
+      prPositions[i * 3]     = (Math.random() - 0.5) * 110;
+      prPositions[i * 3 + 1] = 5 + Math.random() * 45;
+      prPositions[i * 3 + 2] = (Math.random() - 0.5) * 110;
+    }
+
+    const precipGeo = new THREE.BufferGeometry();
+    precipGeo.setAttribute('position', new THREE.BufferAttribute(prPositions, 3));
+    precipGeo.setAttribute('color', new THREE.BufferAttribute(prColors, 3));
+
+    const precipMat = new THREE.PointsMaterial({
+      size: 0.55,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.85
+    });
+    const precipSystem = new THREE.Points(precipGeo, precipMat);
+    precipSystem.visible = false;
+    scene.add(precipSystem);
+
+    // =========================================================================
+    // 7. ΘΕΡΜΟΔΥΝΑΜΙΚΟΙ ΥΠΟΛΟΓΙΣΜΟΙ (STULL WET-BULB, LCL, SNOWLINE)
+    // =========================================================================
+    function calcWetBulb(T, Td) {
+      // Υπολογισμός Σχετικής Υγρασίας από T και Td (Magnus)
+      const rh = Math.min(100, Math.max(5,
+        100 * Math.exp((17.625 * Td) / (243.04 + Td)) / Math.exp((17.625 * T) / (243.04 + T))
+      ));
+      // Τύπος Stull (2011)
+      return T * Math.atan(0.151977 * Math.sqrt(rh + 8.313659)) +
+             Math.atan(T + rh) - Math.atan(rh - 1.676331) +
+             0.00391838 * Math.pow(rh, 1.5) * Math.atan(0.023101 * rh) - 4.686035;
+    }
+
+    function getCardinal(deg) {
+      const dirs = ['Β', 'ΒΒΑ', 'ΒΑ', 'ΑΒΑ', 'Α', 'ΑΝΑ', 'ΝΑ', 'ΝΝΑ', 'Ν', 'ΝΝΔ', 'ΝΔ', 'ΔΝΔ', 'Δ', 'ΔΒΔ', 'ΒΔ', 'ΒΒΔ'];
+      return dirs[Math.round(deg / 22.5) % 16];
+    }
+
+    function updatePhysics() {
+      if (state.dew > state.temp) state.dew = state.temp;
+
+      state.wetBulb = calcWetBulb(state.temp, state.dew);
+      const spread = Math.max(0, state.temp - state.dew);
+
+      // Ύψος Βάσης Νεφών (LCL): ~125m ανά 1°C διαφοράς T - Td πάνω από τη Σαμαρίνα (1450m)
+      state.lclAlt = Math.round(SAMARINA_ALT + 125 * spread);
+
+      // Όριο Χιονόπτωσης (Wet-Bulb <= 0.5°C, κατακόρυφη θερμοβαθμίδα ~0.65°C / 100m)
+      const wbDiff = state.wetBulb - 0.5;
+      state.snowlineAlt = Math.round(SAMARINA_ALT + (wbDiff / 0.65) * 100);
+
+      // Ενημέρωση HUD
+      document.getElementById('val-temp').textContent = `${state.temp.toFixed(1)} °C`;
+      document.getElementById('val-dew').textContent = `${state.dew.toFixed(1)} °C`;
+      document.getElementById('val-wb').textContent = `${state.wetBulb.toFixed(1)} °C`;
+      document.getElementById('val-wind').textContent = `${Math.round(state.windSpeed)} km/h (${getCardinal(state.windDir)})`;
+      document.getElementById('val-lcl').textContent = `${state.lclAlt.toLocaleString('el-GR')} μ.`;
+      document.getElementById('val-snowline').textContent = state.snowlineAlt <= SAMARINA_ALT
+        ? `<= 1.450 μ. (Μέσα στο χωριό!)`
+        : `${state.snowlineAlt.toLocaleString('el-GR')} μ.`;
+
+      // Τύπος φαινομένων στη Σαμαρίνα
+      const pEl = document.getElementById('val-precip-type');
+      if (state.precip <= 0.05) {
+        pEl.textContent = spread < 1.5 ? 'Ομίχλη / Χαμηλή Νέφωση' : 'Ξηρός Καιρός';
+        pEl.style.color = '#94a3b8';
+      } else if (state.wetBulb <= 0.5) {
+        pEl.textContent = `❄️ Χιονόπτωση (${state.precip.toFixed(1)} mm/h)`;
+        pEl.style.color = '#a5f3fc';
+      } else if (state.wetBulb <= 1.5) {
+        pEl.textContent = `🌨️ Χιονόνερο (${state.precip.toFixed(1)} mm/h)`;
+        pEl.style.color = '#38bdf8';
+      } else {
+        pEl.textContent = `🌧️ Βροχή (${state.precip.toFixed(1)} mm/h)`;
+        pEl.style.color = '#60a5fa';
+      }
+
+      // Ενημέρωση Slider Labels
+      document.getElementById('lbl-in-temp').textContent = `${state.temp.toFixed(1)}°C`;
+      document.getElementById('lbl-in-dew').textContent = `${state.dew.toFixed(1)}°C`;
+      document.getElementById('lbl-in-wspeed').textContent = `${Math.round(state.windSpeed)} km/h`;
+      document.getElementById('lbl-in-wdir').textContent = `${Math.round(state.windDir)}°`;
+      document.getElementById('lbl-in-precip').textContent = `${state.precip.toFixed(1)} mm/h`;
+
+      // Ενημέρωση 3D χιονιού & νεφών
+      updateTerrainSnow();
+
+      const cloudOpacity = Math.min(0.75, Math.max(0.08, (1 - spread / 8) * 0.6 + (state.precip > 0 ? 0.35 : 0)));
+      const cloudBaseY = altToSceneY(state.lclAlt);
+      clouds.forEach(c => {
+        c.sprite.material.opacity = cloudOpacity;
+        c.sprite.position.y = cloudBaseY + c.offsetY;
+      });
+
+      precipSystem.visible = state.precip > 0.05;
+    }
+
+    // =========================================================================
+    // 8. ΣΥΝΔΕΣΗ ΜΕ ΖΩΝΤΑΝΑ ΔΕΔΟΜΕΝΑ ISAMAR38 (+ OPEN-METEO FALLBACK)
+    // =========================================================================
+    async function fetchLiveStationData() {
+      const badge = document.getElementById('live-badge');
+      try {
+        if (!WU_API_KEY) {
+          throw new Error('No WU API Key');
+        }
+        const url = `https://api.weather.com/v2/pws/observations/current?stationId=${STATION_ID}&format=json&units=m&apiKey=${WU_API_KEY}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const obs = data.observations[0];
+        const m = obs.metric;
+
+        state.temp = m.temp;
+        state.dew = m.dewpt;
+        state.windSpeed = m.windSpeed;
+        state.windDir = obs.winddir;
+        state.precip = m.precipRate;
+
+        badge.textContent = `● LIVE ISAMAR38 (${new Date().toLocaleTimeString('el-GR', {hour:'2-digit', minute:'2-digit'})})`;
+        badge.style.color = '#34d399';
+        badge.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+      } catch (e) {
+        // Fallback σε Open-Meteo για Σαμαρίνα αν ο σταθμός είναι προσωρινά offline
+        try {
+          const omUrl = 'https://api.open-meteo.com/v1/forecast?latitude=40.104&longitude=21.018&current=temperature_2m,dew_point_2m,precipitation,wind_speed_10m,wind_direction_10m';
+          const res = await fetch(omUrl);
+          const d = await res.json();
+          const cur = d.current;
+          state.temp = cur.temperature_2m;
+          state.dew = cur.dew_point_2m;
+          state.windSpeed = cur.wind_speed_10m;
+          state.windDir = cur.wind_direction_10m;
+          state.precip = cur.precipitation;
+          badge.textContent = '● LIVE Open-Meteo (Εφεδρική ροή Σαμαρίνας)';
+          badge.style.color = '#38bdf8';
+        } catch (_) {
+          badge.textContent = '● Λειτουργία Προσομοίωσης';
+        }
+      }
+
+      document.getElementById('in-temp').value = state.temp;
+      document.getElementById('in-dew').value = state.dew;
+      document.getElementById('in-wspeed').value = state.windSpeed;
+      document.getElementById('in-wdir').value = state.windDir;
+      document.getElementById('in-precip').value = state.precip;
+      updatePhysics();
+    }
+
+    // =========================================================================
+    // 9. EVENT LISTENERS (SLIDERS & PRESETS)
+    // =========================================================================
+    document.getElementById('in-temp').addEventListener('input', e => { state.temp = parseFloat(e.target.value); updatePhysics(); });
+    document.getElementById('in-dew').addEventListener('input', e => { state.dew = parseFloat(e.target.value); updatePhysics(); });
+    document.getElementById('in-wspeed').addEventListener('input', e => { state.windSpeed = parseFloat(e.target.value); updatePhysics(); });
+    document.getElementById('in-wdir').addEventListener('input', e => { state.windDir = parseFloat(e.target.value); updatePhysics(); });
+    document.getElementById('in-precip').addEventListener('input', e => { state.precip = parseFloat(e.target.value); updatePhysics(); });
+
+    document.getElementById('btn-live-sync').addEventListener('click', fetchLiveStationData);
+
+    document.getElementById('preset-snow').addEventListener('click', () => {
+      state.temp = 0.8; state.dew = 0.2; state.windSpeed = 38; state.windDir = 220; state.precip = 4.5;
+      syncSliders(); updatePhysics();
+    });
+    document.getElementById('preset-nw').addEventListener('click', () => {
+      state.temp = -3.5; state.dew = -8.0; state.windSpeed = 58; state.windDir = 315; state.precip = 0.0;
+      syncSliders(); updatePhysics();
+    });
+    document.getElementById('preset-fog').addEventListener('click', () => {
+      state.temp = 5.2; state.dew = 4.8; state.windSpeed = 6; state.windDir = 160; state.precip = 0.2;
+      syncSliders(); updatePhysics();
+    });
+
+    function syncSliders() {
+      document.getElementById('in-temp').value = state.temp;
+      document.getElementById('in-dew').value = state.dew;
+      document.getElementById('in-wspeed').value = state.windSpeed;
+      document.getElementById('in-wdir').value = state.windDir;
+      document.getElementById('in-precip').value = state.precip;
+    }
+
+    // =========================================================================
+    // 10. ANIMATION LOOP & ΠΡΟΒΟΛΗ 3D ΕΤΙΚΕΤΩΝ
+    // =========================================================================
+    function update3DLabel(elId, vec3) {
+      const el = document.getElementById(elId);
+      const projected = vec3.clone().project(camera);
+      if (projected.z > 1) {
+        el.style.display = 'none';
+        return;
+      }
+      el.style.display = 'block';
+      const x = (projected.x * 0.5 + 0.5) * window.innerWidth;
+      const y = (-(projected.y * 0.5) + 0.5) * window.innerHeight;
+      el.style.left = `${x}px`;
+      el.style.top = `${y}px`;
+    }
+
+    const cLow = new THREE.Color(0x38bdf8);
+    const cMid = new THREE.Color(0xf59e0b);
+    const cHigh = new THREE.Color(0xef4444);
+    const cRain = new THREE.Color(0x60a5fa);
+    const cSnowFlake = new THREE.Color(0xffffff);
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+
+      // Μετατροπή μετεωρολογικής διεύθυνσης (από πού φυσάει) σε διάνυσμα κίνησης
+      const rad = (state.windDir + 180) * (Math.PI / 180);
+      const dirX = Math.sin(rad);
+      const dirZ = -Math.cos(rad);
+      const baseSpeed = Math.max(0.04, state.windSpeed * 0.008);
+
+      // 1. Κίνηση Νεφών
+      clouds.forEach(c => {
+        c.sprite.position.x += dirX * baseSpeed * 0.35 * c.speedFactor;
+        c.sprite.position.z += dirZ * baseSpeed * 0.35 * c.speedFactor;
+        if (c.sprite.position.x > 65) c.sprite.position.x = -65;
+        if (c.sprite.position.x < -65) c.sprite.position.x = 65;
+        if (c.sprite.position.z > 65) c.sprite.position.z = -65;
+        if (c.sprite.position.z < -65) c.sprite.position.z = 65;
+      });
+
+      // 2. Κίνηση Ρευμάτων Αέρα με Ορογραφική Ανύψωση & Επιτάχυνση Venturi
+      const posArr = windGeo.attributes.position.array;
+      const colArr = windGeo.attributes.color.array;
+
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const idx = i * 3;
+        let x = posArr[idx];
+        let y = posArr[idx + 1];
+        let z = posArr[idx + 2];
+
+        const groundAlt = getElevationMeters(x, z);
+        const groundY = altToSceneY(groundAlt);
+
+        // Επιτάχυνση λόγω υψομέτρου (Venturi effect στις κορυφογραμμές)
+        const altBoost = 1 + Math.max(0, (groundAlt - 1400) / 1200) * 0.9;
+        const speed = baseSpeed * altBoost;
+
+        x += dirX * speed;
+        z += dirZ * speed;
+
+        // Ορογραφική εκτροπή: ο αέρας ακολουθεί το ανάγλυφο του βουνού
+        const nextGroundY = altToSceneY(getElevationMeters(x, z));
+        const targetY = Math.max(y, nextGroundY + 1.4);
+        y += (targetY - y) * 0.18 - 0.015;
+
+        pLife[i] += 0.006;
+        if (Math.abs(x) > TERRAIN_SIZE * 0.5 || Math.abs(z) > TERRAIN_SIZE * 0.5 || pLife[i] > 1) {
+          resetParticle(i);
+          x = posArr[idx];
+          y = posArr[idx + 1];
+          z = posArr[idx + 2];
+        } else {
+          posArr[idx] = x;
+          posArr[idx + 1] = y;
+          posArr[idx + 2] = z;
+        }
+
+        // Χρωματισμός ανάλογα με την τοπική ταχύτητα ριπής
+        const effectiveKmh = state.windSpeed * altBoost;
+        const pCol = effectiveKmh < 25 ? cLow : (effectiveKmh < 50 ? cMid : cHigh);
+        colArr[idx] = pCol.r;
+        colArr[idx + 1] = pCol.g;
+        colArr[idx + 2] = pCol.b;
+      }
+      windGeo.attributes.position.needsUpdate = true;
+      windGeo.attributes.color.needsUpdate = true;
+
+      // 3. Κίνηση Υετού (Χιόνι πάνω από το Snowline, Βροχή χαμηλότερα)
+      if (precipSystem.visible) {
+        const prArr = precipGeo.attributes.position.array;
+        const prColArr = precipGeo.attributes.color.array;
+        const snowY = altToSceneY(state.snowlineAlt);
+
+        for (let i = 0; i < PRECIP_COUNT; i++) {
+          const idx = i * 3;
+          const isSnow = prArr[idx + 1] >= snowY;
+          const fallSpeed = isSnow ? 0.14 : 0.45;
+          const drift = isSnow ? 0.6 : 0.25;
+
+          prArr[idx] += dirX * baseSpeed * drift + (isSnow ? Math.sin(Date.now() * 0.003 + i) * 0.03 : 0);
+          prArr[idx + 1] -= fallSpeed;
+          prArr[idx + 2] += dirZ * baseSpeed * drift;
+
+          const gY = altToSceneY(getElevationMeters(prArr[idx], prArr[idx + 2]));
+          if (prArr[idx + 1] <= gY) {
+            prArr[idx] = (Math.random() - 0.5) * 110;
+            prArr[idx + 1] = 35 + Math.random() * 20;
+            prArr[idx + 2] = (Math.random() - 0.5) * 110;
+          }
+
+          const col = isSnow ? cSnowFlake : cRain;
+          prColArr[idx] = col.r;
+          prColArr[idx + 1] = col.g;
+          prColArr[idx + 2] = col.b;
+        }
+        precipGeo.attributes.position.needsUpdate = true;
+        precipGeo.attributes.color.needsUpdate = true;
+      }
+
+      // Ενημέρωση θέσης 3D ετικετών
+      update3DLabel('lbl-smolikas', posSmolikas);
+      update3DLabel('lbl-samarina', posSamarina);
+      update3DLabel('lbl-vathylakkos', posVathylakkos);
+
+      renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Εκκίνηση
+    updatePhysics();
+    fetchLiveStationData();
+    setInterval(fetchLiveStationData, 5 * 60 * 1000);
+    animate();
+  </script>
+</body>
+</html>
