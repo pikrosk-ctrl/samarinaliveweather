@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ο καιρός στη Σαμαρίνα (1.450μ.) - ISAMAR38</title>
+    <title>Καιρός & Χιόνια Σαμαρίνας (1.450μ.) - ISAMAR38</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -78,6 +78,9 @@
             padding: 12px;
             display: flex;
             flex-direction: column;
+        }
+        .panel-station-solo {
+            border-left: 4px solid #10b981;
         }
         .panel-header {
             font-size: 0.9rem;
@@ -172,11 +175,19 @@
             text-align: center;
             border: 1px solid #334155;
         }
+        .f-card-solo {
+            background: #0f172a;
+            padding: 8px 6px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
         .f-time { font-size: 0.82rem; color: #94a3b8; font-weight: 600; }
         .f-icon { font-size: 1.35rem; margin: 2px 0; }
         .f-temp { font-size: 1.05rem; font-weight: bold; color: #38bdf8; }
+        .f-card-solo .f-temp { color: #34d399; }
         .f-snow { font-size: 0.74rem; color: #bae6fd; margin-top: 2px; }
-        .f-compare { font-size: 0.67rem; color: #94a3b8; margin-top: 2px; }
+        .f-weight { font-size: 0.65rem; color: #64748b; margin-top: 2px; }
         .f-prob {
             display: inline-block;
             margin-top: 4px;
@@ -269,7 +280,7 @@
     <div class="top-bar">
         <div class="title">
             <h1>🏔️ ΣΑΜΑΡΙΝΑ ΓΡΕΒΕΝΩΝ (1.450μ.) — LIVE SNOW & WEATHER</h1>
-            <span>Σταθμός: Bresser 5-in-1 (ISAMAR38) | Κάμερα: Σαμαρίνα Χωριό | Υβριδική Πρόγνωση (ISAMAR38 + ICON/ECMWF)</span>
+            <span>Σταθμός: Bresser 5-in-1 (ISAMAR38) | Κάμερα: Σαμαρίνα Χωριό | Υβριδική & Αυτόνομη Πρόγνωση</span>
         </div>
         <div class="top-badges">
             <div id="roadStatus" class="alert-box">🛣️ Έλεγχος δρόμου...</div>
@@ -346,6 +357,14 @@
                 <div class="forecast-cards" id="forecastGrid"></div>
             </div>
 
+            <div class="panel panel-station-solo">
+                <div class="panel-header">
+                    <span>📡 24ΩΡΗ ΑΥΤΟΝΟΜΗ ΠΡΟΓΝΩΣΗ ΣΤΑΘΜΟΥ (ΜΟΝΟ ISAMAR38)</span>
+                    <span style="font-size:0.74rem; color:#34d399;">100% Τοπικός Αλγόριθμος (Zambretti & Ψυχρομετρία)</span>
+                </div>
+                <div class="forecast-cards" id="stationForecastGrid"></div>
+            </div>
+
             <div class="panel">
                 <div class="panel-header">
                     <span>🎯 ΕΠΑΛΗΘΕΥΣΗ ΑΚΡΙΒΕΙΑΣ ΣΤΑΘΜΟΥ (ΚΥΡΙΟΣ ΔΕΙΚΤΗΣ +12h)</span>
@@ -373,7 +392,7 @@
     <div class="panel">
         <div class="panel-header">
             <span>📈 ΩΡΙΑΙΟ ΓΡΑΦΗΜΑ 24ΩΡΟΥ: ΥΒΡΙΔΙΚΗ ΘΕΡΜΟΚΡΑΣΙΑ vs ΚΑΘΑΡΟΣ ΣΤΑΘΜΟΣ & ΥΕΤΟΣ</span>
-            <span style="font-size:0.8rem; color:#94a3b8;">Σύγκριση ISAMAR38 (διακεκομμένη) με Υβριδικό ICON/ECMWF (συνεχής)</span>
+            <span style="font-size:0.8rem; color:#94a3b8;">Σύγκριση ISAMAR38 (διακεκομμένη πράσινη) με Υβριδικό ICON/ECMWF (συνεχής μπλε)</span>
         </div>
         <div class="chart-container">
             <canvas id="weatherChart"></canvas>
@@ -389,7 +408,7 @@
     </div>
 
     <div class="footer-bar">
-        Σαμαρίνα Live Weather Dashboard (1.450μ.) • Υβριδικός Αλγόριθμος: Bresser 5-in-1 (ISAMAR38) + Open-Meteo (ICON / ECMWF)
+        Σαμαρίνα Live Weather Dashboard (1.450μ.) • Αυτόνομος & Υβριδικός Αλγόριθμος: Bresser 5-in-1 (ISAMAR38) + Open-Meteo (ICON / ECMWF)
     </div>
 
     <script>
@@ -549,28 +568,29 @@
                 predPr = Number(((precipScore - 45) * 0.08).toFixed(1));
             }
 
+            let snowCm = 0;
+            if (predT <= 1.2 && predPr > 0) {
+                const ratio = predT <= -4.0 ? 1.5 : (predT <= -1.5 ? 1.2 : 0.85);
+                snowCm = Number((predPr * ratio).toFixed(1));
+            }
+
             let prob = 96 - (hrs * 1.2);
             if (Math.abs(trend) >= 1.8) prob -= 6;
             else if (press >= 1018 && Math.abs(trend) < 0.8) prob += 3;
             prob = Math.max(54, Math.min(97, Math.round(prob)));
 
-            return { temp: predT, precip: predPr, prob: prob };
+            return { temp: predT, precip: predPr, snowCm: snowCm, prob: prob };
         }
 
         function predictHybrid(hrs, temp, dew, press, trend, wind, dir, omData) {
             const localPred = predictFromStation(hrs, temp, dew, press, trend, wind, dir);
 
             if (!omData || !omData.hourly || !omData.hourly.time) {
-                let fallbackSnow = 0;
-                if (localPred.temp <= 1.2 && localPred.precip > 0) {
-                    const r = localPred.temp <= -4.0 ? 1.5 : (localPred.temp <= -1.5 ? 1.2 : 0.85);
-                    fallbackSnow = Number((localPred.precip * r).toFixed(1));
-                }
                 return {
                     temp: localPred.temp,
-                    stationTemp: localPred.temp,
+                    station: localPred,
                     precip: localPred.precip,
-                    snowCm: fallbackSnow,
+                    snowCm: localPred.snowCm,
                     prob: localPred.prob,
                     wStationPct: 100,
                     isHybrid: false
@@ -589,9 +609,9 @@
             if (idxTarget === -1) {
                 return {
                     temp: localPred.temp,
-                    stationTemp: localPred.temp,
+                    station: localPred,
                     precip: localPred.precip,
-                    snowCm: 0,
+                    snowCm: localPred.snowCm,
                     prob: localPred.prob,
                     wStationPct: 100,
                     isHybrid: false
@@ -627,7 +647,7 @@
 
             return {
                 temp: hybridTemp,
-                stationTemp: localPred.temp,
+                station: localPred,
                 precip: hybridPrecip,
                 snowCm: hybridSnowCm,
                 prob: hybridProb,
@@ -737,7 +757,7 @@
                     const tLabel = futureDate.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
 
                     const pred = hrs === 0
-                        ? { temp: Number(temp.toFixed(1)), stationTemp: Number(temp.toFixed(1)), precip: Number((rate || 0).toFixed(1)), snowCm: 0, prob: 100 }
+                        ? { temp: Number(temp.toFixed(1)), station: { temp: Number(temp.toFixed(1)) }, precip: Number((rate || 0).toFixed(1)), snowCm: 0, prob: 100 }
                         : predictHybrid(hrs, temp, dew, press, trend, wind, dir, omData);
 
                     if (hrs > 0) {
@@ -748,7 +768,7 @@
 
                     chartLabels.push(tLabel);
                     chartTemps.push(pred.temp);
-                    chartStationTemps.push(pred.stationTemp);
+                    chartStationTemps.push(pred.station.temp);
                     chartZeroLine.push(0);
                     chartPrecip.push(pred.precip);
                     chartSnow.push(pred.snowCm);
@@ -761,34 +781,53 @@
                     <span>❄️ Εκτιμ. Νέο Χιόνι (24h): <b>${estSnowCm24.toFixed(1)} cm</b></span>
                 `;
 
-                const grid = document.getElementById('forecastGrid');
-                grid.innerHTML = '';
+                const hybridGrid = document.getElementById('forecastGrid');
+                const stationGrid = document.getElementById('stationForecastGrid');
+                hybridGrid.innerHTML = '';
+                stationGrid.innerHTML = '';
 
                 for (let hrs = 3; hrs <= 24; hrs += 3) {
                     const futureDate = new Date(baseDate.getTime() + hrs * 3600 * 1000);
                     const tStr = futureDate.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
                     const pred = predictHybrid(hrs, temp, dew, press, trend, wind, dir, omData);
-                    const sn = pred.snowCm;
+                    const st = pred.station;
 
-                    const probClass = pred.prob >= 85 ? 'prob-high' : (pred.prob >= 72 ? 'prob-med' : 'prob-low');
+                    // 1. Κάρτα Υβριδικής Πρόγνωσης
+                    const hProbClass = pred.prob >= 85 ? 'prob-high' : (pred.prob >= 72 ? 'prob-med' : 'prob-low');
+                    let hIcon = '🌤️';
+                    if (pred.snowCm > 0 || (pred.precip > 0 && pred.temp <= 1.2)) hIcon = '❄️';
+                    else if (pred.precip > 0) hIcon = '🌧️';
+                    else if (pred.temp <= 0) hIcon = '🥶';
 
-                    let icon = '🌤️';
-                    if (sn > 0 || (pred.precip > 0 && pred.temp <= 1.2)) icon = '❄️';
-                    else if (pred.precip > 0) icon = '🌧️';
-                    else if (pred.temp <= 0) icon = '🥶';
-
-                    const compareLine = pred.isHybrid
-                        ? `<div class="f-compare" title="Βάρος: ${pred.wStationPct}% Σταθμός / ${100 - pred.wStationPct}% ICON-ECMWF">Σταθμός: ${pred.stationTemp.toFixed(1)}°C</div>`
+                    const weightLabel = pred.isHybrid
+                        ? `<div class="f-weight">Βάρος: ${pred.wStationPct}% Στ. / ${100 - pred.wStationPct}% Μοντ.</div>`
                         : '';
 
-                    grid.innerHTML += `
+                    hybridGrid.innerHTML += `
                         <div class="f-card">
                             <div class="f-time">${tStr} (+${hrs}h)</div>
-                            <div class="f-icon">${icon}</div>
+                            <div class="f-icon">${hIcon}</div>
                             <div class="f-temp">${pred.temp.toFixed(1)}°C</div>
-                            <div class="f-snow">${sn > 0 ? 'Χιόνι: ' + sn + 'cm' : (pred.precip > 0 ? 'Υετός: ' + pred.precip + 'mm' : 'Ξηρό')}</div>
-                            ${compareLine}
-                            <div class="f-prob ${probClass}" title="Συνδυασμένη βεβαιότητα ISAMAR38 + ICON/ECMWF">Βεβαιότ.: ${pred.prob}%</div>
+                            <div class="f-snow">${pred.snowCm > 0 ? 'Χιόνι: ' + pred.snowCm + 'cm' : (pred.precip > 0 ? 'Υετός: ' + pred.precip + 'mm' : 'Ξηρό')}</div>
+                            ${weightLabel}
+                            <div class="f-prob ${hProbClass}">Βεβαιότ.: ${pred.prob}%</div>
+                        </div>
+                    `;
+
+                    // 2. Κάρτα Αυτόνομης Πρόγνωσης Σταθμού (Μόνο ISAMAR38)
+                    const sProbClass = st.prob >= 85 ? 'prob-high' : (st.prob >= 72 ? 'prob-med' : 'prob-low');
+                    let sIcon = '🌤️';
+                    if (st.snowCm > 0 || (st.precip > 0 && st.temp <= 1.2)) sIcon = '❄️';
+                    else if (st.precip > 0) sIcon = '🌧️';
+                    else if (st.temp <= 0) sIcon = '🥶';
+
+                    stationGrid.innerHTML += `
+                        <div class="f-card-solo">
+                            <div class="f-time">${tStr} (+${hrs}h)</div>
+                            <div class="f-icon">${sIcon}</div>
+                            <div class="f-temp">${st.temp.toFixed(1)}°C</div>
+                            <div class="f-snow">${st.snowCm > 0 ? 'Χιόνι: ' + st.snowCm + 'cm' : (st.precip > 0 ? 'Υετός: ' + st.precip + 'mm' : 'Ξηρό')}</div>
+                            <div class="f-prob ${sProbClass}">Βεβαιότ.: ${st.prob}%</div>
                         </div>
                     `;
                 }
@@ -854,7 +893,7 @@
                             },
                             {
                                 type: 'line',
-                                label: 'Καθαρός Σταθμός (ISAMAR38)',
+                                label: 'Αυτόνομος Σταθμός (Μόνο ISAMAR38)',
                                 data: chartStationTemps,
                                 borderColor: '#34d399',
                                 borderWidth: 1.8,
