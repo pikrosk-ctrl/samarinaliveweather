@@ -22,7 +22,6 @@
             height: 100%;
         }
 
-        /* Top Title Banner */
         .hud-top {
             position: fixed;
             top: 14px;
@@ -87,7 +86,6 @@
             box-shadow: 0 0 8px #10b981;
         }
 
-        /* Top Right Live Telemetry Card */
         .hud-stats {
             position: fixed;
             top: 14px;
@@ -114,7 +112,6 @@
         .stat-v.snow { color: #bae6fd; }
         .stat-v.warm { color: #fbbf24; }
 
-        /* Bottom Left Controls */
         .hud-controls {
             position: fixed;
             bottom: 14px;
@@ -185,7 +182,6 @@
             color: #fff;
         }
 
-        /* Bottom Right Legend */
         .hud-legend {
             position: fixed;
             bottom: 14px;
@@ -207,7 +203,6 @@
         }
         .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 
-        /* 3D Floating Labels */
         .marker-label {
             position: fixed;
             transform: translate(-50%, -100%);
@@ -251,7 +246,6 @@
 <body>
     <div id="canvas-container"></div>
 
-    <!-- Top Title -->
     <div class="hud-top">
         <h1>3D Ορογραφική Ροή & Νέφωση — Σμόλικας / Σαμαρίνα</h1>
         <p>Περιστροφή: Αριστερό κλικ • Ζουμ: Ροδέλα • Μετακίνηση: Δεξί κλικ • Βορράς (N) ↑</p>
@@ -260,11 +254,10 @@
                 <span class="live-dot"></span>
                 <span id="live-status-text">Σύνδεση με ISAMAR38...</span>
             </div>
-            <div class="dem-pill" id="dem-status-text">🛰️ Φόρτωση δορυφορικού DEM...</div>
+            <div class="dem-pill" id="dem-status-text">🛰️ Εκκίνηση DEM...</div>
         </div>
     </div>
 
-    <!-- Top Right Telemetry -->
     <div class="hud-stats">
         <div class="stat-row"><span class="stat-k">Θερμοκρασία (1.450μ):</span><span class="stat-v" id="val-temp">-- °C</span></div>
         <div class="stat-row"><span class="stat-k">Σημείο Δρόσου (Σ.Δ.):</span><span class="stat-v" id="val-dew">-- °C</span></div>
@@ -275,7 +268,6 @@
         <div class="stat-row"><span class="stat-k">Φαινόμενα Χωριού:</span><span class="stat-v" id="val-precip-type">--</span></div>
     </div>
 
-    <!-- Bottom Left Controls -->
     <div class="hud-controls">
         <div class="ctrl-header">
             <span>Παράμετροι & Προσομοίωση</span>
@@ -308,7 +300,6 @@
         </div>
     </div>
 
-    <!-- Bottom Right Legend -->
     <div class="hud-legend">
         <div class="leg-item"><span class="dot" style="background:#38bdf8;"></span> Ήπια ροή αέρα</div>
         <div class="leg-item"><span class="dot" style="background:#f59e0b;"></span> Ορογραφική επιτάχυνση</div>
@@ -316,12 +307,10 @@
         <div class="leg-item"><span class="dot" style="background:#f8fafc;"></span> Χιονοκάλυψη (≤ 0.5°C WB)</div>
     </div>
 
-    <!-- 3D Projected Labels -->
     <div id="lbl-peak" class="marker-label"><b>▲ Κορυφή Σμόλικα</b><span>2.637 μ.</span></div>
     <div id="lbl-saddle" class="marker-label"><b>▲ Διάσελο Βαθύλακκου</b><span>~2.150 μ.</span></div>
     <div id="lbl-samarina" class="marker-label samarina"><b>🏠 Σαμαρίνα (ISAMAR38)</b><span>1.450 μ.</span></div>
 
-    <!-- Three.js & OrbitControls -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
@@ -329,17 +318,16 @@
         const WU_STATION_ID = "ISAMAR38";
         const WU_API_KEY = "5c94ee0c13f240ec94ee0c13f2b0ecd9";
 
-        // Tight geographic bounding box framing Smolikas Peak (West) directly above Samarina (East)
         const GEO_BOUNDS = {
-            latMin: 40.072, // South
-            latMax: 40.128, // North
-            lonMin: 20.918, // West (Smolikas Peak 20.9261)
-            lonMax: 21.028  // East (Samarina 21.0180)
+            latMin: 40.072,
+            latMax: 40.128,
+            lonMin: 20.918,
+            lonMax: 21.028
         };
-        const TERRAIN_SIZE = 68;
+        const TERRAIN_SIZE = 66;
         const SEGMENTS = 220;
-        const DEM_GRID_N = 30;   // 30x30 = 900 real satellite points (only 9 API calls -> never hits rate limit!)
-        const DEM_CACHE_KEY = "smolikas_real_dem_30x30_v3";
+        const DEM_GRID_N = 24;   // 24x24 = 576 points (15 small batches of 40 coords -> 100% reliable!)
+        const DEM_CACHE_KEY = "smolikas_real_dem_24x24_v4";
 
         let realDemGrid = null;
 
@@ -372,7 +360,6 @@
             return top + (bot - top) * tz;
         }
 
-        // --- Procedural Noise ---
         function hash2D(ix, iz) {
             const n = Math.sin(ix * 127.1 + iz * 311.7) * 43758.5453123;
             return n - Math.floor(n);
@@ -405,44 +392,40 @@
             return val;
         }
 
-        // Continuous sloping ridge fallback (so slopes extend all the way into Samarina)
         function fallbackElevation(x, z) {
             const pPeak = latLonToSceneXZ(40.0908, 20.9261);
             const pSad = latLonToSceneXZ(40.0975, 20.9685);
             const pSam = latLonToSceneXZ(40.1050, 21.0180);
 
-            // Broad continuous massif sloping from West (2637m) down to Samarina (1450m)
-            const dPeak = Math.sqrt(Math.pow((x - pPeak.x) / 26.0, 2) + Math.pow((z - pPeak.z) / 22.0, 2));
-            const mainSlope = 1350 * Math.exp(-Math.pow(dPeak, 1.35));
+            const dPeak = Math.sqrt(Math.pow((x - pPeak.x) / 30.0, 2) + Math.pow((z - pPeak.z) / 25.0, 2));
+            const mainSlope = 1360 * Math.exp(-Math.pow(dPeak, 1.3));
 
-            // Vathylakkos ridge spur extending straight toward Samarina
-            const dSad = Math.sqrt(Math.pow((x - pSad.x) / 16.0, 2) + Math.pow((z - pSad.z) / 14.0, 2));
-            const spur = 520 * Math.exp(-(dSad * dSad) * 1.1);
+            const dSad = Math.sqrt(Math.pow((x - pSad.x) / 18.0, 2) + Math.pow((z - pSad.z) / 16.0, 2));
+            const spur = 540 * Math.exp(-(dSad * dSad) * 1.0);
 
-            // Samarina amphitheater pocket at the foot of the slope
-            const dSam = Math.sqrt(Math.pow((x - pSam.x) / 6.5, 2) + Math.pow((z - pSam.z) / 8.5, 2));
+            const dSam = Math.sqrt(Math.pow((x - pSam.x) / 6.0, 2) + Math.pow((z - pSam.z) / 8.0, 2));
             const pocket = -210 * Math.exp(-(dSam * dSam) * 1.4);
 
-            let elev = 1280 + mainSlope + spur + pocket;
+            let elev = 1320 + mainSlope + spur + pocket;
             const reliefMask = Math.max(0.2, Math.min(1.0, (elev - 1250) / 950));
             elev += (ridgedNoise(x * 0.14 + 3.1, z * 0.14 - 1.7, 5) - 0.38) * 185 * reliefMask;
-            return Math.max(1200, Math.min(2637, elev));
+            return Math.max(1220, Math.min(2637, elev));
         }
 
         function getElevationMeters(x, z) {
             if (realDemGrid) {
                 const base = sampleRealDem(x, z);
-                const micro = (ridgedNoise(x * 0.55, z * 0.55, 3) - 0.45) * 16;
+                const micro = (ridgedNoise(x * 0.55, z * 0.55, 3) - 0.45) * 18;
                 return base + micro;
             }
             return fallbackElevation(x, z);
         }
 
         function elevToSceneY(elevMeters) {
-            return ((elevMeters - 1150) / 1487) * 28.0;
+            return ((elevMeters - 1150) / 1487) * 29.0;
         }
 
-        // --- Fetch Real Satellite Elevation Grid (Rate-Limit Safe Batches) ---
+        // --- Fetch Real Satellite Elevation Grid in Small 40-Point Chunks ---
         async function loadRealSmolikasDEM() {
             const statusEl = document.getElementById('dem-status-text');
             try {
@@ -459,31 +442,36 @@
             } catch (e) {}
 
             try {
-                statusEl.innerText = "🛰️ Λήψη δορυφορικού DEM Σμόλικα...";
                 const lats = [];
                 const lons = [];
                 for (let iz = 0; iz < DEM_GRID_N; iz++) {
                     const lat = GEO_BOUNDS.latMin + (iz / (DEM_GRID_N - 1)) * (GEO_BOUNDS.latMax - GEO_BOUNDS.latMin);
                     for (let ix = 0; ix < DEM_GRID_N; ix++) {
                         const lon = GEO_BOUNDS.lonMin + (ix / (DEM_GRID_N - 1)) * (GEO_BOUNDS.lonMax - GEO_BOUNDS.lonMin);
-                        lats.push(lat.toFixed(5));
-                        lons.push(lon.toFixed(5));
+                        lats.push(lat.toFixed(4));
+                        lons.push(lon.toFixed(4));
                     }
                 }
 
-                const BATCH = 100; // 900 points = 9 chunks total
+                const BATCH = 40; // Short URL (~750 chars) -> never fails with HTTP 414/400
+                const totalBatches = Math.ceil(lats.length / BATCH);
                 const allElevs = [];
                 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-                for (let start = 0; start < lats.length; start += BATCH) {
+                for (let b = 0; b < totalBatches; b++) {
+                    const start = b * BATCH;
+                    statusEl.innerText = `🛰️ Λήψη DEM (${b + 1}/${totalBatches})...`;
                     const latChunk = lats.slice(start, start + BATCH).join(',');
                     const lonChunk = lons.slice(start, start + BATCH).join(',');
                     const url = `https://api.open-meteo.com/v1/elevation?latitude=${latChunk}&longitude=${lonChunk}`;
-                    const resp = await fetch(url).then(r => r.json());
+
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const resp = await res.json();
                     if (resp && Array.isArray(resp.elevation)) {
                         allElevs.push(...resp.elevation);
                     }
-                    await sleep(160); // Gentle pacing avoids HTTP 429
+                    await sleep(110);
                 }
 
                 if (allElevs.length === DEM_GRID_N * DEM_GRID_N) {
@@ -494,22 +482,20 @@
                     statusEl.innerText = "🛰️ Πραγματικό Δορυφορικό Ανάγλυφο (DEM)";
                     rebuildTerrainGeometry();
                 } else {
-                    statusEl.innerText = "⛰️ Τοπογραφικό Μοντέλο Σμόλικα";
+                    statusEl.innerText = "⛰️ Τοπογραφικό Μοντέλο (Ατελές DEM)";
                 }
             } catch (err) {
-                statusEl.innerText = "⛰️ Τοπογραφικό Μοντέλο Σμόλικα";
+                statusEl.innerText = `⛰️ Τοπογραφικό Μοντέλο (${err.message})`;
             }
         }
 
-        // --- Three.js Scene Setup ---
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x070d19);
         scene.fog = new THREE.FogExp2(0x091120, 0.0085);
 
         const camera = new THREE.PerspectiveCamera(44, window.innerWidth / window.innerHeight, 0.1, 400);
-        // Positioned right above Samarina looking straight up the dramatic slopes toward Smolikas Peak
-        camera.position.set(36, 23, 22);
+        camera.position.set(35, 22, 20);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -524,9 +510,8 @@
         controls.maxPolarAngle = Math.PI * 0.47;
         controls.minDistance = 12;
         controls.maxDistance = 85;
-        controls.target.set(-3, 9.5, -1);
+        controls.target.set(-2, 10.0, -1);
 
-        // --- Alpine Lighting ---
         const hemiLight = new THREE.HemisphereLight(0x93c5fd, 0x1e293b, 0.65);
         scene.add(hemiLight);
 
@@ -538,7 +523,6 @@
         rimLight.position.set(-40, 22, -30);
         scene.add(rimLight);
 
-        // --- High-Resolution Terrain Mesh (220x220) ---
         const terrainGeo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, SEGMENTS, SEGMENTS);
         terrainGeo.rotateX(-Math.PI / 2);
 
@@ -561,10 +545,9 @@
         gridHelper.position.y = -0.1;
         scene.add(gridHelper);
 
-        // --- Real GPS Landmarks ---
-        const coordsPeak = latLonToSceneXZ(40.0908, 20.9261);     // Κορυφή Σμόλικα (2.637μ)
-        const coordsSaddle = latLonToSceneXZ(40.0975, 20.9685);   // Διάσελο Βαθύλακκου (~2.150μ)
-        const coordsSamarina = latLonToSceneXZ(40.1050, 21.0180); // Σαμαρίνα ISAMAR38 (1.450μ)
+        const coordsPeak = latLonToSceneXZ(40.0908, 20.9261);
+        const coordsSaddle = latLonToSceneXZ(40.0975, 20.9685);
+        const coordsSamarina = latLonToSceneXZ(40.1050, 21.0180);
 
         function createPin(x, z, colorHex) {
             const group = new THREE.Group();
@@ -610,7 +593,6 @@
             updateTerrainColors(state ? state.snowlineMeters : 2400);
         }
 
-        // --- Dynamic Terrain Coloring ---
         function updateTerrainColors(snowlineMeters) {
             const normAttr = terrainGeo.attributes.normal;
             const cForest = new THREE.Color(0x163326);
@@ -661,7 +643,6 @@
             terrainGeo.attributes.color.needsUpdate = true;
         }
 
-        // --- Orographic Cloud Layer ---
         const cloudGroup = new THREE.Group();
         scene.add(cloudGroup);
         const cloudParticles = [];
@@ -686,7 +667,6 @@
             });
         }
 
-        // --- Wind Stream Particles & Orographic Precipitation ---
         const WIND_COUNT = 550;
         const windGeo = new THREE.BufferGeometry();
         const windPos = new Float32Array(WIND_COUNT * 3);
@@ -716,7 +696,6 @@
         const windPoints = new THREE.Points(windGeo, windMat);
         scene.add(windPoints);
 
-        // Precipitation Particles (Snow / Rain)
         const PRECIP_COUNT = 750;
         const precipGeo = new THREE.BufferGeometry();
         const precipPos = new Float32Array(PRECIP_COUNT * 3);
@@ -735,7 +714,6 @@
         const precipPoints = new THREE.Points(precipGeo, precipMat);
         scene.add(precipPoints);
 
-        // --- Meteorological State & Physics ---
         let state = {
             temp: 8.0,
             dew: 6.0,
@@ -922,7 +900,6 @@
             return (eAhead - eBehind) / (2 * d);
         }
 
-        // --- Animation Loop ---
         const clock = new THREE.Clock();
         function animate() {
             requestAnimationFrame(animate);
@@ -1026,7 +1003,6 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // Init
         loadRealSmolikasDEM();
         syncLiveWeather();
         setInterval(syncLiveWeather, 300000);
