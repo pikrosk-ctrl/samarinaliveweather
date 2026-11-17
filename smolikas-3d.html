@@ -78,6 +78,24 @@
             font-size: 0.71rem;
             font-weight: 600;
         }
+        .time-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 999px;
+            background: rgba(251, 191, 36, 0.14);
+            border: 1px solid rgba(251, 191, 36, 0.45);
+            color: #fde68a;
+            font-size: 0.71rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .time-pill:hover {
+            background: rgba(251, 191, 36, 0.26);
+            border-color: #fbbf24;
+        }
         .live-dot {
             width: 7px;
             height: 7px;
@@ -255,6 +273,7 @@
                 <span id="live-status-text">Σύνδεση με ISAMAR38...</span>
             </div>
             <div class="dem-pill" id="dem-status-text">🛰️ Εκκίνηση DEM...</div>
+            <button class="time-pill" id="time-mode-btn" onclick="cycleTimeMode()" title="Αλλαγή φωτισμού (Auto / Ημέρα / Σούρουπο / Νύχτα)">🌙 Νύχτα (Auto)</button>
         </div>
     </div>
 
@@ -318,7 +337,6 @@
         const WU_STATION_ID = "ISAMAR38";
         const WU_API_KEY = "5c94ee0c13f240ec94ee0c13f2b0ecd9";
 
-        // Extended East margin (lonMax: 21.058) so Samarina sits safely inside the basin with ridges behind it
         const GEO_BOUNDS = {
             latMin: 40.068,
             latMax: 40.132,
@@ -327,7 +345,7 @@
         };
         const TERRAIN_SIZE = 74;
         const SEGMENTS = 220;
-        const DEM_GRID_N = 24;   // 24x24 = 576 points (15 small batches of 40 coords -> 100% reliable)
+        const DEM_GRID_N = 24;
         const DEM_CACHE_KEY = "smolikas_real_dem_24x24_v5";
 
         let realDemGrid = null;
@@ -407,7 +425,6 @@
             const dSam = Math.sqrt(Math.pow((x - pSam.x) / 6.0, 2) + Math.pow((z - pSam.z) / 8.0, 2));
             const pocket = -210 * Math.exp(-(dSam * dSam) * 1.4);
 
-            // Eastern ridge (Koutsouro / Ailias) framing the village on the east side
             const eastRidge = 240 * Math.exp(-Math.pow((x - (pSam.x + 11)) / 9.0, 2));
 
             let elev = 1320 + mainSlope + spur + pocket + eastRidge;
@@ -515,6 +532,7 @@
         controls.maxDistance = 90;
         controls.target.set(-2, 10.0, -1);
 
+        // --- Dynamic Time-of-Day Lighting & Sky ---
         const hemiLight = new THREE.HemisphereLight(0x93c5fd, 0x1e293b, 0.65);
         scene.add(hemiLight);
 
@@ -525,6 +543,140 @@
         const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.45);
         rimLight.position.set(-40, 22, -30);
         scene.add(rimLight);
+
+        // Subtle Starfield for Night & Dusk
+        const STAR_COUNT = 600;
+        const starGeo = new THREE.BufferGeometry();
+        const starPos = new Float32Array(STAR_COUNT * 3);
+        for (let i = 0; i < STAR_COUNT; i++) {
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(Math.random() * 0.92 + 0.08);
+            const r = 165 + Math.random() * 35;
+            starPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+            starPos[i * 3 + 1] = r * Math.cos(phi);
+            starPos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+        }
+        starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        const starMat = new THREE.PointsMaterial({
+            color: 0xe2e8f0,
+            size: 0.7,
+            transparent: true,
+            opacity: 0.0,
+            fog: false
+        });
+        const starPoints = new THREE.Points(starGeo, starMat);
+        scene.add(starPoints);
+
+        const TIME_MODES = ['auto', 'day', 'dusk', 'night'];
+        let timeModeIndex = 0;
+
+        function cycleTimeMode() {
+            timeModeIndex = (timeModeIndex + 1) % TIME_MODES.length;
+            updateTimeOfDayLighting();
+        }
+
+        function lerpColorHex(c1, c2, t) {
+            return new THREE.Color(c1).lerp(new THREE.Color(c2), Math.max(0, Math.min(1, t)));
+        }
+
+        function updateTimeOfDayLighting() {
+            const mode = TIME_MODES[timeModeIndex];
+            const now = new Date();
+            let decHour = now.getHours() + now.getMinutes() / 60;
+
+            if (mode === 'day') decHour = 13.0;
+            else if (mode === 'dusk') decHour = 18.7;
+            else if (mode === 'night') decHour = 2.0;
+
+            // Sun elevation curve: peaks at 13:00 (+1), lowest at 01:00 (-1)
+            const solarAngle = ((decHour - 7.0) / 12.0) * Math.PI;
+            const sunElevation = Math.sin(solarAngle); // -1 (midnight) to +1 (noon)
+
+            let skyColor, fogColor, sunColor, hemiSky, hemiGround, rimColor;
+            let sunIntensity, hemiIntensity, rimIntensity, starOpacity, cloudTint;
+            let phaseIcon, phaseName;
+
+            if (sunElevation > 0.25) {
+                // Full Alpine Day
+                const t = Math.min(1, (sunElevation - 0.25) / 0.75);
+                skyColor = lerpColorHex(0x163256, 0x1d4678, t);
+                fogColor = lerpColorHex(0x1b3a63, 0x26528a, t);
+                sunColor = lerpColorHex(0xffedd5, 0xfffbeb, t);
+                hemiSky = lerpColorHex(0x93c5fd, 0xbae6fd, t);
+                hemiGround = lerpColorHex(0x273549, 0x334155, t);
+                rimColor = new THREE.Color(0x38bdf8);
+                sunIntensity = 1.25 + t * 0.45;
+                hemiIntensity = 0.65 + t * 0.25;
+                rimIntensity = 0.35;
+                starOpacity = 0.0;
+                cloudTint = 0xf1f5f9;
+                phaseIcon = "☀️";
+                phaseName = "Ημέρα";
+            } else if (sunElevation > -0.22) {
+                // Dawn / Dusk Golden-Violet Twilight
+                const t = (sunElevation + 0.22) / 0.47; // 0 = deep twilight, 1 = bright golden hour
+                skyColor = lerpColorHex(0x0b1122, 0x2a1b36, t);
+                fogColor = lerpColorHex(0x10172b, 0x3b233e, t);
+                sunColor = lerpColorHex(0xf97316, 0xfbbf24, t);
+                hemiSky = lerpColorHex(0x475569, 0xfdba74, t);
+                hemiGround = lerpColorHex(0x1e293b, 0x292524, t);
+                rimColor = lerpColorHex(0x6366f1, 0xfb7185, t);
+                sunIntensity = 0.45 + t * 0.85;
+                hemiIntensity = 0.45 + t * 0.2;
+                rimIntensity = 0.45;
+                starOpacity = (1.0 - t) * 0.55;
+                cloudTint = t > 0.5 ? 0xfed7aa : 0xcbd5e1;
+                phaseIcon = decHour < 12 ? "🌄" : "🌅";
+                phaseName = decHour < 12 ? "Αυγή" : "Σούρουπο";
+            } else {
+                // Deep Alpine Night (Moonlight)
+                skyColor = new THREE.Color(0x050914);
+                fogColor = new THREE.Color(0x070d1c);
+                sunColor = new THREE.Color(0x93c5fd); // Cool moonlight
+                hemiSky = new THREE.Color(0x3b5998);
+                hemiGround = new THREE.Color(0x111827);
+                rimColor = new THREE.Color(0x38bdf8);
+                sunIntensity = 0.68;
+                hemiIntensity = 0.48;
+                rimIntensity = 0.38;
+                starOpacity = 0.85;
+                cloudTint = 0x94a3b8;
+                phaseIcon = "🌙";
+                phaseName = "Νύχτα";
+            }
+
+            scene.background.copy(skyColor);
+            scene.fog.color.copy(fogColor);
+            sunLight.color.copy(sunColor);
+            sunLight.intensity = sunIntensity;
+            hemiLight.color.copy(hemiSky);
+            hemiLight.groundColor.copy(hemiGround);
+            hemiLight.intensity = hemiIntensity;
+            rimLight.color.copy(rimColor);
+            rimLight.intensity = rimIntensity;
+            starMat.opacity = starOpacity;
+
+            // Sun / Moon arc across the sky
+            if (sunElevation > -0.22) {
+                const az = ((decHour - 6.0) / 12.0) * Math.PI;
+                sunLight.position.set(Math.cos(az) * 55, Math.max(12, sunElevation * 62), Math.sin(az) * 35);
+            } else {
+                // High moon position so Smolikas snow & ridges stay crisp at night
+                sunLight.position.set(-32, 48, 34);
+            }
+
+            if (typeof cloudParticles !== 'undefined') {
+                cloudParticles.forEach(cp => cp.mesh.material.color.setHex(cloudTint));
+            }
+
+            const btn = document.getElementById('time-mode-btn');
+            if (btn) {
+                const suffix = mode === 'auto'
+                    ? ` (Auto ${now.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' })})`
+                    : '';
+                btn.innerText = `${phaseIcon} ${phaseName}${suffix}`;
+            }
+        }
 
         const terrainGeo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, SEGMENTS, SEGMENTS);
         terrainGeo.rotateX(-Math.PI / 2);
@@ -730,6 +882,8 @@
         };
 
         rebuildTerrainGeometry();
+        updateTimeOfDayLighting();
+        setInterval(updateTimeOfDayLighting, 60000);
 
         function calcWetBulb(temp, hum) {
             const safeHum = Math.max(1, Math.min(100, hum));
