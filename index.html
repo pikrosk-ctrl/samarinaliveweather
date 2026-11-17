@@ -336,19 +336,61 @@
 
         .chart-container {
             position: relative;
-            height: 220px;
+            height: 275px;
             width: 100%;
-            background: #0f172a;
+            background: linear-gradient(180deg, #0f172a 0%, #0b1222 100%);
             border-radius: 8px;
-            padding: 10px;
+            padding: 12px 14px;
             border: 1px solid #334155;
+            box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.08);
+        }
+        @media (max-width: 600px) {
+            .chart-container { height: 245px; padding: 8px; }
+        }
+        .windy-layer-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .windy-tab {
+            background: #0f172a;
+            color: #94a3b8;
+            border: 1px solid #334155;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .windy-tab:hover {
+            color: #e2e8f0;
+            border-color: #38bdf8;
+        }
+        .windy-tab.active {
+            background: rgba(2, 132, 199, 0.25);
+            color: #38bdf8;
+            border-color: #38bdf8;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+        }
+        .windy-frame-wrap {
+            position: relative;
+            width: 100%;
+            height: 410px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #334155;
+            background: #0f172a;
         }
         .windy-frame {
             width: 100%;
-            height: 460px;
+            height: 100%;
             border: 0;
-            border-radius: 8px;
+            display: block;
             background: #0f172a;
+        }
+        @media (max-width: 600px) {
+            .windy-frame-wrap { height: 340px; }
         }
         .footer-bar {
             text-align: center;
@@ -540,7 +582,7 @@
     <div class="panel">
         <div class="panel-header">
             <span>📈 ΩΡΙΑΙΟ ΓΡΑΦΗΜΑ 24ΩΡΟΥ: ΥΒΡΙΔΙΚΗ ΘΕΡΜΟΚΡΑΣΙΑ vs ΚΑΘΑΡΟΣ ΣΤΑΘΜΟΣ & ΥΕΤΟΣ</span>
-            <span style="font-size:0.8rem; color:#94a3b8;">Σύγκριση ISAMAR38 (διακεκομμένη πράσινη) με Υβριδικό ICON/ECMWF (συνεχής μπλε)</span>
+            <span style="font-size:0.78rem; color:#94a3b8;">Σύγκριση ISAMAR38 (διακεκομμένη πράσινη) με Υβριδικό ICON/ECMWF (συνεχής μπλε)</span>
         </div>
         <div class="chart-container">
             <canvas id="weatherChart"></canvas>
@@ -549,10 +591,17 @@
 
     <div class="panel">
         <div class="panel-header">
-            <span>🗺️ ΖΩΝΤΑΝΟΣ ΧΑΡΤΗΣ ΧΙΟΝΙΟΥ, ΒΡΟΧΗΣ & ΚΕΡΑΥΝΩΝ (WINDY — ΣΑΜΑΡΙΝΑ 40.105°N, 21.018°E)</span>
-            <span style="font-size:0.8rem; color:#94a3b8;">Αλλάξτε επίπεδο (Νέο Χιόνι / Ραντάρ / Θερμοκρασία) από το μενού δεξιά στον χάρτη</span>
+            <span>🗺️ ΖΩΝΤΑΝΟΣ ΧΑΡΤΗΣ ΠΙΝΔΟΥ & ΣΜΟΛΙΚΑ (WINDY — ΣΑΜΑΡΙΝΑ 40.105°N, 21.018°E)</span>
+            <div class="windy-layer-tabs">
+                <button class="windy-tab active" onclick="setWindyOverlay('rain', this)">🌧️ Βροχή / Ραντάρ</button>
+                <button class="windy-tab" onclick="setWindyOverlay('snowAccu', this)">❄️ Νέο Χιόνι</button>
+                <button class="windy-tab" onclick="setWindyOverlay('wind', this)">💨 Άνεμος</button>
+                <button class="windy-tab" onclick="setWindyOverlay('temp', this)">🌡️ Θερμοκρασία</button>
+            </div>
         </div>
-        <iframe class="windy-frame" src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=%C2%B0C&metricWind=km%2Fh&zoom=8&overlay=rain&product=ecmwf&level=surface&lat=40.105&lon=21.018&detailLat=40.105&detailLon=21.018&detail=true&pressure=true&message=true" frameborder="0"></iframe>
+        <div class="windy-frame-wrap">
+            <iframe id="windyFrame" class="windy-frame" src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=%C2%B0C&metricWind=km%2Fh&zoom=9&overlay=rain&product=ecmwf&level=surface&lat=40.105&lon=21.018&detailLat=40.105&detailLon=21.018&detail=false&pressure=true&message=true" frameborder="0"></iframe>
+        </div>
     </div>
 
     <div class="footer-bar">
@@ -568,6 +617,15 @@
     </div>
 
     <script>
+        function setWindyOverlay(overlay, btnEl) {
+            const frame = document.getElementById('windyFrame');
+            if (frame) {
+                frame.src = `https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=%C2%B0C&metricWind=km%2Fh&zoom=9&overlay=${overlay}&product=ecmwf&level=surface&lat=40.105&lon=21.018&detailLat=40.105&detailLon=21.018&detail=false&pressure=true&message=true`;
+            }
+            document.querySelectorAll('.windy-tab').forEach(b => b.classList.remove('active'));
+            if (btnEl) btnEl.classList.add('active');
+        }
+
         let latest12hForecastPacket = null;
 
         function openSmolikas3D() {
@@ -1327,13 +1385,13 @@
                     if (trend <= -1.2) {
                         topAlert.classList.add('alert-storm');
                         topAlert.innerText = `🌥️ ΠΤΩΣΗ ΠΙΕΣΗΣ (${press.toFixed(0)} hPa)`;
-                        diagText = `🌥️ <b>Χαμηλές πιέσεις σε πτώση (${press.toFixed(1)} hPa):</b> Μεταβλητός καιρός με νεφώσεις και πιθανότητα τοπικών φαινομένων.${frostNote}`;
-                    } else if (hum < 75 && totalPrecip24 < 1.0) {
-                        topAlert.innerText = `⛅ ΧΑΜΗΛΕΣ ΠΙΕΣΕΙΣ (${press.toFixed(0)} hPa)`;
-                        diagText = `⛅ <b>Χαμηλές πιέσεις (Υβριδικό):</b> Το βαρόμετρο είναι στα ${press.toFixed(1)} hPa, ωστόσο η χαμηλή υγρασία (${hum}%) διατηρεί τον καιρό ήπιο με αραιές νεφώσεις και χωρίς αξιόλογο υετό.${frostNote}`;
+                        diagText = `🌥️ <b>Χαμηλό βαρόμετρο σε πτώση (${press.toFixed(1)} hPa):</b> Μεταβλητός καιρός με νεφώσεις και πιθανότητα τοπικών φαινομένων.${frostNote}`;
+                    } else if (hum < 80 && totalPrecip24 < 1.0) {
+                        topAlert.innerText = `⛅ ΧΑΜΗΛΟ ΒΑΡΟΜΕΤΡΟ (${press.toFixed(0)} hPa)`;
+                        diagText = `⛅ <b>Χαμηλό βαρόμετρο (${press.toFixed(1)} hPa, σταθερή τάση):</b> Η μέτρια υγρασία (${hum}%) διατηρεί τον καιρό ήπιο με τοπικές νεφώσεις και χωρίς αξιόλογο υετό.${frostNote}`;
                     } else {
-                        topAlert.innerText = `⛅ ΧΑΜΗΛΕΣ ΠΙΕΣΕΙΣ (${press.toFixed(0)} hPa)`;
-                        diagText = `⛅ <b>Χαμηλές πιέσεις (Υβριδικό):</b> Το βαρόμετρο είναι στα ${press.toFixed(1)} hPa με αυξημένη υγρασία (${hum}%) — μεταβλητός/νεφελώδης καιρός με πιθανότητα τοπικών φαινομένων.${frostNote}`;
+                        topAlert.innerText = `⛅ ΧΑΜΗΛΟ ΒΑΡΟΜΕΤΡΟ (${press.toFixed(0)} hPa)`;
+                        diagText = `⛅ <b>Χαμηλό βαρόμετρο (${press.toFixed(1)} hPa, σταθερή τάση):</b> Αυξημένη υγρασία (${hum}%) — νεφελώδης καιρός με πιθανότητα ασθενών τοπικών φαινομένων.${frostNote}`;
                     }
                 } else if (press < 1018) {
                     if (hum >= 82) {
@@ -1369,6 +1427,10 @@
                 document.getElementById('smartDiagnosis').innerHTML = diagText + hazardsHtml;
 
                 const ctx = document.getElementById('weatherChart').getContext('2d');
+                const tempGradient = ctx.createLinearGradient(0, 0, 0, 250);
+                tempGradient.addColorStop(0, 'rgba(56, 189, 248, 0.28)');
+                tempGradient.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
+
                 if (weatherChartInstance) {
                     weatherChartInstance.destroy();
                 }
@@ -1382,10 +1444,13 @@
                                 label: 'Υβριδική Θερμ. (ISAMAR38 + ICON/ECMWF)',
                                 data: chartTemps,
                                 borderColor: '#38bdf8',
-                                backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                                backgroundColor: tempGradient,
+                                fill: true,
                                 borderWidth: 2.5,
                                 tension: 0.35,
-                                pointRadius: 3,
+                                pointRadius: 2.5,
+                                pointHoverRadius: 5,
+                                pointBackgroundColor: '#38bdf8',
                                 yAxisID: 'yTemp'
                             },
                             {
@@ -1397,6 +1462,7 @@
                                 borderDash: [4, 4],
                                 tension: 0.35,
                                 pointRadius: 0,
+                                pointHoverRadius: 4,
                                 fill: false,
                                 yAxisID: 'yTemp'
                             },
@@ -1404,7 +1470,7 @@
                                 type: 'line',
                                 label: 'Όριο Παγετού (0°C)',
                                 data: chartZeroLine,
-                                borderColor: '#ef4444',
+                                borderColor: 'rgba(239, 68, 68, 0.75)',
                                 borderWidth: 1.2,
                                 borderDash: [5, 5],
                                 pointRadius: 0,
@@ -1415,7 +1481,9 @@
                                 type: 'bar',
                                 label: 'Βροχή / Υετός (mm)',
                                 data: chartPrecip,
-                                backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                                backgroundColor: 'rgba(59, 130, 246, 0.65)',
+                                borderColor: '#60a5fa',
+                                borderWidth: 1,
                                 borderRadius: 4,
                                 yAxisID: 'yPrecip'
                             },
@@ -1423,7 +1491,7 @@
                                 type: 'bar',
                                 label: 'Νέο Χιόνι (cm)',
                                 data: chartSnow,
-                                backgroundColor: 'rgba(224, 242, 254, 0.85)',
+                                backgroundColor: 'rgba(224, 242, 254, 0.88)',
                                 borderRadius: 4,
                                 yAxisID: 'yPrecip'
                             }
@@ -1435,27 +1503,53 @@
                         interaction: { mode: 'index', intersect: false },
                         plugins: {
                             legend: {
-                                labels: { color: '#cbd5e1', font: { size: 11 } }
+                                position: 'top',
+                                align: 'start',
+                                labels: {
+                                    color: '#cbd5e1',
+                                    font: { size: 11, weight: '600' },
+                                    usePointStyle: true,
+                                    boxWidth: 8,
+                                    padding: 12
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                titleColor: '#f8fafc',
+                                bodyColor: '#e2e8f0',
+                                borderColor: '#334155',
+                                borderWidth: 1,
+                                padding: 10,
+                                callbacks: {
+                                    label: function(context) {
+                                        const val = context.parsed.y;
+                                        const lbl = context.dataset.label || '';
+                                        if (lbl.includes('Θερμ')) return ` ${lbl}: ${val.toFixed(1)}°C`;
+                                        if (lbl.includes('Χιόνι')) return ` ${lbl}: ${val.toFixed(1)} cm`;
+                                        if (lbl.includes('Υετός')) return ` ${lbl}: ${val.toFixed(1)} mm`;
+                                        return ` ${lbl}: ${val}°C`;
+                                    }
+                                }
                             }
                         },
                         scales: {
                             x: {
-                                ticks: { color: '#94a3b8' },
-                                grid: { color: 'rgba(51, 65, 85, 0.4)' }
+                                ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true, maxTicksLimit: 13 },
+                                grid: { color: 'rgba(51, 65, 85, 0.35)' }
                             },
                             yTemp: {
                                 type: 'linear',
                                 position: 'left',
-                                title: { display: true, text: 'Θερμοκρασία (°C)', color: '#38bdf8', font: { size: 11 } },
-                                ticks: { color: '#38bdf8' },
-                                grid: { color: 'rgba(51, 65, 85, 0.4)' }
+                                title: { display: true, text: 'Θερμοκρασία (°C)', color: '#38bdf8', font: { size: 11, weight: '600' } },
+                                ticks: { color: '#38bdf8', callback: v => v + '°' },
+                                grid: { color: 'rgba(51, 65, 85, 0.35)' }
                             },
                             yPrecip: {
                                 type: 'linear',
                                 position: 'right',
                                 min: 0,
                                 suggestedMax: 5,
-                                title: { display: true, text: 'Υετός (mm) / Χιόνι (cm)', color: '#bae6fd', font: { size: 11 } },
+                                title: { display: true, text: 'Υετός (mm) / Χιόνι (cm)', color: '#bae6fd', font: { size: 11, weight: '600' } },
                                 ticks: { color: '#bae6fd' },
                                 grid: { drawOnChartArea: false }
                             }
