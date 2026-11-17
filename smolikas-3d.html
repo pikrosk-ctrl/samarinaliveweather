@@ -1,5 +1,3 @@
-HTML
-
 <!DOCTYPE html>
 <html lang="el">
 <head>
@@ -383,6 +381,67 @@ HTML
         sunLight.position.set(30, 45, 25);
         scene.add(sunLight);
 
+        // --- ΕΝΑΛΛΑΓΗ ΦΩΤΙΣΜΟΥ (AUTO / ΗΜΕΡΑ / ΔΥΣΗ / ΝΥΧΤΑ) ---
+        const TIME_MODES = ['auto', 'day', 'sunset', 'night'];
+        let currentTimeModeIdx = 0;
+
+        function applyLighting(mode) {
+            let effective = mode;
+            if (mode === 'auto') {
+                const hr = new Date().getHours();
+                if (hr >= 7 && hr < 17) effective = 'day';
+                else if ((hr >= 5 && hr < 7) || (hr >= 17 && hr < 20)) effective = 'sunset';
+                else effective = 'night';
+            }
+
+            if (effective === 'day') {
+                scene.background.setHex(0x1e3a5f);
+                scene.fog.color.setHex(0x1e3a5f);
+                hemiLight.color.setHex(0xe0f2fe);
+                hemiLight.groundColor.setHex(0x334155);
+                hemiLight.intensity = 1.15;
+                sunLight.color.setHex(0xffffff);
+                sunLight.intensity = 1.9;
+                sunLight.position.set(30, 55, 25);
+            } else if (effective === 'sunset') {
+                scene.background.setHex(0x2a1824);
+                scene.fog.color.setHex(0x2a1824);
+                hemiLight.color.setHex(0xfdba74);
+                hemiLight.groundColor.setHex(0x1e1b4b);
+                hemiLight.intensity = 0.85;
+                sunLight.color.setHex(0xf97316);
+                sunLight.intensity = 1.5;
+                sunLight.position.set(-45, 14, 15);
+            } else {
+                scene.background.setHex(0x070d19);
+                scene.fog.color.setHex(0x070d19);
+                hemiLight.color.setHex(0x93c5fd);
+                hemiLight.groundColor.setHex(0x1e293b);
+                hemiLight.intensity = 0.65;
+                sunLight.color.setHex(0x94a3b8);
+                sunLight.intensity = 0.85;
+                sunLight.position.set(20, 40, -20);
+            }
+
+            const btn = document.getElementById('time-mode-btn');
+            if (btn) {
+                const labels = {
+                    auto: '☀️ Auto',
+                    day: '🌤️ Ημέρα',
+                    sunset: '🌅 Δύση',
+                    night: '🌙 Νύχτα'
+                };
+                btn.innerText = labels[mode];
+            }
+        }
+
+        function cycleTimeMode() {
+            currentTimeModeIdx = (currentTimeModeIdx + 1) % TIME_MODES.length;
+            applyLighting(TIME_MODES[currentTimeModeIdx]);
+        }
+
+        applyLighting('auto');
+
         const terrainGeo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, SEGMENTS, SEGMENTS);
         terrainGeo.rotateX(-Math.PI / 2);
         const posAttr = terrainGeo.attributes.position;
@@ -514,7 +573,6 @@ HTML
             return calcWetBulb(temp, rh);
         }
 
-        // Αντίστροφος υπολογισμός Σημείου Δρόσου από Θερμοκρασία & Υγρό Θερμόμετρο (δυαδική αναζήτηση)
         function solveDewFromTempWetBulb(temp, targetWb) {
             let low = -35.0;
             let high = temp;
@@ -563,7 +621,6 @@ HTML
             let wb;
 
             if (sourceSlider === 'wb') {
-                // Ο χρήστης κίνησε απευθείας το slider του Υγρού Θερμομέτρου
                 wb = parseFloat(slWb.value);
                 if (wb > baseTemp) {
                     baseTemp = Math.min(25, Math.round(wb * 2) / 2);
@@ -577,10 +634,8 @@ HTML
                 baseDew = solveDewFromTempWetBulb(baseTemp, wb);
                 baseDew = Math.max(-18, Math.min(20, Math.round(baseDew * 2) / 2));
                 slDew.value = baseDew;
-                // Επαναϋπολογισμός ακριβούς wb από τις στρογγυλεμένες τιμές
                 wb = calcWetBulbFromTempDew(baseTemp, baseDew);
             } else {
-                // Κινήθηκε η Θερμοκρασία ή το Σημείο Δρόσου (ή ήρθαν live/forecast δεδομένα)
                 if (baseDew > baseTemp) {
                     baseDew = baseTemp;
                     slDew.value = baseDew;
@@ -593,7 +648,6 @@ HTML
             const dir = parseFloat(document.getElementById('sl-dir').value);
             const rain = parseFloat(document.getElementById('sl-rain').value);
 
-            // Υψόμετρο χιονόπτωσης (όπου Tw = 0.5°C με υγρή θερμοβαθμίδα 6.5°C/1000μ)
             const snowline = Math.round(1450 + ((wb - 0.5) / 6.5) * 1000);
 
             state.wind = wind;
@@ -691,7 +745,6 @@ HTML
             document.getElementById('sl-dir').value = data.dir;
             document.getElementById('sl-rain').value = data.precip;
 
-            // Υπολογισμός αθροιστικού υετού + πίεσης για τον ορίζοντα πρόγνωσης
             let stepPressure = (data.pressure !== undefined && data.pressure !== null)
                 ? data.pressure
                 : (hrs === 0 ? state.livePressure : null);
@@ -840,7 +893,6 @@ HTML
             windGeo.attributes.position.needsUpdate = true;
             windGeo.attributes.color.needsUpdate = true;
 
-            // Ενημέρωση σωματιδίων υετού (Χιόνι πάνω από snowline, Βροχή κάτω από snowline)
             if (state.rain > 0) {
                 const pPos = precipGeo.attributes.position.array;
                 const pCol = precipGeo.attributes.color.array;
@@ -877,10 +929,8 @@ HTML
                     pPos[i * 3 + 2] = pz;
 
                     if (isSnow) {
-                        // Καθαρό λευκό χιονιού
                         pCol[i * 3] = 0.96; pCol[i * 3 + 1] = 0.98; pCol[i * 3 + 2] = 1.0;
                     } else {
-                        // Γαλάζιο σταγόνων βροχής
                         pCol[i * 3] = 0.22; pCol[i * 3 + 1] = 0.74; pCol[i * 3 + 2] = 0.98;
                     }
                 }
