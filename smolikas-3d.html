@@ -24,6 +24,19 @@
             z-index: 1;
         }
 
+        /* Auto-Hide Container για όλα τα HUD elements */
+        .auto-hide-hud {
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            opacity: 1;
+            visibility: visible;
+        }
+        body.hud-hidden .auto-hide-hud {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translateY(-8px);
+        }
+
         /* Top HUD */
         .hud-top {
             position: fixed;
@@ -42,7 +55,6 @@
             width: 96vw;
         }
         .hud-top h1 { font-size: 0.82rem; color: #e0f2fe; }
-        .hud-top p { display: none; } /* Κρύβεται σε κινητό για οικονομία χώρου */
         .badges-row {
             display: flex;
             flex-wrap: wrap;
@@ -89,7 +101,7 @@
         #sl-forecast-hr { width: 130px; accent-color: #38bdf8; height: 3px; }
         .fc-step-badge { font-size: 0.64rem; font-weight: 700; color: #e0f2fe; background: #0f172a; border: 1px solid #334155; padding: 1px 6px; border-radius: 4px; }
 
-        /* Collapsible Floating Panels για Κινητά */
+        /* Floating Panels */
         .floating-panel {
             position: fixed;
             background: rgba(15, 23, 42, 0.9);
@@ -98,10 +110,8 @@
             border-radius: 10px;
             z-index: 20;
             box-shadow: 0 10px 25px rgba(0,0,0,0.6);
-            transition: max-height 0.3s ease;
         }
 
-        /* Stats Panel (Πάνω Δεξιά - μικρότερο) */
         .hud-stats {
             top: 108px;
             right: 8px;
@@ -115,7 +125,6 @@
         .stat-v { font-weight: 700; color: #38bdf8; }
         .stat-v.snow { color: #bae6fd; }
 
-        /* Controls Panel (Κάτω Αριστερά - Toggleable) */
         .hud-controls {
             bottom: 8px;
             left: 8px;
@@ -123,6 +132,7 @@
             padding: 8px;
             max-height: 38px;
             overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.4s ease, transform 0.4s ease;
         }
         .hud-controls.expanded { max-height: 280px; }
         .ctrl-header {
@@ -147,9 +157,6 @@
         .preset-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 4px; }
         .preset-btn { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; padding: 3px 2px; border-radius: 4px; font-size: 0.58rem; font-weight: 600; text-align: center; cursor: pointer; }
 
-        /* Απόκρυψη θορύβου σε κινητό */
-        .hud-legend { display: none; }
-
         .marker-label {
             position: fixed;
             transform: translate(-50%, -100%);
@@ -161,7 +168,9 @@
             pointer-events: none;
             white-space: nowrap;
             z-index: 10;
+            transition: opacity 0.4s ease;
         }
+        body.hud-hidden .marker-label { opacity: 0; }
         .marker-label b { color: #f8fafc; display: block; }
         .marker-label span { color: #38bdf8; font-size: 0.58rem; }
         .marker-label.samarina { border-color: #10b981; }
@@ -171,7 +180,7 @@
 <body>
     <div id="canvas-container"></div>
 
-    <div class="hud-top">
+    <div class="hud-top auto-hide-hud">
         <h1>3D Σμόλικας & Σαμαρίνα</h1>
         <div class="badges-row">
             <div class="live-pill"><span class="live-dot"></span><span id="live-status-text">ISAMAR38</span></div>
@@ -193,14 +202,14 @@
         </div>
     </div>
 
-    <div class="floating-panel hud-stats">
+    <div class="floating-panel hud-stats auto-hide-hud">
         <div class="stat-row"><span class="stat-k">Θερμ (1.450μ):</span><span class="stat-v" id="val-temp">-- °C</span></div>
         <div class="stat-row"><span class="stat-k">Υγρό Θερμ:</span><span class="stat-v" id="val-wb">-- °C</span></div>
         <div class="stat-row"><span class="stat-k">Άνεμος:</span><span class="stat-v" id="val-wind">-- km/h</span></div>
         <div class="stat-row"><span class="stat-k">Χιόνι:</span><span class="stat-v snow" id="val-snowline">-- μ.</span></div>
     </div>
 
-    <div class="floating-panel hud-controls" id="controls-panel">
+    <div class="floating-panel hud-controls auto-hide-hud" id="controls-panel">
         <div class="ctrl-header" onclick="toggleControlsPanel()">
             <span id="ctrl-toggle-title">⚙️ Παράμετροι (Άνοιγμα)</span>
             <span>▼</span>
@@ -242,11 +251,31 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/controls/OrbitControls.js"></script>
 
     <script>
+        /* Auto-Hide Logic */
+        let idleTimer = null;
+        function resetIdleTimer() {
+            document.body.classList.remove('hud-hidden');
+            clearTimeout(idleTimer);
+            idleTimer = setTimeout(() => {
+                // Αν είναι ανοιχτό το panel παραμέτρων, δεν το κρύβουμε αυτόματα για να μην ενοχλεί
+                const p = document.getElementById('controls-panel');
+                if (!p.classList.contains('expanded')) {
+                    document.body.classList.add('hud-hidden');
+                }
+            }, 4000); // Απόκρυψη μετά από 4 δευτερόλεπτα αδράνειας
+        }
+
+        ['mousemove', 'touchstart', 'click', 'keydown', 'wheel'].forEach(evt => {
+            window.addEventListener(evt, resetIdleTimer, { passive: true });
+        });
+        resetIdleTimer();
+
         function toggleControlsPanel() {
             const p = document.getElementById('controls-panel');
             p.classList.toggle('expanded');
             const isExp = p.classList.contains('expanded');
             document.getElementById('ctrl-toggle-title').innerText = isExp ? '⚙️ Παράμετροι (Κλείσιμο)' : '⚙️ Παράμετροι (Άνοιγμα)';
+            resetIdleTimer();
         }
 
         const WU_STATION_ID = "ISAMAR38";
@@ -254,7 +283,7 @@
 
         const GEO_BOUNDS = { latMin: 40.068, latMax: 40.132, lonMin: 20.914, lonMax: 21.058 };
         const TERRAIN_SIZE = 74;
-        const SEGMENTS = 160; // Ελαφρύτερο για κινητά
+        const SEGMENTS = 160;
         const DEM_GRID_N = 24;
         const DEM_CACHE_KEY = "smolikas_real_dem_24x24_v5";
 
@@ -394,8 +423,6 @@
             terrainGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
             updatePinHeights();
         }
-
-        let state = { temp: 8.0, dew: 6.0, wind: 12, dir: 240, rain: 0.0, wetBulb: 6.7, snowlineMeters: 2400 };
 
         function calcWetBulb(temp, hum) {
             const h = Math.max(1, Math.min(100, hum));
