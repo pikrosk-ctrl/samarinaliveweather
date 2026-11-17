@@ -24,7 +24,6 @@
             z-index: 1;
         }
 
-        /* Auto-Hide Container για όλα τα HUD elements */
         .auto-hide-hud {
             transition: opacity 0.4s ease, transform 0.4s ease;
             opacity: 1;
@@ -37,7 +36,6 @@
             transform: translateY(-8px);
         }
 
-        /* Top HUD */
         .hud-top {
             position: fixed;
             top: 8px;
@@ -73,7 +71,6 @@
         .time-pill { background: rgba(251, 191, 36, 0.14); border: 1px solid rgba(251, 191, 36, 0.45); color: #fde68a; cursor: pointer; }
         .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981; }
 
-        /* Timeline Box */
         .timeline-box {
             margin-top: 4px;
             padding-top: 4px;
@@ -101,7 +98,6 @@
         #sl-forecast-hr { width: 130px; accent-color: #38bdf8; height: 3px; }
         .fc-step-badge { font-size: 0.64rem; font-weight: 700; color: #e0f2fe; background: #0f172a; border: 1px solid #334155; padding: 1px 6px; border-radius: 4px; }
 
-        /* Floating Panels */
         .floating-panel {
             position: fixed;
             background: rgba(15, 23, 42, 0.9);
@@ -247,22 +243,21 @@
     <div id="lbl-saddle" class="marker-label"><b>▲ Διάσελο</b><span>~2.150μ</span></div>
     <div id="lbl-samarina" class="marker-label samarina"><b>🏠 Σαμαρίνα</b><span>1.450μ</span></div>
 
+    <!-- Three.js & OrbitControls -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <script>
-        /* Auto-Hide Logic */
         let idleTimer = null;
         function resetIdleTimer() {
             document.body.classList.remove('hud-hidden');
             clearTimeout(idleTimer);
             idleTimer = setTimeout(() => {
-                // Αν είναι ανοιχτό το panel παραμέτρων, δεν το κρύβουμε αυτόματα για να μην ενοχλεί
                 const p = document.getElementById('controls-panel');
                 if (!p.classList.contains('expanded')) {
                     document.body.classList.add('hud-hidden');
                 }
-            }, 4000); // Απόκρυψη μετά από 4 δευτερόλεπτα αδράνειας
+            }, 4000);
         }
 
         ['mousemove', 'touchstart', 'click', 'keydown', 'wheel'].forEach(evt => {
@@ -290,8 +285,6 @@
         let realDemGrid = null;
         let forecastPacket = null;
         let currentDataSource = 'live';
-        let forecastPlayTimer = null;
-        let forecastOverrideDecHour = null;
 
         function latLonToSceneXZ(lat, lon) {
             const u = (lon - GEO_BOUNDS.lonMin) / (GEO_BOUNDS.lonMax - GEO_BOUNDS.lonMin);
@@ -492,7 +485,7 @@
             } catch (e) {}
         }
 
-        rebuildTerrainGeometry();
+        loadRealSmolikasDEM();
         recalcPhysics();
         syncLiveWeather();
 
