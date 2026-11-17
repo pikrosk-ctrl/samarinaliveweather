@@ -1,3 +1,5 @@
+HTML
+
 <!DOCTYPE html>
 <html lang="el">
 <head>
@@ -16,6 +18,23 @@
             flex-direction: column;
             padding: 12px;
             gap: 12px;
+        }
+        /* Sticky Banner Παγετού */
+        #frost-banner {
+            display: none;
+            background: #b91c1c;
+            color: #ffffff;
+            padding: 12px 20px;
+            text-align: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            position: sticky;
+            top: 0;
+            z-index: 9999;
+            transition: background 0.3s ease;
+            border-radius: 8px;
         }
         .top-bar {
             display: flex;
@@ -386,6 +405,11 @@
     </style>
 </head>
 <body>
+    <!-- Sticky Banner Προειδοποίησης Παγετού για Ακατοίκητα Σπίτια -->
+    <div id="frost-banner">
+        <span id="frost-icon">⚠️</span> <span id="frost-msg">ΠΡΟΕΙΔΟΠΟΙΗΣΗ ΠΑΓΕΤΟΥ: Κίνδυνος παγώματος δικτύων ύδρευσης!</span>
+    </div>
+
     <div class="top-bar">
         <div class="title">
             <h1>🏔️ ΣΑΜΑΡΙΝΑ ΓΡΕΒΕΝΩΝ (1.450μ.) — LIVE SNOW & WEATHER</h1>
@@ -564,6 +588,28 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') closeSmolikas3D();
         });
+
+        // Συνάρτηση αξιολόγησης παγετού για ακατοίκητα σπίτια
+        function updateFrostWarning(tempC) {
+            const banner = document.getElementById('frost-banner');
+            const msg = document.getElementById('frost-msg');
+            const icon = document.getElementById('frost-icon');
+
+            if (tempC <= -3) {
+                banner.style.display = 'block';
+                if (tempC <= -6) {
+                    banner.style.background = '#7f1d1d'; // Βαθύ κόκκινο για ακραίο παγετό
+                    icon.textContent = '🚨';
+                    msg.textContent = `ΣΥΝΑΓΕΡΜΟΣ ΑΚΡΑΙΟΥ ΠΑΓΕΤΟΥ (${tempC}°C): Άμεση ανάγκη αποστράγγισης εσωτερικών δικτύων στα κλειστά σπίτια της Σαμαρίνας!`;
+                } else {
+                    banner.style.background = '#b91c1c';
+                    icon.textContent = '⚠️';
+                    msg.textContent = `ΠΡΟΕΙΔΟΠΟΙΗΣΗ ΠΑΓΕΤΟΥ (${tempC}°C): Θερμοκρασίες υπό του μηδενός. Προσοχή στις σωληνώσεις των ακατοίκητων σπιτιών.`;
+                }
+            } else {
+                banner.style.display = 'none';
+            }
+        }
 
         const WU_STATION_ID = "ISAMAR38";
         const WU_API_KEY = "5c94ee0c13f240ec94ee0c13f2b0ecd9";
@@ -981,6 +1027,9 @@
                 const chill = obs.metric.windChill;
                 const spread = temp - dew;
                 const wetBulb = calcWetBulb(temp, hum);
+
+                // Ενεργοποίηση ελέγχου παγετού βάσει της τρέχουσας θερμοκρασίας του σταθμού
+                updateFrostWarning(temp);
 
                 let rawTrend = 0;
                 let trendFoundFromHistory = false;
@@ -1408,105 +1457,105 @@
         setInterval(loadVerificationStats, 600000);
     </script>
     <footer class="site-methodology-footer">
-    <div class="footer-inner">
-        <h3>ℹ️ Σημείωση Μεθοδολογίας &amp; Σκοπού Δημιουργίας</h3>
-        <p class="footer-lead">
-            Η πλατφόρμα δημιουργήθηκε από αγάπη για τη Σαμαρίνα και τον Σμόλικα, με στόχο την άμεση, κατανοητή και επιστημονικά τεκμηριωμένη αποτύπωση των τοπικών καιρικών συνθηκών στα <strong>1.450 μέτρα</strong>. Δεν υποκαθιστά τους επίσημους μετεωρολογικούς φορείς ούτε εκδίδει δελτία καιρού ευρείας κλίμακας· λειτουργεί ως <strong>εργαλείο τοπικής παρατήρησης (nowcasting) και μικροκλιματικής ανάλυσης</strong>.
-        </p>
+        <div class="footer-inner">
+            <h3>ℹ️ Σημείωση Μεθοδολογίας &amp; Σκοπού Δημιουργίας</h3>
+            <p class="footer-lead">
+                Η πλατφόρμα δημιουργήθηκε από αγάπη για τη Σαμαρίνα και τον Σμόλικα, με στόχο την άμεση, κατανοητή και επιστημονικά τεκμηριωμένη αποτύπωση των τοπικών καιρικών συνθηκών στα <strong>1.450 μέτρα</strong>. Δεν υποκαθιστά τους επίσημους μετεωρολογικούς φορείς ούτε εκδίδει δελτία καιρού ευρείας κλίμακας· λειτουργεί ως <strong>εργαλείο τοπικής παρατήρησης (nowcasting) και μικροκλιματικής ανάλυσης</strong>.
+            </p>
 
-        <div class="footer-grid">
-            <div class="footer-card">
-                <h4>📡 Τα Δεδομένα που Βλέπετε</h4>
-                <p>
-                    Οι ζωντανές μετρήσεις (Θερμοκρασία, Σημείο Δρόσου, Υγρό Θερμόμετρο κατά Stull, Άνεμος, Βαρομετρική Πίεση και Υετός) αντλούνται σε πραγματικό χρόνο από τον σταθμό <strong>ISAMAR38</strong>. Οι βραχυπρόθεσμες εκτιμήσεις (+12h) συνδυάζουν τις πραγματικές τάσεις του σταθμού με διορθωμένα δεδομένα αριθμητικών μοντέλων (ICON / ECMWF) για το υψόμετρο του οικισμού.
-                </p>
+            <div class="footer-grid">
+                <div class="footer-card">
+                    <h4>📡 Τα Δεδομένα που Βλέπετε</h4>
+                    <p>
+                        Οι ζωντανές μετρήσεις (Θερμοκρασία, Σημείο Δρόσου, Υγρό Θερμόμετρο κατά Stull, Άνεμος, Βαρομετρική Πίεση και Υετός) αντλούνται σε πραγματικό χρόνο από τον σταθμό <strong>ISAMAR38</strong>. Οι βραχυπρόθεσμες εκτιμήσεις (+12h) συνδυάζουν τις πραγματικές τάσεις του σταθμού με διορθωμένα δεδομένα αριθμητικών μοντέλων (ICON / ECMWF) για το υψόμετρο του οικισμού.
+                    </p>
+                </div>
+
+                <div class="footer-card">
+                    <h4>📍 Αυστηρός Χωρικός Περιορισμός</h4>
+                    <p>
+                        Κάθε εκτίμηση ή πρόγνωση αφορά <strong>αποκλειστικά τον χώρο της Σαμαρίνας (1.450 μ.) και τις άμεσες πλαγιές του Σμόλικα</strong>. Στα βουνά, αποστάσεις λίγων χιλιομέτρων ή διαφορές προσανατολισμού μεταβάλλουν ριζικά τον καιρό· συνεπώς, τα στοιχεία δεν γενικεύονται σε γειτονικές περιοχές.
+                    </p>
+                </div>
+
+                <div class="footer-card">
+                    <h4>🏔️ Η Τρισδιάστατη (3D) Προβολή</h4>
+                    <p>
+                        Η 3D απεικόνιση βασίζεται σε πραγματικά δορυφορικά υψομετρικά δεδομένα (<strong>DEM</strong>) και αποτελεί <strong>φυσικό διαγνωστικό εργαλείο</strong>: αποτυπώνει την ορογραφική ροή του ανέμου, υπολογίζει δυναμικά τη γραμμή χιονόπτωσης μέσω του Υγρού Θερμομέτρου (<em>T<sub>w</sub> ≤ 0.5°C</em>) και επιτρέπει τη δοκιμή καιρικών σεναρίων σε πραγματικό χρόνο.
+                    </p>
+                </div>
             </div>
 
-            <div class="footer-card">
-                <h4>📍 Αυστηρός Χωρικός Περιορισμός</h4>
-                <p>
-                    Κάθε εκτίμηση ή πρόγνωση αφορά <strong>αποκλειστικά τον χώρο της Σαμαρίνας (1.450 μ.) και τις άμεσες πλαγιές του Σμόλικα</strong>. Στα βουνά, αποστάσεις λίγων χιλιομέτρων ή διαφορές προσανατολισμού μεταβάλλουν ριζικά τον καιρό· συνεπώς, τα στοιχεία δεν γενικεύονται σε γειτονικές περιοχές.
-                </p>
-            </div>
-
-            <div class="footer-card">
-                <h4>🏔️ Η Τρισδιάστατη (3D) Προβολή</h4>
-                <p>
-                    Η 3D απεικόνιση βασίζεται σε πραγματικά δορυφορικά υψομετρικά δεδομένα (<strong>DEM</strong>) και αποτελεί <strong>φυσικό διαγνωστικό εργαλείο</strong>: αποτυπώνει την ορογραφική ροή του ανέμου, υπολογίζει δυναμικά τη γραμμή χιονόπτωσης μέσω του Υγρού Θερμομέτρου (<em>T<sub>w</sub> ≤ 0.5°C</em>) και επιτρέπει τη δοκιμή καιρικών σεναρίων σε πραγματικό χρόνο.
-                </p>
+            <div class="footer-disclaimer">
+                Για επίσημες προγνώσεις και έκτακτα δελτία επικίνδυνων φαινομένων, να συμβουλεύεστε πάντοτε την <strong>Εθνική Μετεωρολογική Υπηρεσία (ΕΜΥ)</strong> και την <strong>Πολιτική Προστασία</strong>.
             </div>
         </div>
+    </footer>
 
-        <div class="footer-disclaimer">
-            Για επίσημες προγνώσεις και έκτακτα δελτία επικίνδυνων φαινομένων, να συμβουλεύεστε πάντοτε την <strong>Εθνική Μετεωρολογική Υπηρεσία (ΕΜΥ)</strong> και την <strong>Πολιτική Προστασία</strong>.
-        </div>
-    </div>
-</footer>
-
-<style>
-    .site-methodology-footer {
-        margin-top: 28px;
-        padding: 24px 16px 32px;
-        background: rgba(15, 23, 42, 0.92);
-        border-top: 1px solid rgba(56, 189, 248, 0.28);
-        color: #cbd5e1;
-        font-family: 'Segoe UI', system-ui, sans-serif;
-        font-size: 0.85rem;
-        line-height: 1.6;
-    }
-    .footer-inner {
-        max-width: 1100px;
-        margin: 0 auto;
-    }
-    .site-methodology-footer h3 {
-        color: #e0f2fe;
-        font-size: 1rem;
-        margin-bottom: 10px;
-        letter-spacing: 0.2px;
-    }
-    .footer-lead {
-        color: #94a3b8;
-        margin-bottom: 18px;
-    }
-    .footer-lead strong {
-        color: #e2e8f0;
-    }
-    .footer-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 14px;
-        margin-bottom: 18px;
-    }
-    .footer-card {
-        background: rgba(30, 41, 59, 0.55);
-        border: 1px solid rgba(71, 85, 105, 0.45);
-        border-radius: 10px;
-        padding: 14px;
-    }
-    .footer-card h4 {
-        color: #38bdf8;
-        font-size: 0.88rem;
-        margin-bottom: 6px;
-    }
-    .footer-card p {
-        font-size: 0.8rem;
-        color: #cbd5e1;
-        margin: 0;
-    }
-    .footer-card strong {
-        color: #f8fafc;
-    }
-    .footer-disclaimer {
-        padding-top: 12px;
-        border-top: 1px solid rgba(51, 65, 85, 0.6);
-        font-size: 0.78rem;
-        color: #94a3b8;
-        text-align: center;
-    }
-    .footer-disclaimer strong {
-        color: #fde68a;
-    }
-</style>
+    <style>
+        .site-methodology-footer {
+            margin-top: 28px;
+            padding: 24px 16px 32px;
+            background: rgba(15, 23, 42, 0.92);
+            border-top: 1px solid rgba(56, 189, 248, 0.28);
+            color: #cbd5e1;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+        .footer-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .site-methodology-footer h3 {
+            color: #e0f2fe;
+            font-size: 1rem;
+            margin-bottom: 10px;
+            letter-spacing: 0.2px;
+        }
+        .footer-lead {
+            color: #94a3b8;
+            margin-bottom: 18px;
+        }
+        .footer-lead strong {
+            color: #e2e8f0;
+        }
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+        .footer-card {
+            background: rgba(30, 41, 59, 0.55);
+            border: 1px solid rgba(71, 85, 105, 0.45);
+            border-radius: 10px;
+            padding: 14px;
+        }
+        .footer-card h4 {
+            color: #38bdf8;
+            font-size: 0.88rem;
+            margin-bottom: 6px;
+        }
+        .footer-card p {
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            margin: 0;
+        }
+        .footer-card strong {
+            color: #f8fafc;
+        }
+        .footer-disclaimer {
+            padding-top: 12px;
+            border-top: 1px solid rgba(51, 65, 85, 0.6);
+            font-size: 0.78rem;
+            color: #94a3b8;
+            text-align: center;
+        }
+        .footer-disclaimer strong {
+            color: #fde68a;
+        }
+    </style>
     <script data-goatcounter="https://samarinaweather.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 </body>
