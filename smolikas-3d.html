@@ -243,7 +243,6 @@
     <div id="lbl-saddle" class="marker-label"><b>▲ Διάσελο</b><span>~2.150μ</span></div>
     <div id="lbl-samarina" class="marker-label samarina"><b>🏠 Σαμαρίνα</b><span>1.450μ</span></div>
 
-    <!-- Three.js & OrbitControls -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
@@ -285,6 +284,7 @@
         let realDemGrid = null;
         let forecastPacket = null;
         let currentDataSource = 'live';
+        let forecastPlayTimer = null;
 
         function latLonToSceneXZ(lat, lon) {
             const u = (lon - GEO_BOUNDS.lonMin) / (GEO_BOUNDS.lonMax - GEO_BOUNDS.lonMin);
@@ -321,7 +321,7 @@
                 const cached = localStorage.getItem(DEM_CACHE_KEY);
                 if (cached) {
                     realDemGrid = new Float32Array(JSON.parse(cached));
-                    rebuildTerrainGeometry();
+                    rebuildTerrainGeometry(2400);
                     return;
                 }
             } catch (e) {}
@@ -339,7 +339,7 @@
                 if (resp && Array.isArray(resp.elevation)) {
                     realDemGrid = new Float32Array(576).fill(1500);
                     resp.elevation.forEach((el, idx) => { realDemGrid[idx] = el; });
-                    rebuildTerrainGeometry();
+                    rebuildTerrainGeometry(2400);
                 }
             } catch (err) {}
         }
@@ -375,6 +375,7 @@
         terrainGeo.rotateX(-Math.PI / 2);
         const posAttr = terrainGeo.attributes.position;
         const colors = new Float32Array(posAttr.count * 3);
+        const elevations = new Float32Array(posAttr.count);
         const terrainMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0.05 });
         const terrainMesh = new THREE.Mesh(terrainGeo, terrainMat);
         scene.add(terrainMesh);
@@ -403,13 +404,25 @@
             });
         }
 
-        function rebuildTerrainGeometry() {
+        function rebuildTerrainGeometry(snowlineMeters) {
             for (let i = 0; i < posAttr.count; i++) {
                 const x = posAttr.getX(i), z = posAttr.getZ(i);
                 const elev = getElevationMeters(x, z);
+                elevations[i] = elev;
                 posAttr.setY(i, elevToSceneY(elev));
-                const c = elev > 2100 ? 0xd1d5db : (elev > 1700 ? 0x4b5335 : 0x163326);
-                colors[i*3] = ((c>>16)&255)/255; colors[i*3+1] = ((c>>8)&255)/255; colors[i*3+2] = (c&255)/255;
+
+                let baseColor = 0x163326; // Δάσος
+                if (elev > 2100) baseColor = 0x475569; // Βράχια
+                else if (elev > 1700) baseColor = 0x4b5335; // Λιβάδι
+
+                // Χιόνι μόνο αν το υψόμετρο ξεπερνάει το πραγματικό όριο χιονόπτωσης
+                if (elev > snowlineMeters) {
+                    baseColor = 0xf1f5f9;
+                }
+
+                colors[i*3] = ((baseColor>>16)&255)/255;
+                colors[i*3+1] = ((baseColor>>8)&255)/255;
+                colors[i*3+2] = (baseColor&255)/255;
             }
             posAttr.needsUpdate = true;
             terrainGeo.computeVertexNormals();
@@ -443,13 +456,19 @@
             document.getElementById('val-wb').innerText = `${wb.toFixed(1)}°C`;
             document.getElementById('val-wind').innerText = `${wind} km/h`;
             document.getElementById('val-snowline').innerText = snowline <= 1450 ? `Χιόνι στο χωριό` : `${snowline} μ.`;
+
+            rebuildTerrainGeometry(snowline);
         }
 
         ['sl-temp', 'sl-dew', 'sl-wind', 'sl-dir', 'sl-rain'].forEach(id => {
-            document.getElementById(id).addEventListener('input', recalcPhysics);
+            document.getElementById(id).addEventListener('input', () => {
+                stopForecastPlay();
+                recalcPhysics();
+            });
         });
 
         function applyPreset(type) {
+            stopForecastPlay();
             if (type === 'snow') {
                 document.getElementById('sl-temp').value = -1.5; document.getElementById('sl-dew').value = -2.0; document.getElementById('sl-wind').value = 34; document.getElementById('sl-rain').value = 4.5;
             } else if (type === 'blizzard') {
@@ -458,6 +477,118 @@
                 document.getElementById('sl-temp').value = 2.5; document.getElementById('sl-dew').value = 2.3; document.getElementById('sl-wind').value = 6; document.getElementById('sl-rain').value = 0.0;
             }
             recalcPhysics();
+        }
+
+        function buildStandaloneStation12h(obs) {
+            const temp = obs.metric.temp;
+            const dew = obs.metric.dewpt;
+            const wind = obs.metric.windSpeed;
+            const dir = obs.winddir;
+            const rate = obs.metric.precipRate;
+            const now = new Date();
+            const baseDate = new Date(now);
+            baseDate.setMinutes(0, 0, 0);
+
+            const steps = [];
+            for (let hrs = 0; hrs <= 12; hrs++) {
+                const fDate = new Date(baseDate.getTime() + hrs * 3600 * 1000);
+                const tLabel = fDate.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
+                const stepObj = {
+                    temp: Number((temp - hrs * 0.15).toFixed(1)),
+                    dew: Number((dew - hrs * 0.1).toFixed(1)),
+                    wind: Math.round(wind),
+                    dir: dir,
+                    precip: Number(rate.toFixed(1))
+                };
+                steps.push({ hrs, timeLabel: tLabel, station: stepObj, hybrid: stepObj });
+            }
+            return { generatedAt: Date.now(), steps };
+        }
+
+        function loadStoredForecastPacket() {
+            try {
+                const raw = localStorage.getItem('samarina_12h_forecast_v1');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed && Array.isArray(parsed.steps)) {
+                        forecastPacket = parsed;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'SAMARINA_12H_FORECAST' && event.data.payload) {
+                forecastPacket = event.data.payload;
+            }
+        });
+
+        function setDataSource(src) {
+            currentDataSource = src;
+            document.getElementById('btn-src-live').className = 'src-btn' + (src === 'live' ? ' active-live' : '');
+            document.getElementById('btn-src-station').className = 'src-btn' + (src === 'station' ? ' active-station' : '');
+            document.getElementById('btn-src-hybrid').className = 'src-btn' + (src === 'hybrid' ? ' active-hybrid' : '');
+
+            const timelineEl = document.getElementById('timeline-controls');
+            if (src === 'live') {
+                stopForecastPlay();
+                timelineEl.style.display = 'none';
+                syncLiveWeather();
+            } else {
+                loadStoredForecastPacket();
+                timelineEl.style.display = 'flex';
+                applyForecastHourStep(parseInt(document.getElementById('sl-forecast-hr').value, 10) || 0);
+            }
+        }
+
+        function applyForecastHourStep(hrs) {
+            if (!forecastPacket || !forecastPacket.steps || !forecastPacket.steps[hrs]) return;
+            const step = forecastPacket.steps[hrs];
+            const data = (currentDataSource === 'hybrid' && step.hybrid) ? step.hybrid : step.station;
+
+            document.getElementById('sl-temp').value = data.temp;
+            document.getElementById('sl-dew').value = data.dew;
+            document.getElementById('sl-wind').value = data.wind;
+            document.getElementById('sl-dir').value = data.dir;
+            document.getElementById('sl-rain').value = data.precip;
+
+            const tag = hrs === 0 ? '+0h (Τώρα)' : `+${hrs}h (${step.timeLabel})`;
+            document.getElementById('lbl-fc-step').innerText = tag;
+            document.getElementById('live-status-text').innerText = `${currentDataSource === 'hybrid' ? 'Υβριδικό' : 'Σταθμός'} ${tag}`;
+            recalcPhysics();
+        }
+
+        document.getElementById('sl-forecast-hr').addEventListener('input', (e) => {
+            applyForecastHourStep(parseInt(e.target.value, 10) || 0);
+        });
+
+        function toggleForecastPlay() {
+            const btn = document.getElementById('btn-play-fc');
+            if (forecastPlayTimer) {
+                stopForecastPlay();
+                return;
+            }
+            btn.innerText = '⏸ Pause';
+            btn.classList.add('playing');
+            forecastPlayTimer = setInterval(() => {
+                const slider = document.getElementById('sl-forecast-hr');
+                let next = (parseInt(slider.value, 10) || 0) + 1;
+                if (next > 12) next = 0;
+                slider.value = next;
+                applyForecastHourStep(next);
+            }, 1400);
+        }
+
+        function stopForecastPlay() {
+            if (forecastPlayTimer) {
+                clearInterval(forecastPlayTimer);
+                forecastPlayTimer = null;
+            }
+            const btn = document.getElementById('btn-play-fc');
+            if (btn) {
+                btn.innerText = '▶ Play';
+                btn.classList.remove('playing');
+            }
         }
 
         function updateLabels() {
@@ -472,21 +603,29 @@
         }
 
         async function syncLiveWeather() {
+            loadStoredForecastPacket();
             try {
                 const res = await fetch(`https://api.weather.com/v2/pws/observations/current?stationId=${WU_STATION_ID}&format=json&units=m&numericPrecision=decimal&apiKey=${WU_API_KEY}`);
                 const data = await res.json();
                 const obs = data.observations[0];
-                document.getElementById('sl-temp').value = obs.metric.temp;
-                document.getElementById('sl-dew').value = obs.metric.dewpt;
-                document.getElementById('sl-wind').value = Math.round(obs.metric.windSpeed);
-                document.getElementById('sl-dir').value = obs.winddir;
-                document.getElementById('sl-rain').value = obs.metric.precipRate;
-                recalcPhysics();
-            } catch (e) {}
+                if (!forecastPacket) {
+                    forecastPacket = buildStandaloneStation12h(obs);
+                }
+                if (currentDataSource === 'live') {
+                    document.getElementById('sl-temp').value = obs.metric.temp;
+                    document.getElementById('sl-dew').value = obs.metric.dewpt;
+                    document.getElementById('sl-wind').value = Math.round(obs.metric.windSpeed);
+                    document.getElementById('sl-dir').value = obs.winddir;
+                    document.getElementById('sl-rain').value = obs.metric.precipRate;
+                    document.getElementById('live-status-text').innerText = `LIVE ISAMAR38`;
+                    recalcPhysics();
+                }
+            } catch (e) {
+                if (currentDataSource === 'live') recalcPhysics();
+            }
         }
 
         loadRealSmolikasDEM();
-        recalcPhysics();
         syncLiveWeather();
 
         function animate() {
