@@ -1288,6 +1288,7 @@
                 }
 
                 const isSoutherly = (dir >= 135 && dir <= 250);
+                const isNortherly = (dir >= 315 || dir <= 65);
                 const topAlert = document.getElementById('topAlert');
                 topAlert.className = 'alert-box';
                 let diagText = '';
@@ -1305,18 +1306,23 @@
                     topAlert.classList.add('alert-storm');
                     topAlert.innerText = `🌧️ ΕΝΕΡΓΗ ΒΡΟΧΟΠΤΩΣΗ`;
                     diagText = `🌧️ <b>Βροχή σε εξέλιξη:</b> Ο σταθμός καταγράφει ρυθμό υετού ${rate} mm/h.`;
-                } else if (estSnowCm24 > 0.3 || ((totalPrecip24 > 1.0 || trend <= -1.5) && (wetBulb <= 0.5 || minTemp24 <= 1.0))) {
+                } else if (estSnowCm24 > 0.3 || (totalPrecip24 > 1.0 && (wetBulb <= 0.5 || minTemp24 <= 1.0))) {
                     hasSnowAlert = true;
                     topAlert.classList.add('alert-snow');
                     topAlert.innerText = `❄️ ΣΥΝΑΓΕΡΜΟΣ ΧΙΟΝΟΠΤΩΣΗΣ (24h)`;
                     diagText = `❄️ <b>Ευνοϊκές συνθήκες χιονιού (Υβριδικό):</b> Ο σταθμός μετρά ${temp.toFixed(1)}°C (Υγρό Θερμ. ${wetBulb.toFixed(1)}°C, Σ.Δ. ${dew.toFixed(1)}°C) και ο συνδυασμός ISAMAR38 + ICON/ECMWF εκτιμά ελάχιστη ${minTemp24.toFixed(1)}°C και νέο χιόνι ~${estSnowCm24.toFixed(1)} cm το επόμενο 24ωρο.`;
-                } else if (trend <= -1.5 && isSoutherly) {
+                } else if (trend <= -1.5 && (isSoutherly || isNortherly)) {
                     topAlert.classList.add('alert-storm');
-                    topAlert.innerText = `🌧️ ΕΡΧΕΤΑΙ ΕΠΙΔΕΙΝΩΣΗ (ΠΤΩΣΗ ΠΙΕΣΗΣ)`;
-                    diagText = `🌧️ <b>Βαρομετρικό χαμηλό πλησιάζει:</b> Η πίεση στον σταθμό πέφτει (${trend.toFixed(1)} hPa/3h) με υγρό ${degToCompass(dir)} άνεμο.`;
-                } else if (spread <= 1.5 && wind < 6) {
+                    if (isNortherly) {
+                        topAlert.innerText = `🌬️ ΨΥΧΡΗ ΕΙΣΒΟΛΗ / ΠΤΩΣΗ ΠΙΕΣΗΣ`;
+                        diagText = `🌬️ <b>Απότομη μεταβολή με Βοριά:</b> Η πίεση υποχωρεί (${trend.toFixed(1)} hPa/3h) με ${degToCompass(dir)} άνεμο — αναμένεται αισθητή πτώση θερμοκρασίας και τοπικές νεφώσεις/φαινόμενα.`;
+                    } else {
+                        topAlert.innerText = `🌧️ ΕΡΧΕΤΑΙ ΕΠΙΔΕΙΝΩΣΗ (ΠΤΩΣΗ ΠΙΕΣΗΣ)`;
+                        diagText = `🌧️ <b>Βαρομετρικό χαμηλό πλησιάζει:</b> Η πίεση στον σταθμό πέφτει (${trend.toFixed(1)} hPa/3h) με υγρό ${degToCompass(dir)} άνεμο.`;
+                    }
+                } else if (spread <= 0.8 && wind <= 12) {
                     topAlert.innerText = `🌫️ ΟΜΙΧΛΗ / ΧΑΜΗΛΗ ΝΕΦΩΣΗ`;
-                    diagText = `🌫️ <b>Κορεσμένη ατμόσφαιρα:</b> Θερμοκρασία (${temp.toFixed(1)}°C) και Σημείο Δρόσου (${dew.toFixed(1)}°C) απέχουν μόλις ${spread.toFixed(1)}°C — αναμένεται ομίχλη ή χαμηλά νέφη.`;
+                    diagText = `🌫️ <b>Κορεσμένη ατμόσφαιρα:</b> Θερμοκρασία (${temp.toFixed(1)}°C) και Σημείο Δρόσου (${dew.toFixed(1)}°C) απέχουν μόλις ${spread.toFixed(1)}°C (Υγρασία ${hum}%) — συνθήκες ομίχλης ή χαμηλών νεφών.`;
                 } else if (press < 1013) {
                     if (trend <= -1.2) {
                         topAlert.classList.add('alert-storm');
@@ -1330,11 +1336,21 @@
                         diagText = `⛅ <b>Χαμηλές πιέσεις (Υβριδικό):</b> Το βαρόμετρο είναι στα ${press.toFixed(1)} hPa με αυξημένη υγρασία (${hum}%) — μεταβλητός/νεφελώδης καιρός με πιθανότητα τοπικών φαινομένων.${frostNote}`;
                     }
                 } else if (press < 1018) {
-                    topAlert.innerText = `🌤️ ΚΑΝΟΝΙΚΕΣ ΠΙΕΣΕΙΣ (${press.toFixed(0)} hPa)`;
-                    diagText = `🌤️ <b>Σχετικά σταθερός καιρός (Υβριδικό):</b> Κανονικές βαρομετρικές πιέσεις (${press.toFixed(1)} hPa) χωρίς αξιόλογο υετό.${frostNote}`;
+                    if (hum >= 82) {
+                        topAlert.innerText = `☁️ ΝΕΦΕΛΩΔΗΣ / ΥΓΡΟΣ (${press.toFixed(0)} hPa)`;
+                        diagText = `☁️ <b>Κανονικές πιέσεις με υψηλή υγρασία (${press.toFixed(1)} hPa, ${hum}%):</b> Τοπικές νεφώσεις στα 1.450μ. χωρίς αξιόλογο υετό.${frostNote}`;
+                    } else {
+                        topAlert.innerText = `🌤️ ΚΑΝΟΝΙΚΕΣ ΠΙΕΣΕΙΣ (${press.toFixed(0)} hPa)`;
+                        diagText = `🌤️ <b>Σχετικά σταθερός καιρός (Υβριδικό):</b> Κανονικές βαρομετρικές πιέσεις (${press.toFixed(1)} hPa) χωρίς αξιόλογο υετό.${frostNote}`;
+                    }
                 } else {
-                    topAlert.innerText = `☀️ ΣΤΑΘΕΡΟΣ ΚΑΙΡΟΣ (${press.toFixed(0)} hPa)`;
-                    diagText = `☀️ <b>Αίθριες συνθήκες (Υβριδικό):</b> Υψηλές πιέσεις (${press.toFixed(1)} hPa) χωρίς αξιόλογο υετό.${frostNote}`;
+                    if (hum >= 82) {
+                        topAlert.innerText = `🌥️ ΥΨΗΛΕΣ ΠΙΕΣΕΙΣ / ΥΓΡΑΣΙΑ (${press.toFixed(0)} hPa)`;
+                        diagText = `🌥️ <b>Αντικυκλωνικές συνθήκες με υγρασία (${press.toFixed(1)} hPa, ${hum}%):</b> Εγκλωβισμένη υγρασία ή χαμηλές νεφώσεις στα 1.450μ., χωρίς φαινόμενα.${frostNote}`;
+                    } else {
+                        topAlert.innerText = `☀️ ΣΤΑΘΕΡΟΣ ΚΑΙΡΟΣ (${press.toFixed(0)} hPa)`;
+                        diagText = `☀️ <b>Αίθριες συνθήκες (Υβριδικό):</b> Υψηλές πιέσεις (${press.toFixed(1)} hPa, υγρασία ${hum}%) χωρίς αξιόλογο υετό.${frostNote}`;
+                    }
                 }
 
                 const dangerHazard = hazards.find(h => h.level === "danger");
