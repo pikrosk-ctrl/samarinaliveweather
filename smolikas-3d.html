@@ -1,3 +1,5 @@
+HTML
+
 <!DOCTYPE html>
 <html lang="el">
 <head>
@@ -112,7 +114,7 @@
         .hud-stats {
             top: 108px;
             right: 8px;
-            width: 165px;
+            width: 175px;
             padding: 6px 8px;
             font-size: 0.65rem;
         }
@@ -206,6 +208,8 @@
         <div class="stat-row"><span class="stat-k">Θερμ (1.450μ):</span><span class="stat-v" id="val-temp">-- °C</span></div>
         <div class="stat-row"><span class="stat-k">Υγρό Θερμ:</span><span class="stat-v" id="val-wb">-- °C</span></div>
         <div class="stat-row"><span class="stat-k">Άνεμος:</span><span class="stat-v" id="val-wind">-- km/h</span></div>
+        <div class="stat-row"><span class="stat-k">Πίεση:</span><span class="stat-v" id="val-pressure">-- hPa</span></div>
+        <div class="stat-row"><span class="stat-k">Υετός (24ω):</span><span class="stat-v" id="val-precip-total">0.0 mm</span></div>
         <div class="stat-row"><span class="stat-k">Χιόνι:</span><span class="stat-v snow" id="val-snowline">-- μ.</span></div>
     </div>
 
@@ -523,7 +527,31 @@
             return (low + high) * 0.5;
         }
 
-        let state = { wind: 12, dir: 240, wetBulb: 6.8, rain: 0, snowline: 2419 };
+        let state = {
+            wind: 12,
+            dir: 240,
+            wetBulb: 6.8,
+            rain: 0,
+            snowline: 2419,
+            livePressure: null,
+            livePrecipTotal: 0
+        };
+
+        function updatePressureAndTotalHud(pressureVal, precipTotalVal) {
+            const pEl = document.getElementById('val-pressure');
+            const tEl = document.getElementById('val-precip-total');
+            if (pEl) {
+                pEl.innerText = (pressureVal !== null && pressureVal !== undefined && !isNaN(Number(pressureVal)))
+                    ? `${Number(pressureVal).toFixed(1)} hPa`
+                    : '-- hPa';
+            }
+            if (tEl) {
+                const safeTotal = (precipTotalVal !== null && precipTotalVal !== undefined && !isNaN(Number(precipTotalVal)))
+                    ? Number(precipTotalVal)
+                    : 0;
+                tEl.innerText = `${safeTotal.toFixed(1)} mm`;
+            }
+        }
 
         function recalcPhysics(sourceSlider = 'temp_dew') {
             const slTemp = document.getElementById('sl-temp');
@@ -663,6 +691,28 @@
             document.getElementById('sl-dir').value = data.dir;
             document.getElementById('sl-rain').value = data.precip;
 
+            // Υπολογισμός αθροιστικού υετού + πίεσης για τον ορίζοντα πρόγνωσης
+            let stepPressure = (data.pressure !== undefined && data.pressure !== null)
+                ? data.pressure
+                : (hrs === 0 ? state.livePressure : null);
+
+            let stepPrecipTotal;
+            if (data.precipTotal !== undefined && data.precipTotal !== null) {
+                stepPrecipTotal = data.precipTotal;
+            } else {
+                let addedPrecip = 0;
+                for (let h = 1; h <= hrs; h++) {
+                    const s = forecastPacket.steps[h];
+                    const d = (currentDataSource === 'hybrid' && s?.hybrid) ? s.hybrid : s?.station;
+                    if (d && !isNaN(Number(d.precip))) {
+                        addedPrecip += Number(d.precip);
+                    }
+                }
+                stepPrecipTotal = (state.livePrecipTotal || 0) + addedPrecip;
+            }
+
+            updatePressureAndTotalHud(stepPressure, stepPrecipTotal);
+
             const tag = hrs === 0 ? '+0h (Τώρα)' : `+${hrs}h (${step.timeLabel})`;
             document.getElementById('lbl-fc-step').innerText = tag;
             document.getElementById('live-status-text').innerText = `${currentDataSource === 'hybrid' ? 'Υβριδικό' : 'Σταθμός'} ${tag}`;
@@ -719,6 +769,10 @@
                 const res = await fetch(`https://api.weather.com/v2/pws/observations/current?stationId=${WU_STATION_ID}&format=json&units=m&numericPrecision=decimal&apiKey=${WU_API_KEY}`);
                 const data = await res.json();
                 const obs = data.observations[0];
+
+                state.livePressure = obs.metric?.pressure ?? null;
+                state.livePrecipTotal = obs.metric?.precipTotal ?? 0;
+
                 if (currentDataSource === 'live') {
                     document.getElementById('sl-temp').value = obs.metric.temp;
                     document.getElementById('sl-dew').value = obs.metric.dewpt;
@@ -726,6 +780,7 @@
                     document.getElementById('sl-dir').value = obs.winddir;
                     document.getElementById('sl-rain').value = obs.metric.precipRate;
                     document.getElementById('live-status-text').innerText = `LIVE ISAMAR38`;
+                    updatePressureAndTotalHud(state.livePressure, state.livePrecipTotal);
                     recalcPhysics('temp_dew');
                 }
             } catch (e) {
