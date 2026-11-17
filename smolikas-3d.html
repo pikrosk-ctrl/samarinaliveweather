@@ -7,7 +7,7 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            background: #060a12;
+            background: #1e3a5f;
             color: #f1f5f9;
             font-family: 'Segoe UI', system-ui, sans-serif;
             overflow: hidden;
@@ -68,7 +68,7 @@
         }
         .live-pill { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.45); color: #34d399; display: flex; align-items: center; gap: 4px; }
         .dem-pill { background: rgba(56, 189, 248, 0.14); border: 1px solid rgba(56, 189, 248, 0.4); color: #7dd3fc; }
-        .time-pill { background: rgba(251, 191, 36, 0.14); border: 1px solid rgba(251, 191, 36, 0.45); color: #fde68a; cursor: pointer; }
+        .time-pill { background: rgba(251, 191, 36, 0.14); border: 1px solid rgba(251, 191, 36, 0.45); color: #fde68a; }
         .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981; }
 
         .timeline-box {
@@ -185,7 +185,7 @@
         <div class="badges-row">
             <div class="live-pill"><span class="live-dot"></span><span id="live-status-text">ISAMAR38</span></div>
             <div class="dem-pill" id="dem-status-text">🛰️ DEM</div>
-            <button class="time-pill" id="time-mode-btn" onclick="cycleTimeMode()">☀️ Auto</button>
+            <div class="time-pill">☀️ Ημέρα</div>
         </div>
 
         <div class="timeline-box">
@@ -356,8 +356,9 @@
 
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x070d19);
-        scene.fog = new THREE.FogExp2(0x070d19, 0.0075);
+        // ΣΤΑΘΕΡΟΣ ΦΩΤΙΣΜΟΣ ΗΜΕΡΑΣ
+        scene.background = new THREE.Color(0x2563eb);
+        scene.fog = new THREE.FogExp2(0x3b82f6, 0.006);
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 400);
         camera.position.set(28, 20, 22);
@@ -375,72 +376,11 @@
         controls.maxDistance = 85;
         controls.target.set(0, 8.0, 0);
 
-        const hemiLight = new THREE.HemisphereLight(0x93c5fd, 0x1e293b, 0.75);
+        const hemiLight = new THREE.HemisphereLight(0xf0f9ff, 0x334155, 1.25);
         scene.add(hemiLight);
-        const sunLight = new THREE.DirectionalLight(0xfff7ed, 1.4);
-        sunLight.position.set(30, 45, 25);
+        const sunLight = new THREE.DirectionalLight(0xffffff, 2.0);
+        sunLight.position.set(30, 55, 25);
         scene.add(sunLight);
-
-        // --- ΕΝΑΛΛΑΓΗ ΦΩΤΙΣΜΟΥ (AUTO / ΗΜΕΡΑ / ΔΥΣΗ / ΝΥΧΤΑ) ---
-        const TIME_MODES = ['auto', 'day', 'sunset', 'night'];
-        let currentTimeModeIdx = 0;
-
-        function applyLighting(mode) {
-            let effective = mode;
-            if (mode === 'auto') {
-                const hr = new Date().getHours();
-                if (hr >= 7 && hr < 17) effective = 'day';
-                else if ((hr >= 5 && hr < 7) || (hr >= 17 && hr < 20)) effective = 'sunset';
-                else effective = 'night';
-            }
-
-            if (effective === 'day') {
-                scene.background.setHex(0x1e3a5f);
-                scene.fog.color.setHex(0x1e3a5f);
-                hemiLight.color.setHex(0xe0f2fe);
-                hemiLight.groundColor.setHex(0x334155);
-                hemiLight.intensity = 1.15;
-                sunLight.color.setHex(0xffffff);
-                sunLight.intensity = 1.9;
-                sunLight.position.set(30, 55, 25);
-            } else if (effective === 'sunset') {
-                scene.background.setHex(0x2a1824);
-                scene.fog.color.setHex(0x2a1824);
-                hemiLight.color.setHex(0xfdba74);
-                hemiLight.groundColor.setHex(0x1e1b4b);
-                hemiLight.intensity = 0.85;
-                sunLight.color.setHex(0xf97316);
-                sunLight.intensity = 1.5;
-                sunLight.position.set(-45, 14, 15);
-            } else {
-                scene.background.setHex(0x070d19);
-                scene.fog.color.setHex(0x070d19);
-                hemiLight.color.setHex(0x93c5fd);
-                hemiLight.groundColor.setHex(0x1e293b);
-                hemiLight.intensity = 0.65;
-                sunLight.color.setHex(0x94a3b8);
-                sunLight.intensity = 0.85;
-                sunLight.position.set(20, 40, -20);
-            }
-
-            const btn = document.getElementById('time-mode-btn');
-            if (btn) {
-                const labels = {
-                    auto: '☀️ Auto',
-                    day: '🌤️ Ημέρα',
-                    sunset: '🌅 Δύση',
-                    night: '🌙 Νύχτα'
-                };
-                btn.innerText = labels[mode];
-            }
-        }
-
-        function cycleTimeMode() {
-            currentTimeModeIdx = (currentTimeModeIdx + 1) % TIME_MODES.length;
-            applyLighting(TIME_MODES[currentTimeModeIdx]);
-        }
-
-        applyLighting('auto');
 
         const terrainGeo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, SEGMENTS, SEGMENTS);
         terrainGeo.rotateX(-Math.PI / 2);
@@ -470,7 +410,6 @@
         const windPoints = new THREE.Points(windGeo, windMat);
         scene.add(windPoints);
 
-        // Δυναμικά σωματίδια υετού (Χιόνι / Βροχή βάσει Υγρού Θερμομέτρου)
         const PRECIP_COUNT = 900;
         const precipGeo = new THREE.BufferGeometry();
         const precipPos = new Float32Array(PRECIP_COUNT * 3);
@@ -515,10 +454,10 @@
 
         function rebuildTerrainGeometry(snowlineMeters) {
             const normAttr = terrainGeo.attributes.normal;
-            const cForest = new THREE.Color(0x133021);
-            const cMeadow = new THREE.Color(0x3f4a32);
-            const cRock = new THREE.Color(0x333d4d);
-            const cSnow = new THREE.Color(0xf1f5f9);
+            const cForest = new THREE.Color(0x166534);
+            const cMeadow = new THREE.Color(0x4d7c0f);
+            const cRock = new THREE.Color(0x475569);
+            const cSnow = new THREE.Color(0xffffff);
             const tmp = new THREE.Color();
 
             for (let i = 0; i < posAttr.count; i++) {
