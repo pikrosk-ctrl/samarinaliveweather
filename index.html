@@ -388,7 +388,7 @@
             <span>Σταθμός: Bresser 5-in-1 (ISAMAR38) | Κάμερα: Σαμαρίνα Χωριό | Υβριδική & Αυτόνομη Πρόγνωση</span>
         </div>
         <div class="top-badges">
-            <button onclick="openSmolikas3D()" class="btn-3d-launch">🏔️ 3D Ροή Αέρα Σμόλικα</button>
+            <button onclick="openSmolikas3D()" class="btn-3d-launch">🏔️ 3D Ροή Αέρα & 12h Πρόγνωση</button>
             <div id="roadStatus" class="alert-box">🛣️ Έλεγχος δρόμου...</div>
             <div id="topAlert" class="alert-box">Έλεγχος συνθηκών...</div>
             <div class="visitor-badge" title="Συνολικές επισκέψεις σελίδας">
@@ -540,11 +540,15 @@
     </div>
 
     <script>
+        let latest12hForecastPacket = null;
+
         function openSmolikas3D() {
             const modal = document.getElementById('modal-3d');
             const iframe = document.getElementById('iframe-3d');
             if (!iframe.getAttribute('src')) {
                 iframe.setAttribute('src', 'smolikas-3d.html');
+            } else if (iframe.contentWindow && latest12hForecastPacket) {
+                iframe.contentWindow.postMessage({ type: 'SAMARINA_12H_FORECAST', payload: latest12hForecastPacket }, '*');
             }
             modal.style.display = 'flex';
         }
@@ -558,7 +562,7 @@
         const WU_STATION_ID = "ISAMAR38";
         const WU_API_KEY = "5c94ee0c13f240ec94ee0c13f2b0ecd9";
         const STATS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ_y9OVAjf5gRIJN7ZKm_OuR_fP5UFcu2YWX3XNU7PRxSouu3L2-kPh6Rk1u3VP-pdBjOTIo22t3mN/pub?gid=409751746&single=true&output=csv";
-        const OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast?latitude=40.105&longitude=21.018&elevation=1450&hourly=temperature_2m,precipitation,precipitation_probability,snowfall,freezing_level_height,weather_code&models=best_match&timezone=Europe%2FAthens&forecast_days=2";
+        const OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast?latitude=40.105&longitude=21.018&elevation=1450&hourly=temperature_2m,precipitation,precipitation_probability,snowfall,freezing_level_height,weather_code,wind_speed_10m,wind_direction_10m,dew_point_2m&models=best_match&timezone=Europe%2FAthens&forecast_days=2";
         let weatherChartInstance = null;
 
         function calcWetBulb(temp, hum) {
@@ -809,7 +813,11 @@
             else if (press >= 1018 && Math.abs(trend) < 0.8) prob += 3;
             prob = Math.max(54, Math.min(98, Math.round(prob)));
 
-            return { temp: predT, wetBulb: predTw, precip: predPr, snowCm: snowCm, prob: prob };
+            const predDew = Number(Math.min(predT, predPr > 0 ? predT - 0.4 : dew + diurnalDelta * 0.35).toFixed(1));
+            const predWind = Math.max(0, Math.min(90, Math.round(wind + (trend < -1 ? Math.abs(trend) * 3.5 * (hrs / 12) : 0))));
+            const predDir = Math.round((dir + (trend < -1.5 ? -15 * (hrs / 12) : 0) + 360) % 360);
+
+            return { temp: predT, dew: predDew, wetBulb: predTw, wind: predWind, dir: predDir, precip: predPr, snowCm: snowCm, prob: prob };
         }
 
         function predictHybrid(hrs, temp, dew, hum, press, trend, wind, dir, activeRate, omData) {
@@ -818,7 +826,10 @@
             if (!omData || !omData.hourly || !omData.hourly.time) {
                 return {
                     temp: localPred.temp,
+                    dew: localPred.dew,
                     wetBulb: localPred.wetBulb,
+                    wind: localPred.wind,
+                    dir: localPred.dir,
                     station: localPred,
                     precip: localPred.precip,
                     snowCm: localPred.snowCm,
@@ -841,7 +852,10 @@
             if (idxTarget === -1) {
                 return {
                     temp: localPred.temp,
+                    dew: localPred.dew,
                     wetBulb: localPred.wetBulb,
+                    wind: localPred.wind,
+                    dir: localPred.dir,
                     station: localPred,
                     precip: localPred.precip,
                     snowCm: localPred.snowCm,
@@ -877,7 +891,20 @@
             const wPrecipModel = 1 - wPrecipStation;
 
             const hybridTemp = Number(((localPred.temp * wTempStation) + (correctedModelTemp * wTempModel)).toFixed(1));
-            const hybridTw = estimateFutureWetBulb(hybridTemp, dew);
+            const modelDew = (omData.hourly.dew_point_2m && omData.hourly.dew_point_2m[idxTarget] !== undefined)
+                ? omData.hourly.dew_point_2m[idxTarget]
+                : localPred.dew;
+            const hybridDew = Number(Math.min(hybridTemp, (localPred.dew * wTempStation) + (modelDew * wTempModel)).toFixed(1));
+            const hybridTw = estimateFutureWetBulb(hybridTemp, hybridDew);
+
+            const modelWind = (omData.hourly.wind_speed_10m && omData.hourly.wind_speed_10m[idxTarget] !== undefined)
+                ? omData.hourly.wind_speed_10m[idxTarget]
+                : localPred.wind;
+            const modelDir = (omData.hourly.wind_direction_10m && omData.hourly.wind_direction_10m[idxTarget] !== undefined)
+                ? omData.hourly.wind_direction_10m[idxTarget]
+                : localPred.dir;
+            const hybridWind = Math.round((localPred.wind * wTempStation) + (modelWind * wTempModel));
+            const hybridDir = Math.round(modelDir);
 
             const modelPrecip = omData.hourly.precipitation[idxTarget] || 0;
             const freezingLvl = omData.hourly.freezing_level_height[idxTarget] || (1450 + (hybridTemp / 6.5) * 1000);
@@ -894,7 +921,10 @@
 
             return {
                 temp: hybridTemp,
+                dew: hybridDew,
                 wetBulb: hybridTw,
+                wind: hybridWind,
+                dir: hybridDir,
                 station: localPred,
                 precip: hybridPrecip,
                 snowCm: hybridSnowCm,
@@ -1038,6 +1068,7 @@
                 const chartZeroLine = [];
                 const chartPrecip = [];
                 const chartSnow = [];
+                const steps12h = [];
 
                 let totalPrecip24 = 0;
                 let estSnowCm24 = 0;
@@ -1051,8 +1082,53 @@
                     const tLabel = futureDate.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
 
                     const pred = hrs === 0
-                        ? { temp: Number(temp.toFixed(1)), wetBulb: wetBulb, station: { temp: Number(temp.toFixed(1)), wetBulb: wetBulb }, precip: Number((rate || 0).toFixed(1)), snowCm: 0, prob: 100 }
+                        ? {
+                            temp: Number(temp.toFixed(1)),
+                            dew: Number(dew.toFixed(1)),
+                            wetBulb: wetBulb,
+                            wind: Math.round(wind),
+                            dir: dir,
+                            station: {
+                                temp: Number(temp.toFixed(1)),
+                                dew: Number(dew.toFixed(1)),
+                                wetBulb: wetBulb,
+                                wind: Math.round(wind),
+                                dir: dir,
+                                precip: Number((rate || 0).toFixed(1)),
+                                snowCm: 0,
+                                prob: 100
+                            },
+                            precip: Number((rate || 0).toFixed(1)),
+                            snowCm: 0,
+                            prob: 100
+                        }
                         : predictHybrid(hrs, temp, dew, hum, press, trend, wind, dir, rate, omData);
+
+                    if (hrs <= 12) {
+                        steps12h.push({
+                            hrs,
+                            timeLabel: tLabel,
+                            decHour: futureDate.getHours() + futureDate.getMinutes() / 60,
+                            station: {
+                                temp: pred.station.temp,
+                                dew: pred.station.dew,
+                                wind: pred.station.wind,
+                                dir: pred.station.dir,
+                                precip: pred.station.precip,
+                                snowCm: pred.station.snowCm,
+                                prob: pred.station.prob
+                            },
+                            hybrid: {
+                                temp: pred.temp,
+                                dew: pred.dew,
+                                wind: pred.wind,
+                                dir: pred.dir,
+                                precip: pred.precip,
+                                snowCm: pred.snowCm,
+                                prob: pred.prob
+                            }
+                        });
+                    }
 
                     if (hrs > 0) {
                         totalPrecip24 += pred.precip;
@@ -1067,6 +1143,19 @@
                     chartPrecip.push(pred.precip);
                     chartSnow.push(pred.snowCm);
                 }
+
+                latest12hForecastPacket = {
+                    generatedAt: Date.now(),
+                    hasHybridModel: Boolean(omData),
+                    steps: steps12h
+                };
+                try {
+                    localStorage.setItem('samarina_12h_forecast_v1', JSON.stringify(latest12hForecastPacket));
+                    const iframe3d = document.getElementById('iframe-3d');
+                    if (iframe3d && iframe3d.contentWindow) {
+                        iframe3d.contentWindow.postMessage({ type: 'SAMARINA_12H_FORECAST', payload: latest12hForecastPacket }, '*');
+                    }
+                } catch (err) {}
 
                 document.getElementById('dailyExtremes').innerHTML = `
                     <span>📉 Ελάχ. Ημέρας: <b>${minDayT.toFixed(1)}°C</b>${minDayTime}</span>
