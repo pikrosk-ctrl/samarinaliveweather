@@ -95,7 +95,8 @@
         .src-btn.active-hybrid { background: rgba(56, 189, 248, 0.22); color: #7dd3fc; border-color: #38bdf8; }
         .timeline-controls { display: flex; align-items: center; gap: 6px; justify-content: center; }
         .play-btn { background: #0284c7; color: #fff; border: none; padding: 2px 8px; border-radius: 4px; font-size: 0.64rem; font-weight: 700; cursor: pointer; }
-        #sl-forecast-hr { width: 130px; accent-color: #38bdf8; height: 3px; }
+        .play-btn.playing { background: #d97706; }
+        #sl-forecast-hr { width: 130px; accent-color: #38bdf8; height: 3px; cursor: pointer; }
         .fc-step-badge { font-size: 0.64rem; font-weight: 700; color: #e0f2fe; background: #0f172a; border: 1px solid #334155; padding: 1px 6px; border-radius: 4px; }
 
         .floating-panel {
@@ -149,7 +150,7 @@
         .slider-group { margin-bottom: 2px; }
         .slider-label { display: flex; justify-content: space-between; font-size: 0.62rem; color: #cbd5e1; }
         .slider-label span:last-child { color: #38bdf8; font-weight: 700; }
-        input[type="range"] { width: 100%; accent-color: #38bdf8; height: 3px; }
+        input[type="range"] { width: 100%; accent-color: #38bdf8; height: 3px; cursor: pointer; }
         .preset-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 4px; }
         .preset-btn { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; padding: 3px 2px; border-radius: 4px; font-size: 0.58rem; font-weight: 600; text-align: center; cursor: pointer; }
 
@@ -187,13 +188,13 @@
         <div class="timeline-box">
             <div class="source-tabs">
                 <button class="src-btn active-live" id="btn-src-live" onclick="setDataSource('live')">🟢 Live</button>
-                <button class="src-btn" id="btn-src-station" onclick="setDataSource('station')">📡 Σταθμός</button>
-                <button class="src-btn" id="btn-src-hybrid" onclick="setDataSource('hybrid')">❄️ Υβριδικό</button>
+                <button class="src-btn" id="btn-src-station" onclick="setDataSource('station')">📡 Σταθμός (+12h)</button>
+                <button class="src-btn" id="btn-src-hybrid" onclick="setDataSource('hybrid')">❄️ Υβριδικό (+12h)</button>
             </div>
             <div class="timeline-controls" id="timeline-controls" style="display:none;">
                 <button class="play-btn" id="btn-play-fc" onclick="toggleForecastPlay()">▶ Play</button>
                 <input type="range" id="sl-forecast-hr" min="0" max="12" step="1" value="0">
-                <span class="fc-step-badge" id="lbl-fc-step">+0h</span>
+                <span class="fc-step-badge" id="lbl-fc-step">+0h (Τώρα)</span>
             </div>
         </div>
     </div>
@@ -380,7 +381,6 @@
         const terrainMesh = new THREE.Mesh(terrainGeo, terrainMat);
         scene.add(terrainMesh);
 
-        // Wind Stream Particles Setup
         const WIND_COUNT = 400;
         const windGeo = new THREE.BufferGeometry();
         const windPos = new Float32Array(WIND_COUNT * 3);
@@ -510,10 +510,14 @@
         }
 
         ['sl-temp', 'sl-dew', 'sl-wind', 'sl-dir', 'sl-rain'].forEach(id => {
-            document.getElementById(id).addEventListener('input', recalcPhysics);
+            document.getElementById(id).addEventListener('input', () => {
+                stopForecastPlay();
+                recalcPhysics();
+            });
         });
 
         function applyPreset(type) {
+            stopForecastPlay();
             if (type === 'snow') {
                 document.getElementById('sl-temp').value = -1.5; document.getElementById('sl-dew').value = -2.0; document.getElementById('sl-wind').value = 34; document.getElementById('sl-rain').value = 4.5;
             } else if (type === 'blizzard') {
@@ -522,6 +526,92 @@
                 document.getElementById('sl-temp').value = 2.5; document.getElementById('sl-dew').value = 2.3; document.getElementById('sl-wind').value = 6; document.getElementById('sl-rain').value = 0.0;
             }
             recalcPhysics();
+        }
+
+        function loadStoredForecastPacket() {
+            try {
+                const raw = localStorage.getItem('samarina_12h_forecast_v1');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed && Array.isArray(parsed.steps)) {
+                        forecastPacket = parsed;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'SAMARINA_12H_FORECAST' && event.data.payload) {
+                forecastPacket = event.data.payload;
+            }
+        });
+
+        function setDataSource(src) {
+            currentDataSource = src;
+            document.getElementById('btn-src-live').className = 'src-btn' + (src === 'live' ? ' active-live' : '');
+            document.getElementById('btn-src-station').className = 'src-btn' + (src === 'station' ? ' active-station' : '');
+            document.getElementById('btn-src-hybrid').className = 'src-btn' + (src === 'hybrid' ? ' active-hybrid' : '');
+
+            const timelineEl = document.getElementById('timeline-controls');
+            if (src === 'live') {
+                stopForecastPlay();
+                timelineEl.style.display = 'none';
+                syncLiveWeather();
+            } else {
+                loadStoredForecastPacket();
+                timelineEl.style.display = 'flex';
+                applyForecastHourStep(parseInt(document.getElementById('sl-forecast-hr').value, 10) || 0);
+            }
+        }
+
+        function applyForecastHourStep(hrs) {
+            if (!forecastPacket || !forecastPacket.steps || !forecastPacket.steps[hrs]) return;
+            const step = forecastPacket.steps[hrs];
+            const data = (currentDataSource === 'hybrid' && step.hybrid) ? step.hybrid : step.station;
+
+            document.getElementById('sl-temp').value = data.temp;
+            document.getElementById('sl-dew').value = data.dew;
+            document.getElementById('sl-wind').value = data.wind;
+            document.getElementById('sl-dir').value = data.dir;
+            document.getElementById('sl-rain').value = data.precip;
+
+            const tag = hrs === 0 ? '+0h (Τώρα)' : `+${hrs}h (${step.timeLabel})`;
+            document.getElementById('lbl-fc-step').innerText = tag;
+            document.getElementById('live-status-text').innerText = `${currentDataSource === 'hybrid' ? 'Υβριδικό' : 'Σταθμός'} ${tag}`;
+            recalcPhysics();
+        }
+
+        document.getElementById('sl-forecast-hr').addEventListener('input', (e) => {
+            applyForecastHourStep(parseInt(e.target.value, 10) || 0);
+        });
+
+        function toggleForecastPlay() {
+            const btn = document.getElementById('btn-play-fc');
+            if (forecastPlayTimer) {
+                stopForecastPlay();
+                return;
+            }
+            btn.innerText = '⏸ Pause';
+            btn.classList.add('playing');
+            forecastPlayTimer = setInterval(() => {
+                const slider = document.getElementById('sl-forecast-hr');
+                let next = (parseInt(slider.value, 10) || 0) + 1;
+                if (next > 12) next = 0;
+                slider.value = next;
+                applyForecastHourStep(next);
+            }, 1400);
+        }
+
+        function stopForecastPlay() {
+            if (forecastPlayTimer) {
+                clearInterval(forecastPlayTimer);
+                forecastPlayTimer = null;
+            }
+            const btn = document.getElementById('btn-play-fc');
+            if (btn) {
+                btn.innerText = '▶ Play';
+                btn.classList.remove('playing');
+            }
         }
 
         function updateLabels() {
@@ -536,21 +626,26 @@
         }
 
         async function syncLiveWeather() {
+            loadStoredForecastPacket();
             try {
                 const res = await fetch(`https://api.weather.com/v2/pws/observations/current?stationId=${WU_STATION_ID}&format=json&units=m&numericPrecision=decimal&apiKey=${WU_API_KEY}`);
                 const data = await res.json();
                 const obs = data.observations[0];
-                document.getElementById('sl-temp').value = obs.metric.temp;
-                document.getElementById('sl-dew').value = obs.metric.dewpt;
-                document.getElementById('sl-wind').value = Math.round(obs.metric.windSpeed);
-                document.getElementById('sl-dir').value = obs.winddir;
-                document.getElementById('sl-rain').value = obs.metric.precipRate;
-                recalcPhysics();
-            } catch (e) {}
+                if (currentDataSource === 'live') {
+                    document.getElementById('sl-temp').value = obs.metric.temp;
+                    document.getElementById('sl-dew').value = obs.metric.dewpt;
+                    document.getElementById('sl-wind').value = Math.round(obs.metric.windSpeed);
+                    document.getElementById('sl-dir').value = obs.winddir;
+                    document.getElementById('sl-rain').value = obs.metric.precipRate;
+                    document.getElementById('live-status-text').innerText = `LIVE ISAMAR38`;
+                    recalcPhysics();
+                }
+            } catch (e) {
+                if (currentDataSource === 'live') recalcPhysics();
+            }
         }
 
         loadRealSmolikasDEM();
-        recalcPhysics();
         syncLiveWeather();
 
         const clock = new THREE.Clock();
@@ -559,7 +654,6 @@
             const dt = Math.min(0.05, clock.getDelta());
             const elapsed = clock.getElapsedTime();
 
-            // Wind Stream Update Animation
             const rad = (state.dir * Math.PI) / 180;
             const vx = -Math.sin(rad);
             const vz = Math.cos(rad);
@@ -593,11 +687,11 @@
                 posArr[i * 3 + 2] = z;
 
                 if (state.wind >= 45) {
-                    colArr[i*3] = 0.94; colArr[i*3+1] = 0.27; colArr[i*3+2] = 0.27; // Κόκκινο (θύελλα)
+                    colArr[i*3] = 0.94; colArr[i*3+1] = 0.27; colArr[i*3+2] = 0.27;
                 } else if (state.wind >= 25) {
-                    colArr[i*3] = 0.96; colArr[i*3+1] = 0.62; colArr[i*3+2] = 0.04; // Πορτοκαλί (ισχυρός)
+                    colArr[i*3] = 0.96; colArr[i*3+1] = 0.62; colArr[i*3+2] = 0.04;
                 } else {
-                    colArr[i*3] = 0.22; colArr[i*3+1] = 0.74; colArr[i*3+2] = 0.97; // Γαλάζιος (ομαλός)
+                    colArr[i*3] = 0.22; colArr[i*3+1] = 0.74; colArr[i*3+2] = 0.97;
                 }
             }
             windGeo.attributes.position.needsUpdate = true;
