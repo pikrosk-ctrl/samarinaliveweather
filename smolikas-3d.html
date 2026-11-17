@@ -3,885 +3,914 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Δορυφορική Ροή & 12h Πρόγνωση — Σμόλικας / Σαμαρίνα</title>
+    <title>3D Σμόλικας & Σαμαρίνα - Ροή Αέρα & 12h Πρόγνωση</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            background: #1e3a5f;
-            color: #f1f5f9;
-            font-family: 'Segoe UI', system-ui, sans-serif;
             overflow: hidden;
-            width: 100vw;
-            height: 100vh;
+            background: #0b1528;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: #f1f5f9;
             user-select: none;
             -webkit-user-select: none;
         }
         #canvas-container {
             position: fixed;
             inset: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
+            width: 100vw;
+            height: 100dvh;
         }
 
-        .auto-hide-hud {
-            transition: opacity 0.4s ease, transform 0.4s ease;
-            opacity: 1;
-            visibility: visible;
-        }
-        body.hud-hidden .auto-hide-hud {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-            transform: translateY(-8px);
-        }
-
-        .hud-top {
+        /* Επάνω Κεντρική Μπάρα */
+        .top-hud {
             position: fixed;
-            top: 8px;
+            top: 12px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(15, 23, 42, 0.92);
-            border: 1px solid rgba(56, 189, 248, 0.35);
-            backdrop-filter: blur(8px);
-            padding: 6px 12px;
-            border-radius: 10px;
-            text-align: center;
             z-index: 20;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.65);
-            max-width: 96vw;
-            width: 96vw;
-        }
-        .hud-top h1 { font-size: 0.82rem; color: #e0f2fe; }
-        .badges-row {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 4px;
-            margin-top: 4px;
-        }
-        .live-pill, .dem-pill, .time-pill {
-            padding: 2px 8px;
-            border-radius: 999px;
-            font-size: 0.64rem;
-            font-weight: 700;
-        }
-        .live-pill { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.45); color: #34d399; display: flex; align-items: center; gap: 4px; }
-        .dem-pill { background: rgba(56, 189, 248, 0.14); border: 1px solid rgba(56, 189, 248, 0.4); color: #7dd3fc; }
-        .time-pill { background: rgba(251, 191, 36, 0.14); border: 1px solid rgba(251, 191, 36, 0.45); color: #fde68a; }
-        .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981; }
-
-        .timeline-box {
-            margin-top: 4px;
-            padding-top: 4px;
-            border-top: 1px solid rgba(51, 65, 85, 0.75);
+            background: rgba(15, 23, 42, 0.84);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            border-radius: 12px;
+            padding: 8px 14px;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+            max-width: calc(100vw - 140px);
+        }
+        .hud-title-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .hud-title {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #f8fafc;
+            letter-spacing: 0.2px;
+        }
+        .badge-pill {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            display: inline-flex;
+            align-items: center;
             gap: 4px;
         }
-        .source-tabs { display: flex; justify-content: center; gap: 4px; }
-        .src-btn {
-            background: #0f172a;
-            color: #94a3b8;
-            border: 1px solid #334155;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.62rem;
+        .badge-live {
+            background: rgba(6, 78, 59, 0.75);
+            color: #34d399;
+            border-color: rgba(16, 185, 129, 0.45);
+        }
+        .badge-dem {
+            background: rgba(30, 58, 138, 0.75);
+            color: #7dd3fc;
+            border-color: rgba(56, 189, 248, 0.45);
+        }
+        .btn-cycle-sky {
+            background: rgba(30, 41, 59, 0.9);
+            color: #fde68a;
+            border: 1px solid rgba(251, 191, 36, 0.45);
+            padding: 2px 9px;
+            border-radius: 999px;
+            font-size: 0.73rem;
             font-weight: 700;
             cursor: pointer;
+            transition: all 0.15s ease;
         }
-        .src-btn.active-live { background: rgba(16, 185, 129, 0.22); color: #34d399; border-color: #10b981; }
-        .src-btn.active-station { background: rgba(52, 211, 153, 0.2); color: #6ee7b7; border-color: #34d399; }
-        .src-btn.active-hybrid { background: rgba(56, 189, 248, 0.22); color: #7dd3fc; border-color: #38bdf8; }
-        .timeline-controls { display: flex; align-items: center; gap: 6px; justify-content: center; }
-        .play-btn { background: #0284c7; color: #fff; border: none; padding: 2px 8px; border-radius: 4px; font-size: 0.64rem; font-weight: 700; cursor: pointer; }
-        .play-btn.playing { background: #d97706; }
-        #sl-forecast-hr { width: 130px; accent-color: #38bdf8; height: 3px; cursor: pointer; }
-        .fc-step-badge { font-size: 0.64rem; font-weight: 700; color: #e0f2fe; background: #0f172a; border: 1px solid #334155; padding: 1px 6px; border-radius: 4px; }
+        .btn-cycle-sky:hover {
+            background: rgba(51, 65, 85, 0.95);
+            transform: translateY(-1px);
+        }
 
-        .floating-panel {
+        /* Κουμπιά Επιλογής Πηγής (Live / Σταθμός +12h / Υβριδικό +12h) */
+        .mode-switch {
+            display: flex;
+            gap: 5px;
+            background: rgba(2, 6, 23, 0.65);
+            padding: 3px;
+            border-radius: 8px;
+            border: 1px solid rgba(51, 65, 85, 0.7);
+        }
+        .mode-btn {
+            background: transparent;
+            color: #94a3b8;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .mode-btn.active-live {
+            background: #059669;
+            color: #ffffff;
+        }
+        .mode-btn.active-station {
+            background: #0d9488;
+            color: #ffffff;
+        }
+        .mode-btn.active-hybrid {
+            background: #0284c7;
+            color: #ffffff;
+        }
+
+        /* Δεξί Πάνελ Τηλεμετρίας */
+        .telemetry-box {
             position: fixed;
-            background: rgba(15, 23, 42, 0.9);
-            border: 1px solid #334155;
-            backdrop-filter: blur(8px);
-            border-radius: 10px;
+            top: 12px;
+            right: 12px;
             z-index: 20;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+            background: rgba(15, 23, 42, 0.84);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(51, 65, 85, 0.85);
+            border-radius: 10px;
+            padding: 10px 12px;
+            min-width: 185px;
+            font-size: 0.78rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+        .tel-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.35);
+        }
+        .tel-row:last-child { border-bottom: none; }
+        .tel-lbl { color: #94a3b8; }
+        .tel-val { font-weight: 700; color: #38bdf8; }
+
+        /* Timeline Slider για +12h */
+        .timeline-bar {
+            display: none;
+            position: fixed;
+            bottom: 58px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            border-radius: 10px;
+            padding: 8px 14px;
+            width: min(460px, calc(100vw - 24px));
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #e0f2fe;
+            margin-bottom: 5px;
+        }
+        .timeline-bar input[type="range"] {
+            width: 100%;
+            accent-color: #38bdf8;
+            cursor: pointer;
         }
 
-        .hud-stats {
-            top: 108px;
-            right: 8px;
-            width: 175px;
-            padding: 6px 8px;
-            font-size: 0.65rem;
-        }
-        .stat-row { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid rgba(51, 65, 85, 0.3); }
-        .stat-row:last-child { border-bottom: none; }
-        .stat-k { color: #94a3b8; }
-        .stat-v { font-weight: 700; color: #38bdf8; }
-        .stat-v.snow { color: #bae6fd; }
-
-        .hud-controls {
-            bottom: 8px;
-            left: 8px;
-            width: 215px;
-            padding: 8px;
-            max-height: 38px;
+        /* Κάτω Αριστερό Πάνελ Παραμέτρων */
+        .controls-panel {
+            position: fixed;
+            bottom: 12px;
+            left: 12px;
+            z-index: 20;
+            background: rgba(15, 23, 42, 0.86);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(51, 65, 85, 0.85);
+            border-radius: 10px;
+            width: 245px;
             overflow: hidden;
-            transition: max-height 0.3s ease, opacity 0.4s ease, transform 0.4s ease;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
         }
-        .hud-controls.expanded { max-height: 330px; }
-        .ctrl-header {
+        .controls-toggle {
+            width: 100%;
+            background: rgba(30, 41, 59, 0.8);
+            color: #f1f5f9;
+            border: none;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            font-weight: 700;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.72rem;
-            font-weight: 700;
-            color: #e2e8f0;
             cursor: pointer;
         }
-        .ctrl-body {
-            margin-top: 6px;
+        .controls-body {
+            display: none;
+            padding: 10px 12px;
+            flex-direction: column;
+            gap: 9px;
+            font-size: 0.76rem;
+        }
+        .controls-panel.open .controls-body {
+            display: flex;
+        }
+        .ctrl-group {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 3px;
         }
-        .slider-group { margin-bottom: 2px; }
-        .slider-label { display: flex; justify-content: space-between; font-size: 0.62rem; color: #cbd5e1; }
-        .slider-label span:last-child { color: #38bdf8; font-weight: 700; }
-        .slider-group.wb-group .slider-label span:first-child { color: #bae6fd; font-weight: 600; }
-        .slider-group.wb-group .slider-label span:last-child { color: #7dd3fc; }
-        input[type="range"] { width: 100%; accent-color: #38bdf8; height: 3px; cursor: pointer; }
-        #sl-wb { accent-color: #34d399; }
-        .preset-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 4px; }
-        .preset-btn { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; padding: 3px 2px; border-radius: 4px; font-size: 0.58rem; font-weight: 600; text-align: center; cursor: pointer; }
+        .ctrl-label {
+            display: flex;
+            justify-content: space-between;
+            color: #cbd5e1;
+            font-weight: 600;
+        }
+        .ctrl-label span:last-child {
+            color: #38bdf8;
+            font-weight: 700;
+        }
+        .ctrl-group input[type="range"] {
+            width: 100%;
+            accent-color: #38bdf8;
+            cursor: pointer;
+        }
+        .btn-reset-live {
+            margin-top: 2px;
+            background: #0284c7;
+            color: #ffffff;
+            border: none;
+            padding: 6px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
 
-        .marker-label {
+        /* Ετικέτες 3D Κορυφών */
+        .pin-label {
             position: fixed;
-            transform: translate(-50%, -100%);
-            background: rgba(15, 23, 42, 0.9);
-            border: 1px solid rgba(148, 163, 184, 0.45);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.62rem;
-            pointer-events: none;
-            white-space: nowrap;
             z-index: 10;
-            transition: opacity 0.4s ease;
+            pointer-events: none;
+            transform: translate(-50%, -100%);
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            border-radius: 6px;
+            padding: 3px 7px;
+            font-size: 0.72rem;
+            line-height: 1.2;
+            white-space: nowrap;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
         }
-        body.hud-hidden .marker-label { opacity: 0; }
-        .marker-label b { color: #f8fafc; display: block; }
-        .marker-label span { color: #38bdf8; font-size: 0.58rem; }
-        .marker-label.samarina { border-color: #10b981; }
-        .marker-label.samarina span { color: #34d399; }
+        .pin-label b { display: block; color: #f8fafc; }
+        .pin-label span { color: #38bdf8; font-weight: 600; font-size: 0.67rem; }
+        .pin-samarina { border-color: rgba(239, 68, 68, 0.7); }
+        .pin-samarina span { color: #fca5a5; }
+
+        @media (max-width: 720px) {
+            .top-hud {
+                top: 44px;
+                max-width: calc(100vw - 16px);
+                padding: 6px 10px;
+            }
+            .telemetry-box {
+                top: auto;
+                bottom: 12px;
+                right: 12px;
+                min-width: 155px;
+                padding: 7px 9px;
+                font-size: 0.72rem;
+            }
+            .controls-panel {
+                width: 195px;
+            }
+            .timeline-bar {
+                bottom: 145px;
+            }
+        }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
     <div id="canvas-container"></div>
 
-    <div class="hud-top auto-hide-hud">
-        <h1>3D Σμόλικας & Σαμαρίνα</h1>
-        <div class="badges-row">
-            <div class="live-pill"><span class="live-dot"></span><span id="live-status-text">ISAMAR38</span></div>
-            <div class="dem-pill" id="dem-status-text">🛰️ DEM</div>
-            <div class="time-pill">☀️ Ημέρα</div>
+    <!-- Επάνω Μπάρα -->
+    <div class="top-hud">
+        <div class="hud-title-row">
+            <span class="hud-title">3D Σμόλικας & Σαμαρίνα</span>
+            <span class="badge-pill badge-live" id="source-badge">● LIVE ISAMAR38</span>
+            <span class="badge-pill badge-dem">🗻 DEM</span>
+            <button class="btn-cycle-sky" id="sky-btn" onclick="cycleSkyMode()" title="Αλλαγή φωτισμού (Αυτόματο / Ημέρα / Δύση / Νύχτα)">🔄 Αυτόματο (Ημέρα)</button>
         </div>
-
-        <div class="timeline-box">
-            <div class="source-tabs">
-                <button class="src-btn active-live" id="btn-src-live" onclick="setDataSource('live')">🟢 Live</button>
-                <button class="src-btn" id="btn-src-station" onclick="setDataSource('station')">📡 Σταθμός (+12h)</button>
-                <button class="src-btn" id="btn-src-hybrid" onclick="setDataSource('hybrid')">❄️ Υβριδικό (+12h)</button>
-            </div>
-            <div class="timeline-controls" id="timeline-controls" style="display:none;">
-                <button class="play-btn" id="btn-play-fc" onclick="toggleForecastPlay()">▶ Play</button>
-                <input type="range" id="sl-forecast-hr" min="0" max="12" step="1" value="0">
-                <span class="fc-step-badge" id="lbl-fc-step">+0h (Τώρα)</span>
-            </div>
+        <div class="mode-switch">
+            <button class="mode-btn active-live" id="btn-mode-live" onclick="setForecastMode('live')">🟢 Live</button>
+            <button class="mode-btn" id="btn-mode-station" onclick="setForecastMode('station')">📡 Σταθμός (+12h)</button>
+            <button class="mode-btn" id="btn-mode-hybrid" onclick="setForecastMode('hybrid')">❄️ Υβριδικό (+12h)</button>
         </div>
     </div>
 
-    <div class="floating-panel hud-stats auto-hide-hud">
-        <div class="stat-row"><span class="stat-k">Θερμ (1.450μ):</span><span class="stat-v" id="val-temp">-- °C</span></div>
-        <div class="stat-row"><span class="stat-k">Υγρό Θερμ:</span><span class="stat-v" id="val-wb">-- °C</span></div>
-        <div class="stat-row"><span class="stat-k">Άνεμος:</span><span class="stat-v" id="val-wind">-- km/h</span></div>
-        <div class="stat-row"><span class="stat-k">Πίεση:</span><span class="stat-v" id="val-pressure">-- hPa</span></div>
-        <div class="stat-row"><span class="stat-k">Υετός (24ω):</span><span class="stat-v" id="val-precip-total">0.0 mm</span></div>
-        <div class="stat-row"><span class="stat-k">Χιόνι:</span><span class="stat-v snow" id="val-snowline">-- μ.</span></div>
+    <!-- Δεξιά Τηλεμετρία -->
+    <div class="telemetry-box">
+        <div class="tel-row"><span class="tel-lbl">Θερμ. (1.450μ):</span><span class="tel-val" id="tel-temp">--°C</span></div>
+        <div class="tel-row"><span class="tel-lbl">Υγρό Θερμ.:</span><span class="tel-val" id="tel-wb">--°C</span></div>
+        <div class="tel-row"><span class="tel-lbl">Άνεμος:</span><span class="tel-val" id="tel-wind">-- km/h</span></div>
+        <div class="tel-row"><span class="tel-lbl">Πίεση:</span><span class="tel-val" id="tel-press">-- hPa</span></div>
+        <div class="tel-row"><span class="tel-lbl">Υετός (24ω):</span><span class="tel-val" id="tel-precip">0.0 mm</span></div>
+        <div class="tel-row"><span class="tel-lbl">Χιόνι:</span><span class="tel-val" id="tel-snowline">-- μ.</span></div>
     </div>
 
-    <div class="floating-panel hud-controls auto-hide-hud" id="controls-panel">
-        <div class="ctrl-header" onclick="toggleControlsPanel()">
-            <span id="ctrl-toggle-title">⚙️ Παράμετροι (Άνοιγμα)</span>
+    <!-- Slider Χρόνου (+12h) -->
+    <div class="timeline-bar" id="timeline-bar">
+        <div class="timeline-header">
+            <span id="tl-label">Ώρα Πρόγνωσης: +0h</span>
+            <span id="tl-sub">Σύρετε για +12 ώρες</span>
+        </div>
+        <input type="range" id="tl-slider" min="0" max="12" step="1" value="0" oninput="onTimelineChange(this.value)">
+    </div>
+
+    <!-- Κάτω Αριστερά Παράμετροι -->
+    <div class="controls-panel" id="controls-panel">
+        <button class="controls-toggle" onclick="document.getElementById('controls-panel').classList.toggle('open')">
+            <span>⚙️ Παράμετροι (Άνοιγμα)</span>
             <span>▼</span>
-        </div>
-        <div class="ctrl-body">
-            <div class="slider-group">
-                <div class="slider-label"><span>Θερμοκρασία (°C)</span><span id="lbl-temp">8.0°C</span></div>
-                <input type="range" id="sl-temp" min="-15" max="25" step="0.5" value="8">
+        </button>
+        <div class="controls-body">
+            <div class="ctrl-group">
+                <div class="ctrl-label"><span>Θερμοκρασία (°C)</span><span id="lbl-temp">10.5°C</span></div>
+                <input type="range" id="sl-temp" min="-15" max="28" step="0.5" value="10.5" oninput="onManualInput()">
             </div>
-            <div class="slider-group">
-                <div class="slider-label"><span>Σημείο Δρόσου (°C)</span><span id="lbl-dew">6.0°C</span></div>
-                <input type="range" id="sl-dew" min="-18" max="20" step="0.5" value="6">
+            <div class="ctrl-group">
+                <div class="ctrl-label"><span>Υγρασία (%)</span><span id="lbl-hum">65%</span></div>
+                <input type="range" id="sl-hum" min="15" max="100" step="1" value="65" oninput="onManualInput()">
             </div>
-            <div class="slider-group wb-group">
-                <div class="slider-label"><span>💧 Υγρό Θερμόμετρο (°C)</span><span id="lbl-wb">6.8°C</span></div>
-                <input type="range" id="sl-wb" min="-16" max="22" step="0.1" value="6.8">
+            <div class="ctrl-group">
+                <div class="ctrl-label"><span>Ταχύτητα Ανέμου</span><span id="lbl-wind">12 km/h</span></div>
+                <input type="range" id="sl-wind" min="0" max="90" step="1" value="12" oninput="onManualInput()">
             </div>
-            <div class="slider-group">
-                <div class="slider-label"><span>Άνεμος (km/h)</span><span id="lbl-wind">12 km/h</span></div>
-                <input type="range" id="sl-wind" min="0" max="90" step="1" value="12">
+            <div class="ctrl-group">
+                <div class="ctrl-label"><span>Διεύθυνση Ανέμου</span><span id="lbl-dir">170° (Ν)</span></div>
+                <input type="range" id="sl-dir" min="0" max="359" step="5" value="170" oninput="onManualInput()">
             </div>
-            <div class="slider-group">
-                <div class="slider-label"><span>Διεύθυνση (°)</span><span id="lbl-dir">240°</span></div>
-                <input type="range" id="sl-dir" min="0" max="360" step="5" value="240">
-            </div>
-            <div class="slider-group">
-                <div class="slider-label"><span>Υετός (mm/h)</span><span id="lbl-rain">0.0 mm/h</span></div>
-                <input type="range" id="sl-rain" min="0" max="15" step="0.5" value="0">
-            </div>
-            <div class="preset-row">
-                <button class="preset-btn" onclick="applyPreset('snow')">❄️ Χιονιάς</button>
-                <button class="preset-btn" onclick="applyPreset('blizzard')">🌬️ Θύελλα</button>
-                <button class="preset-btn" onclick="applyPreset('fog')">🌫️ Ομίχλη</button>
-            </div>
+            <button class="btn-reset-live" onclick="resetToLive()">🔄 Επαναφορά σε Live Σταθμό</button>
         </div>
     </div>
 
-    <div id="lbl-peak" class="marker-label"><b>▲ Κορυφή</b><span>2.637μ</span></div>
-    <div id="lbl-saddle" class="marker-label"><b>▲ Διάσελο</b><span>~2.150μ</span></div>
-    <div id="lbl-samarina" class="marker-label samarina"><b>🏠 Σαμαρίνα</b><span>1.450μ</span></div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- 3D Pins -->
+    <div class="pin-label" id="pin-peak"><b>▲ Κορυφή Σμόλικα</b><span>2.637μ.</span></div>
+    <div class="pin-label" id="pin-pass"><b>▲ Διάσελο / Βαθύλακκος</b><span>2.150μ.</span></div>
+    <div class="pin-label pin-samarina" id="pin-samarina"><b>🏠 Σαμαρίνα</b><span>1.450μ.</span></div>
 
     <script>
-        let idleTimer = null;
-        function resetIdleTimer() {
-            document.body.classList.remove('hud-hidden');
-            clearTimeout(idleTimer);
-            idleTimer = setTimeout(() => {
-                const p = document.getElementById('controls-panel');
-                if (!p.classList.contains('expanded')) {
-                    document.body.classList.add('hud-hidden');
-                }
-            }, 4000);
-        }
-
-        ['mousemove', 'touchstart', 'click', 'keydown', 'wheel'].forEach(evt => {
-            window.addEventListener(evt, resetIdleTimer, { passive: true });
-        });
-        resetIdleTimer();
-
-        function toggleControlsPanel() {
-            const p = document.getElementById('controls-panel');
-            p.classList.toggle('expanded');
-            const isExp = p.classList.contains('expanded');
-            document.getElementById('ctrl-toggle-title').innerText = isExp ? '⚙️ Παράμετροι (Κλείσιμο)' : '⚙️ Παράμετροι (Άνοιγμα)';
-            resetIdleTimer();
-        }
-
         const WU_STATION_ID = "ISAMAR38";
         const WU_API_KEY = "5c94ee0c13f240ec94ee0c13f2b0ecd9";
 
-        const GEO_BOUNDS = { latMin: 40.068, latMax: 40.132, lonMin: 20.914, lonMax: 21.058 };
-        const TERRAIN_SIZE = 74;
-        const SEGMENTS = 180;
-        const DEM_GRID_N = 24;
-        const DEM_CACHE_KEY = "smolikas_real_dem_24x24_v5";
+        // Κατάσταση Καιρού
+        const state = {
+            temp: 10.5,
+            hum: 65,
+            wind: 12,
+            dir: 170,
+            press: 1006.8,
+            precip: 0.0,
+            wetBulb: 7.1,
+            snowLineElev: 2450,
+            mode: 'live', // 'live' | 'station' | 'hybrid'
+            forecastPacket: null,
+            forecastHourIdx: 0,
+            skyMode: 'auto', // 'auto' | 'day' | 'sunset' | 'night'
+            simHour: new Date().getHours() + new Date().getMinutes() / 60
+        };
 
-        let realDemGrid = null;
-        let forecastPacket = null;
-        let currentDataSource = 'live';
-        let forecastPlayTimer = null;
-
-        function latLonToSceneXZ(lat, lon) {
-            const u = (lon - GEO_BOUNDS.lonMin) / (GEO_BOUNDS.lonMax - GEO_BOUNDS.lonMin);
-            const v = (lat - GEO_BOUNDS.latMin) / (GEO_BOUNDS.latMax - GEO_BOUNDS.latMin);
-            return { x: (u - 0.5) * TERRAIN_SIZE, z: (0.5 - v) * TERRAIN_SIZE };
-        }
-
-        function sampleRealDem(x, z) {
-            const u = Math.max(0, Math.min(1, (x / TERRAIN_SIZE) + 0.5));
-            const v = Math.max(0, Math.min(1, 0.5 - (z / TERRAIN_SIZE)));
-            const fx = u * (DEM_GRID_N - 1), fz = v * (DEM_GRID_N - 1);
-            const ix = Math.min(DEM_GRID_N - 2, Math.floor(fx)), iz = Math.min(DEM_GRID_N - 2, Math.floor(fz));
-            const tx = fx - ix, tz = fz - iz;
-            const e00 = realDemGrid[iz * DEM_GRID_N + ix], e10 = realDemGrid[iz * DEM_GRID_N + (ix + 1)];
-            const e01 = realDemGrid[(iz + 1) * DEM_GRID_N + ix], e11 = realDemGrid[(iz + 1) * DEM_GRID_N + (ix + 1)];
-            return (e00 + (e10 - e00) * tx) * (1 - tz) + (e01 + (e11 - e01) * tx) * tz;
-        }
-
-        function fallbackElevation(x, z) {
-            return 1450 + 400 * Math.exp(-Math.pow(x/25, 2));
-        }
-
-        function getElevationMeters(x, z) {
-            if (realDemGrid) {
-                return sampleRealDem(x, z) + ((Math.sin(x*0.4)*Math.cos(z*0.4))*10);
-            }
-            return fallbackElevation(x, z);
-        }
-
-        function elevToSceneY(elevMeters) { return ((elevMeters - 1150) / 1487) * 29.0; }
-
-        async function loadRealSmolikasDEM() {
-            try {
-                const cached = localStorage.getItem(DEM_CACHE_KEY);
-                if (cached) {
-                    realDemGrid = new Float32Array(JSON.parse(cached));
-                    rebuildTerrainGeometry(2400);
-                    return;
-                }
-            } catch (e) {}
-            try {
-                const lats = [], lons = [];
-                for (let iz = 0; iz < DEM_GRID_N; iz++) {
-                    let lat = GEO_BOUNDS.latMin + (iz / (DEM_GRID_N - 1)) * (GEO_BOUNDS.latMax - GEO_BOUNDS.latMin);
-                    for (let ix = 0; ix < DEM_GRID_N; ix++) {
-                        let lon = GEO_BOUNDS.lonMin + (ix / (DEM_GRID_N - 1)) * (GEO_BOUNDS.lonMax - GEO_BOUNDS.lonMin);
-                        lats.push(lat.toFixed(4)); lons.push(lon.toFixed(4));
-                    }
-                }
-                const res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lats.slice(0,40).join(',')}&longitude=${lons.slice(0,40).join(',')}`);
-                const resp = await res.json();
-                if (resp && Array.isArray(resp.elevation)) {
-                    realDemGrid = new Float32Array(576).fill(1500);
-                    resp.elevation.forEach((el, idx) => { realDemGrid[idx] = el; });
-                    rebuildTerrainGeometry(2400);
-                }
-            } catch (err) {}
-        }
-
+        // --- THREE.JS SETUP ---
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        // ΣΤΑΘΕΡΟΣ ΦΩΤΙΣΜΟΣ ΗΜΕΡΑΣ
-        scene.background = new THREE.Color(0x2563eb);
-        scene.fog = new THREE.FogExp2(0x3b82f6, 0.006);
+        scene.background = new THREE.Color(0x3b82f6);
+        scene.fog = new THREE.FogExp2(0x60a5fa, 0.0022);
 
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 400);
-        camera.position.set(28, 20, 22);
+        const camera = new THREE.PerspectiveCamera(44, window.innerWidth / window.innerHeight, 1, 1500);
+        camera.position.set(135, 115, 145);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.08;
         container.appendChild(renderer.domElement);
 
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.06;
-        controls.maxPolarAngle = Math.PI * 0.47;
-        controls.minDistance = 10;
-        controls.maxDistance = 85;
-        controls.target.set(0, 8.0, 0);
+        controls.maxPolarAngle = Math.PI * 0.48;
+        controls.minDistance = 55;
+        controls.maxDistance = 320;
+        controls.target.set(0, 24, 0);
 
-        const hemiLight = new THREE.HemisphereLight(0xf0f9ff, 0x334155, 1.25);
+        // Φωτισμός (Ημέρα / Δύση / Νύχτα)
+        const hemiLight = new THREE.HemisphereLight(0xe0f2fe, 0x1e3a2f, 0.85);
         scene.add(hemiLight);
-        const sunLight = new THREE.DirectionalLight(0xffffff, 2.0);
-        sunLight.position.set(30, 55, 25);
+
+        const sunLight = new THREE.DirectionalLight(0xfffbeb, 1.25);
+        sunLight.position.set(120, 180, 90);
         scene.add(sunLight);
 
-        const terrainGeo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, SEGMENTS, SEGMENTS);
+        const rimLight = new THREE.DirectionalLight(0x93c5fd, 0.35);
+        rimLight.position.set(-110, 80, -100);
+        scene.add(rimLight);
+
+        // Αστέρια για τη νύχτα
+        const starGeo = new THREE.BufferGeometry();
+        const starCount = 450;
+        const starPos = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount; i++) {
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.random() * Math.PI * 0.45;
+            const r = 480;
+            starPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+            starPos[i * 3 + 1] = r * Math.cos(phi) + 40;
+            starPos[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+        }
+        starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        const starMat = new THREE.PointsMaterial({ color: 0xf8fafc, size: 1.6, transparent: true, opacity: 0 });
+        const starField = new THREE.Points(starGeo, starMat);
+        scene.add(starField);
+
+        // --- ΠΑΡΑΓΩΓΗ ΑΝΑΓΛΥΦΟΥ ΣΜΟΛΙΚΑ & ΣΑΜΑΡΙΝΑΣ (DEM-LIKE TOPOGRAPHY) ---
+        const GRID_SIZE = 130;
+        const TERRAIN_W = 210;
+        const TERRAIN_D = 210;
+
+        function getElevationMeters(nx, nz) {
+            // nx, nz in [-1, 1]
+            // Κύρια κορυφή Σμόλικα (2.637μ) βορειοδυτικά (-0.35, -0.32)
+            const dPeak = Math.hypot((nx + 0.36) * 1.15, (nz + 0.30) * 1.15);
+            const mainPeak = 1380 * Math.exp(-(dPeak * dPeak) / 0.19);
+
+            // Δευτερεύουσα κορυφογραμμή / Μόσια & Κλέφτης
+            const dRidge1 = Math.hypot((nx + 0.05) * 1.3, (nz + 0.42) * 1.6);
+            const ridge1 = 860 * Math.exp(-(dRidge1 * dRidge1) / 0.14);
+
+            // Διάσελο / Βαθύλακκος (2.150μ)
+            const dPass = Math.hypot((nx + 0.08) * 1.4, (nz + 0.10) * 1.4);
+            const passH = 680 * Math.exp(-(dPass * dPass) / 0.16);
+
+            // Ανατολική ράχη πάνω από τη Σαμαρίνα (Κιούριστα / Αγία Παρασκευή)
+            const dEast = Math.hypot((nx - 0.35) * 1.25, (nz + 0.05) * 1.15);
+            const eastRidge = 540 * Math.exp(-(dEast * dEast) / 0.22);
+
+            // Κοιλάδα Σαμαρίνας νοτιοανατολικά (0.28, 0.32) -> ~1.450μ
+            const dValley = Math.hypot((nx - 0.28) * 1.3, (nz - 0.32) * 1.3);
+            const valleyCut = -260 * Math.exp(-(dValley * dValley) / 0.18);
+
+            // Φυσικές ρεματιές & ορογραφικές πτυχώσεις
+            const detail =
+                65 * Math.sin(nx * 9.5 + nz * 4.2) * Math.cos(nz * 8.0 - nx * 3.1) +
+                32 * Math.sin(nx * 19.0 - nz * 15.0) +
+                18 * Math.cos(nx * 28.0 + nz * 24.0);
+
+            const baseElev = 1320 + mainPeak + ridge1 + passH + eastRidge + valleyCut + detail;
+            return Math.max(1150, Math.min(2637, baseElev));
+        }
+
+        function elevToSceneY(elevM) {
+            return (elevM - 1150) * 0.046;
+        }
+
+        const terrainGeo = new THREE.PlaneGeometry(TERRAIN_W, TERRAIN_D, GRID_SIZE, GRID_SIZE);
         terrainGeo.rotateX(-Math.PI / 2);
+
         const posAttr = terrainGeo.attributes.position;
-        const colors = new Float32Array(posAttr.count * 3);
-        const elevations = new Float32Array(posAttr.count);
-        const terrainMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.82, metalness: 0.04 });
+        const vertexCount = posAttr.count;
+        const elevations = new Float32Array(vertexCount);
+        const colors = new Float32Array(vertexCount * 3);
+
+        for (let i = 0; i < vertexCount; i++) {
+            const x = posAttr.getX(i);
+            const z = posAttr.getZ(i);
+            const nx = x / (TERRAIN_W * 0.5);
+            const nz = z / (TERRAIN_D * 0.5);
+            const elev = getElevationMeters(nx, nz);
+            elevations[i] = elev;
+            posAttr.setY(i, elevToSceneY(elev));
+        }
+        terrainGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        terrainGeo.computeVertexNormals();
+
+        const terrainMat = new THREE.MeshStandardMaterial({
+            vertexColors: true,
+            roughness: 0.86,
+            metalness: 0.04,
+            flatShading: false
+        });
         const terrainMesh = new THREE.Mesh(terrainGeo, terrainMat);
         scene.add(terrainMesh);
 
-        const WIND_COUNT = 400;
-        const windGeo = new THREE.BufferGeometry();
-        const windPos = new Float32Array(WIND_COUNT * 3);
-        const windCol = new Float32Array(WIND_COUNT * 3);
-        const windData = [];
-        const HALF_SPAN = TERRAIN_SIZE * 0.46;
+        // Χρωματισμός Εδάφους & Δυναμικής Γραμμής Χιονιού
+        const cForestDeep = new THREE.Color(0x1b4332);  // Βαθύ δάσος μαύρης πεύκης/ρόμπολου (<1650μ)
+        const cForestMid  = new THREE.Color(0x2d6a4f);  // Ορεινό πράσινο (1650-1900μ)
+        const cAlpine     = new THREE.Color(0x6b705c);  // Υπαλπικά λιβάδια / οφιολιθικό πέτρωμα (1900-2250μ)
+        const cRock       = new THREE.Color(0x7f8c8d);  // Γυμνός βράχος κορυφής (>2250μ)
+        const cSnow       = new THREE.Color(0xf8fafc);  // Φρέσκο χιόνι
 
-        for (let i = 0; i < WIND_COUNT; i++) {
-            windPos[i * 3] = (Math.random() - 0.5) * (HALF_SPAN * 2);
-            windPos[i * 3 + 1] = 3 + Math.random() * 22;
-            windPos[i * 3 + 2] = (Math.random() - 0.5) * (HALF_SPAN * 2);
-            windData.push({ speedOffset: 0.8 + Math.random() * 0.4, altOffset: 1.0 + Math.random() * 4.0, phase: Math.random() * Math.PI * 2 });
-        }
-        windGeo.setAttribute('position', new THREE.BufferAttribute(windPos, 3));
-        windGeo.setAttribute('color', new THREE.BufferAttribute(windCol, 3));
-        const windMat = new THREE.PointsMaterial({ size: 0.45, vertexColors: true, transparent: true, opacity: 0.85 });
-        const windPoints = new THREE.Points(windGeo, windMat);
-        scene.add(windPoints);
-
-        const PRECIP_COUNT = 900;
-        const precipGeo = new THREE.BufferGeometry();
-        const precipPos = new Float32Array(PRECIP_COUNT * 3);
-        const precipCol = new Float32Array(PRECIP_COUNT * 3);
-        const precipData = [];
-        for (let i = 0; i < PRECIP_COUNT; i++) {
-            precipPos[i * 3] = (Math.random() - 0.5) * (HALF_SPAN * 2);
-            precipPos[i * 3 + 1] = Math.random() * 34;
-            precipPos[i * 3 + 2] = (Math.random() - 0.5) * (HALF_SPAN * 2);
-            precipData.push({ fallOffset: 0.75 + Math.random() * 0.5, driftPhase: Math.random() * Math.PI * 2 });
-        }
-        precipGeo.setAttribute('position', new THREE.BufferAttribute(precipPos, 3));
-        precipGeo.setAttribute('color', new THREE.BufferAttribute(precipCol, 3));
-        const precipMat = new THREE.PointsMaterial({ size: 0.34, vertexColors: true, transparent: true, opacity: 0.88 });
-        const precipPoints = new THREE.Points(precipGeo, precipMat);
-        precipPoints.visible = false;
-        scene.add(precipPoints);
-
-        const coordsPeak = latLonToSceneXZ(40.0908, 20.9261);
-        const coordsSaddle = latLonToSceneXZ(40.0975, 20.9685);
-        const coordsSamarina = latLonToSceneXZ(40.1050, 21.0180);
-
-        function createPin(x, z, colorHex) {
-            const group = new THREE.Group();
-            const lineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0,2.5,0)]);
-            group.add(new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: colorHex })));
-            group.add(new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), new THREE.MeshBasicMaterial({ color: colorHex })));
-            scene.add(group);
-            return { group, x, y: 10, z };
-        }
-
-        const pinPeak = createPin(coordsPeak.x, coordsPeak.z, 0x38bdf8);
-        const pinSaddle = createPin(coordsSaddle.x, coordsSaddle.z, 0xf59e0b);
-        const pinSamarina = createPin(coordsSamarina.x, coordsSamarina.z, 0x10b981);
-
-        function updatePinHeights() {
-            [pinPeak, pinSaddle, pinSamarina].forEach(p => {
-                p.group.position.set(p.x, elevToSceneY(getElevationMeters(p.x, p.z)), p.z);
-                p.y = p.group.position.y + 2.5;
-            });
-        }
-
-        function rebuildTerrainGeometry(snowlineMeters) {
+        function updateTerrainColors() {
             const normAttr = terrainGeo.attributes.normal;
-            const cForest = new THREE.Color(0x166534);
-            const cMeadow = new THREE.Color(0x4d7c0f);
-            const cRock = new THREE.Color(0x475569);
-            const cSnow = new THREE.Color(0xffffff);
-            const tmp = new THREE.Color();
+            const colAttr = terrainGeo.attributes.color;
+            const snowLine = state.snowLineElev;
 
-            for (let i = 0; i < posAttr.count; i++) {
-                const x = posAttr.getX(i), z = posAttr.getZ(i);
-                const elev = getElevationMeters(x, z);
-                elevations[i] = elev;
-                posAttr.setY(i, elevToSceneY(elev));
-            }
-            terrainGeo.computeVertexNormals();
-
-            for (let i = 0; i < posAttr.count; i++) {
+            for (let i = 0; i < vertexCount; i++) {
                 const elev = elevations[i];
-                const ny = normAttr ? normAttr.getY(i) : 0.8;
-                const slope = 1.0 - ny;
+                const slopeY = normAttr.getY(i); // 1 = επίπεδο, <0.6 = απότομος γκρεμός
+                const col = new THREE.Color();
 
-                if (elev < 1700) {
-                    tmp.copy(cForest);
-                } else if (elev < 2100) {
-                    const t = (elev - 1700) / 400;
-                    tmp.copy(cForest).lerp(cMeadow, t);
+                if (elev < 1650) {
+                    col.copy(cForestDeep).lerp(cForestMid, (elev - 1150) / 500);
+                } else if (elev < 1920) {
+                    col.copy(cForestMid).lerp(cAlpine, (elev - 1650) / 270);
+                } else if (elev < 2280) {
+                    col.copy(cAlpine).lerp(cRock, (elev - 1920) / 360);
                 } else {
-                    const t = Math.min(1, (elev - 2100) / 400);
-                    tmp.copy(cMeadow).lerp(cRock, t);
+                    col.copy(cRock);
                 }
 
-                if (slope > 0.28) {
-                    tmp.lerp(cRock, Math.min(1, (slope - 0.28) / 0.2));
+                // Σκίαση στις απότομες πλαγιές
+                if (slopeY < 0.78) {
+                    col.multiplyScalar(0.84 + (slopeY * 0.2));
                 }
 
-                if (elev > snowlineMeters) {
-                    const depth = Math.min(1, (elev - snowlineMeters) / 100);
-                    tmp.lerp(cSnow, depth * 0.9);
+                // Δυναμική χιονοκάλυψη πάνω από τη γραμμή χιονόπτωσης (με φυσική μετάβαση 120μ)
+                const snowFactor = THREE.MathUtils.clamp((elev - (snowLine - 60)) / 130, 0, 1);
+                // Σε πολύ απότομα βράχια το χιόνι πιάνει λιγότερο
+                const slopeSnowMask = THREE.MathUtils.clamp((slopeY - 0.45) / 0.35, 0.25, 1.0);
+                const finalSnow = snowFactor * slopeSnowMask;
+
+                if (finalSnow > 0.01) {
+                    col.lerp(cSnow, finalSnow);
                 }
 
-                colors[i*3] = tmp.r;
-                colors[i*3+1] = tmp.g;
-                colors[i*3+2] = tmp.b;
+                colAttr.setXYZ(i, col.r, col.g, col.b);
             }
-            posAttr.needsUpdate = true;
-            terrainGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-            updatePinHeights();
+            colAttr.needsUpdate = true;
         }
 
-        function calcWetBulb(temp, hum) {
-            const h = Math.max(1, Math.min(100, hum));
-            return temp * Math.atan(0.151977 * Math.sqrt(h + 8.313659)) + Math.atan(temp + h) - Math.atan(h - 1.676331) + 0.00391838 * Math.pow(h, 1.5) * Math.atan(0.023101 * h) - 4.686035;
-        }
-
-        function calcWetBulbFromTempDew(temp, dew) {
-            const clampedDew = Math.min(temp, dew);
-            const rh = Math.min(100, Math.max(5, (Math.exp((17.67 * clampedDew) / (clampedDew + 243.5)) / Math.exp((17.67 * temp) / (temp + 243.5))) * 100));
-            return calcWetBulb(temp, rh);
-        }
-
-        function solveDewFromTempWetBulb(temp, targetWb) {
-            let low = -35.0;
-            let high = temp;
-            for (let i = 0; i < 24; i++) {
-                const mid = (low + high) * 0.5;
-                const wb = calcWetBulbFromTempDew(temp, mid);
-                if (wb < targetWb) low = mid;
-                else high = mid;
-            }
-            return (low + high) * 0.5;
-        }
-
-        let state = {
-            wind: 12,
-            dir: 240,
-            wetBulb: 6.8,
-            rain: 0,
-            snowline: 2419,
-            livePressure: null,
-            livePrecipTotal: 0
+        // --- ΣΗΜΕΙΑ ΑΝΑΦΟΡΑΣ (PINS) ---
+        const pinCoords = {
+            peak: { nx: -0.36, nz: -0.30, el: document.getElementById('pin-peak') },
+            pass: { nx: -0.08, nz: -0.10, el: document.getElementById('pin-pass') },
+            samarina: { nx: 0.28, nz: 0.32, el: document.getElementById('pin-samarina') }
         };
 
-        function updatePressureAndTotalHud(pressureVal, precipTotalVal) {
-            const pEl = document.getElementById('val-pressure');
-            const tEl = document.getElementById('val-precip-total');
-            if (pEl) {
-                pEl.innerText = (pressureVal !== null && pressureVal !== undefined && !isNaN(Number(pressureVal)))
-                    ? `${Number(pressureVal).toFixed(1)} hPa`
-                    : '-- hPa';
-            }
-            if (tEl) {
-                const safeTotal = (precipTotalVal !== null && precipTotalVal !== undefined && !isNaN(Number(precipTotalVal)))
-                    ? Number(precipTotalVal)
-                    : 0;
-                tEl.innerText = `${safeTotal.toFixed(1)} mm`;
-            }
-        }
+        const pinVectors = {};
+        Object.keys(pinCoords).forEach(key => {
+            const p = pinCoords[key];
+            const px = p.nx * (TERRAIN_W * 0.5);
+            const pz = p.nz * (TERRAIN_D * 0.5);
+            const py = elevToSceneY(getElevationMeters(p.nx, p.nz));
+            pinVectors[key] = new THREE.Vector3(px, py + 2.5, pz);
 
-        function recalcPhysics(sourceSlider = 'temp_dew') {
-            const slTemp = document.getElementById('sl-temp');
-            const slDew = document.getElementById('sl-dew');
-            const slWb = document.getElementById('sl-wb');
+            // Μικρός δείκτης στο έδαφος
+            const markerGeo = new THREE.SphereGeometry(key === 'samarina' ? 1.5 : 1.1, 12, 12);
+            const markerMat = new THREE.MeshBasicMaterial({ color: key === 'samarina' ? 0xef4444 : 0x38bdf8 });
+            const marker = new THREE.Mesh(markerGeo, markerMat);
+            marker.position.set(px, py + 0.6, pz);
+            scene.add(marker);
+        });
 
-            let baseTemp = parseFloat(slTemp.value);
-            let baseDew = parseFloat(slDew.value);
-            let wb;
-
-            if (sourceSlider === 'wb') {
-                wb = parseFloat(slWb.value);
-                if (wb > baseTemp) {
-                    baseTemp = Math.min(25, Math.round(wb * 2) / 2);
-                    slTemp.value = baseTemp;
+        function updatePinsScreenPos() {
+            Object.keys(pinCoords).forEach(key => {
+                const v = pinVectors[key].clone().project(camera);
+                const el = pinCoords[key].el;
+                if (v.z > 1) {
+                    el.style.display = 'none';
+                } else {
+                    el.style.display = 'block';
+                    const x = (v.x * 0.5 + 0.5) * window.innerWidth;
+                    const y = (-v.y * 0.5 + 0.5) * window.innerHeight;
+                    el.style.left = `${x}px`;
+                    el.style.top = `${y - 8}px`;
                 }
-                const minPossibleWb = calcWetBulb(baseTemp, 5);
-                if (wb < minPossibleWb) {
-                    wb = minPossibleWb;
-                    slWb.value = wb.toFixed(1);
-                }
-                baseDew = solveDewFromTempWetBulb(baseTemp, wb);
-                baseDew = Math.max(-18, Math.min(20, Math.round(baseDew * 2) / 2));
-                slDew.value = baseDew;
-                wb = calcWetBulbFromTempDew(baseTemp, baseDew);
-            } else {
-                if (baseDew > baseTemp) {
-                    baseDew = baseTemp;
-                    slDew.value = baseDew;
-                }
-                wb = calcWetBulbFromTempDew(baseTemp, baseDew);
-                slWb.value = wb.toFixed(1);
-            }
-
-            const wind = parseFloat(document.getElementById('sl-wind').value);
-            const dir = parseFloat(document.getElementById('sl-dir').value);
-            const rain = parseFloat(document.getElementById('sl-rain').value);
-
-            const snowline = Math.round(1450 + ((wb - 0.5) / 6.5) * 1000);
-
-            state.wind = wind;
-            state.dir = dir;
-            state.wetBulb = wb;
-            state.rain = rain;
-            state.snowline = snowline;
-
-            document.getElementById('lbl-temp').innerText = `${baseTemp.toFixed(1)}°C`;
-            document.getElementById('lbl-dew').innerText = `${baseDew.toFixed(1)}°C`;
-            document.getElementById('lbl-wb').innerText = `${wb.toFixed(1)}°C`;
-            document.getElementById('lbl-wind').innerText = `${wind} km/h`;
-            document.getElementById('lbl-dir').innerText = `${dir}°`;
-            document.getElementById('lbl-rain').innerText = `${rain.toFixed(1)} mm/h`;
-
-            document.getElementById('val-temp').innerText = `${baseTemp.toFixed(1)}°C`;
-            document.getElementById('val-wb').innerText = `${wb.toFixed(1)}°C`;
-            document.getElementById('val-wind').innerText = `${wind} km/h`;
-            document.getElementById('val-snowline').innerText = snowline <= 1450 ? `Χιόνι στο χωριό` : `${snowline} μ.`;
-
-            precipPoints.visible = rain > 0;
-            precipMat.size = wb <= 0.5 ? 0.38 : 0.28;
-
-            rebuildTerrainGeometry(snowline);
-        }
-
-        ['sl-temp', 'sl-dew', 'sl-wind', 'sl-dir', 'sl-rain'].forEach(id => {
-            document.getElementById(id).addEventListener('input', () => {
-                stopForecastPlay();
-                recalcPhysics('temp_dew');
             });
-        });
-
-        document.getElementById('sl-wb').addEventListener('input', () => {
-            stopForecastPlay();
-            recalcPhysics('wb');
-        });
-
-        function applyPreset(type) {
-            stopForecastPlay();
-            if (type === 'snow') {
-                document.getElementById('sl-temp').value = -1.5; document.getElementById('sl-dew').value = -2.0; document.getElementById('sl-wind').value = 34; document.getElementById('sl-rain').value = 4.5;
-            } else if (type === 'blizzard') {
-                document.getElementById('sl-temp').value = -6.0; document.getElementById('sl-dew').value = -7.5; document.getElementById('sl-wind').value = 68; document.getElementById('sl-rain').value = 6.0;
-            } else if (type === 'fog') {
-                document.getElementById('sl-temp').value = 2.5; document.getElementById('sl-dew').value = 2.3; document.getElementById('sl-wind').value = 6; document.getElementById('sl-rain').value = 0.0;
-            }
-            recalcPhysics('temp_dew');
         }
 
-        function loadStoredForecastPacket() {
-            try {
-                const raw = localStorage.getItem('samarina_12h_forecast_v1');
-                if (raw) {
-                    const parsed = JSON.parse(raw);
-                    if (parsed && Array.isArray(parsed.steps)) {
-                        forecastPacket = parsed;
-                    }
+        // --- ΣΩΜΑΤΙΔΙΑ ΡΟΗΣ ΑΕΡΑ (WIND STREAMLINES) ---
+        const PARTICLE_COUNT = 520;
+        const pGeo = new THREE.BufferGeometry();
+        const pPositions = new Float32Array(PARTICLE_COUNT * 3);
+        const pColors = new Float32Array(PARTICLE_COUNT * 3);
+        const pAges = new Float32Array(PARTICLE_COUNT);
+
+        function resetParticle(i, randomAge = false) {
+            const rx = (Math.random() - 0.5) * TERRAIN_W * 0.96;
+            const rz = (Math.random() - 0.5) * TERRAIN_D * 0.96;
+            const nx = rx / (TERRAIN_W * 0.5);
+            const nz = rz / (TERRAIN_D * 0.5);
+            const groundY = elevToSceneY(getElevationMeters(nx, nz));
+            pPositions[i * 3] = rx;
+            pPositions[i * 3 + 1] = groundY + 3 + Math.random() * 24;
+            pPositions[i * 3 + 2] = rz;
+            pAges[i] = randomAge ? Math.random() * 100 : 0;
+        }
+
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+            resetParticle(i, true);
+        }
+        pGeo.setAttribute('position', new THREE.BufferAttribute(pPositions, 3));
+        pGeo.setAttribute('color', new THREE.BufferAttribute(pColors, 3));
+
+        const pMat = new THREE.PointsMaterial({
+            size: 1.85,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.85
+        });
+        const windParticles = new THREE.Points(pGeo, pMat);
+        scene.add(windParticles);
+
+        function updateWindParticles(dt) {
+            // Μετεωρολογική διεύθυνση ανέμου (από πού φυσάει) -> διάνυσμα κίνησης
+            const rad = ((state.dir + 180) % 360) * (Math.PI / 180);
+            const vx = Math.sin(rad);
+            const vz = -Math.cos(rad);
+            const speedFactor = Math.max(0.18, state.wind * 0.045);
+
+            const isCold = state.wetBulb <= 0.5;
+            const colWarm = new THREE.Color(0x7dd3fc);
+            const colCold = new THREE.Color(0xf0f9ff);
+
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                pAges[i] += dt * 45;
+                let x = pPositions[i * 3] + vx * speedFactor;
+                let z = pPositions[i * 3 + 2] + vz * speedFactor;
+
+                const halfW = TERRAIN_W * 0.48;
+                const halfD = TERRAIN_D * 0.48;
+                if (x < -halfW || x > halfW || z < -halfD || z > halfD || pAges[i] > 110) {
+                    resetParticle(i, false);
+                    x = pPositions[i * 3];
+                    z = pPositions[i * 3 + 2];
                 }
-            } catch (e) {}
+
+                const nx = x / (TERRAIN_W * 0.5);
+                const nz = z / (TERRAIN_D * 0.5);
+                const elev = getElevationMeters(nx, nz);
+                const groundY = elevToSceneY(elev);
+
+                // Ορογραφική ανύψωση πάνω από τις κορυφογραμμές
+                const targetY = groundY + 4.5 + ((i % 7) * 2.6);
+                let y = pPositions[i * 3 + 1];
+                y += (targetY - y) * 0.12;
+
+                pPositions[i * 3] = x;
+                pPositions[i * 3 + 1] = y;
+                pPositions[i * 3 + 2] = z;
+
+                const c = (elev >= state.snowLineElev || isCold) ? colCold : colWarm;
+                pColors[i * 3] = c.r;
+                pColors[i * 3 + 1] = c.g;
+                pColors[i * 3 + 2] = c.b;
+            }
+            pGeo.attributes.position.needsUpdate = true;
+            pGeo.attributes.color.needsUpdate = true;
+        }
+
+        // --- ΕΝΑΛΛΑΓΗ ΗΜΕΡΑΣ / ΔΥΣΗΣ / ΝΥΧΤΑΣ ---
+        function getEffectiveSkyPhase() {
+            if (state.skyMode !== 'auto') return state.skyMode;
+            const h = state.simHour;
+            if (h >= 7.5 && h < 17.0) return 'day';
+            if ((h >= 6.0 && h < 7.5) || (h >= 17.0 && h <= 19.2)) return 'sunset';
+            return 'night';
+        }
+
+        function applySkyLighting() {
+            const phase = getEffectiveSkyPhase();
+            const btn = document.getElementById('sky-btn');
+
+            const phaseLabels = { day: '☀️ Ημέρα', sunset: '🌅 Δύση', night: '🌙 Νύχτα' };
+            if (state.skyMode === 'auto') {
+                btn.textContent = `🔄 Αυτόματο (${phaseLabels[phase].split(' ')[1]})`;
+                btn.style.color = '#fde68a';
+            } else {
+                btn.textContent = phaseLabels[phase];
+                btn.style.color = phase === 'night' ? '#93c5fd' : (phase === 'sunset' ? '#fdba74' : '#fde047');
+            }
+
+            if (phase === 'day') {
+                scene.background.setHex(0x2563eb);
+                scene.fog.color.setHex(0x60a5fa);
+                scene.fog.density = 0.0020;
+                hemiLight.color.setHex(0xe0f2fe);
+                hemiLight.groundColor.setHex(0x1e3a2f);
+                hemiLight.intensity = 0.90;
+                sunLight.color.setHex(0xfffbeb);
+                sunLight.intensity = 1.25;
+                sunLight.position.set(120, 185, 90);
+                rimLight.color.setHex(0x93c5fd);
+                rimLight.intensity = 0.35;
+                starMat.opacity = 0;
+            } else if (phase === 'sunset') {
+                scene.background.setHex(0x1e293b);
+                scene.fog.color.setHex(0x7c2d12);
+                scene.fog.density = 0.0024;
+                hemiLight.color.setHex(0xfdba74);
+                hemiLight.groundColor.setHex(0x1e1b4b);
+                hemiLight.intensity = 0.78;
+                sunLight.color.setHex(0xf97316);
+                sunLight.intensity = 1.15;
+                sunLight.position.set(-160, 55, 70);
+                rimLight.color.setHex(0x818cf8);
+                rimLight.intensity = 0.45;
+                starMat.opacity = 0.25;
+            } else {
+                // Νύχτα με καθαρό σεληνόφως (ώστε να φαίνεται καθαρά το βουνό και όχι μαύρη οθόνη)
+                scene.background.setHex(0x070d19);
+                scene.fog.color.setHex(0x0f172a);
+                scene.fog.density = 0.0023;
+                hemiLight.color.setHex(0x60a5fa);
+                hemiLight.groundColor.setHex(0x0f172a);
+                hemiLight.intensity = 0.68;
+                sunLight.color.setHex(0x93c5fd);
+                sunLight.intensity = 0.72;
+                sunLight.position.set(-95, 150, -85);
+                rimLight.color.setHex(0x38bdf8);
+                rimLight.intensity = 0.32;
+                starMat.opacity = 0.85;
+            }
+        }
+
+        function cycleSkyMode() {
+            const order = ['auto', 'day', 'sunset', 'night'];
+            const nextIdx = (order.indexOf(state.skyMode) + 1) % order.length;
+            state.skyMode = order[nextIdx];
+            applySkyLighting();
+        }
+
+        // --- ΨΥΧΡΟΜΕΤΡΙΑ & ΥΠΟΛΟΓΙΣΜΟΣ ΥΨΟΜΕΤΡΟΥ ΧΙΟΝΙΟΥ ---
+        function calcWetBulb(temp, hum) {
+            const safeHum = Math.max(1, Math.min(100, hum));
+            const tw = temp * Math.atan(0.151977 * Math.sqrt(safeHum + 8.313659))
+                     + Math.atan(temp + safeHum)
+                     - Math.atan(safeHum - 1.676331)
+                     + 0.00391838 * Math.pow(safeHum, 1.5) * Math.atan(0.023101 * safeHum)
+                     - 4.686035;
+            return Number(tw.toFixed(1));
+        }
+
+        function degToCompass(num) {
+            const val = Math.floor((num / 22.5) + 0.5);
+            const arr = ["Β", "ΒΒΑ", "ΒΑ", "ΑΒΑ", "Α", "ΑΝΑ", "ΝΑ", "ΝΝΑ", "Ν", "ΝΝΔ", "ΝΔ", "ΔΝΔ", "Δ", "ΔΒΔ", "ΒΔ", "ΒΒΔ"];
+            return arr[(val % 16)];
+        }
+
+        function syncUIAndScene() {
+            state.wetBulb = calcWetBulb(state.temp, state.hum);
+            // Γραμμή χιονόπτωσης βάσει Wet-Bulb στα 1.450μ (βαθμίδα ~6.2°C / 1000μ)
+            const rawSnowLine = 1450 + ((state.wetBulb - 0.5) / 6.2) * 1000;
+            state.snowLineElev = Math.round(THREE.MathUtils.clamp(rawSnowLine, 900, 3200));
+
+            document.getElementById('tel-temp').textContent = `${state.temp.toFixed(1)}°C`;
+            document.getElementById('tel-wb').textContent = `${state.wetBulb.toFixed(1)}°C`;
+            document.getElementById('tel-wind').textContent = `${Math.round(state.wind)} km/h`;
+            document.getElementById('tel-press').textContent = `${state.press.toFixed(1)} hPa`;
+            document.getElementById('tel-precip').textContent = `${state.precip.toFixed(1)} mm`;
+            document.getElementById('tel-snowline').textContent = state.snowLineElev <= 1450 ? 'Στο χωριό (≤1.450μ.)' : `${state.snowLineElev} μ.`;
+
+            document.getElementById('sl-temp').value = state.temp;
+            document.getElementById('lbl-temp').textContent = `${state.temp.toFixed(1)}°C`;
+            document.getElementById('sl-hum').value = state.hum;
+            document.getElementById('lbl-hum').textContent = `${Math.round(state.hum)}%`;
+            document.getElementById('sl-wind').value = state.wind;
+            document.getElementById('lbl-wind').textContent = `${Math.round(state.wind)} km/h`;
+            document.getElementById('sl-dir').value = state.dir;
+            document.getElementById('lbl-dir').textContent = `${Math.round(state.dir)}° (${degToCompass(state.dir)})`;
+
+            updateTerrainColors();
+            applySkyLighting();
+        }
+
+        function onManualInput() {
+            state.temp = parseFloat(document.getElementById('sl-temp').value);
+            state.hum = parseFloat(document.getElementById('sl-hum').value);
+            state.wind = parseFloat(document.getElementById('sl-wind').value);
+            state.dir = parseFloat(document.getElementById('sl-dir').value);
+            document.getElementById('source-badge').textContent = '● ΧΕΙΡΟΚΙΝΗΤΟ ΣΕΝΑΡΙΟ';
+            syncUIAndScene();
+        }
+
+        // --- ΔΙΑΧΕΙΡΙΣΗ LIVE & +12H ΠΡΟΓΝΩΣΗΣ ---
+        function setForecastMode(mode) {
+            state.mode = mode;
+            document.getElementById('btn-mode-live').className = 'mode-btn' + (mode === 'live' ? ' active-live' : '');
+            document.getElementById('btn-mode-station').className = 'mode-btn' + (mode === 'station' ? ' active-station' : '');
+            document.getElementById('btn-mode-hybrid').className = 'mode-btn' + (mode === 'hybrid' ? ' active-hybrid' : '');
+
+            const tlBar = document.getElementById('timeline-bar');
+            if (mode === 'live') {
+                tlBar.style.display = 'none';
+                fetchLiveStation();
+            } else {
+                tlBar.style.display = 'block';
+                onTimelineChange(document.getElementById('tl-slider').value);
+            }
+        }
+
+        function onTimelineChange(val) {
+            const idx = parseInt(val, 10);
+            state.forecastHourIdx = idx;
+
+            if (!state.forecastPacket) {
+                try {
+                    const cached = localStorage.getItem('samarina_12h_forecast_v1');
+                    if (cached) state.forecastPacket = JSON.parse(cached);
+                } catch (e) {}
+            }
+
+            if (!state.forecastPacket || !state.forecastPacket.steps || !state.forecastPacket.steps[idx]) {
+                document.getElementById('tl-label').textContent = `Ώρα Πρόγνωσης: +${idx}h (Αναμονή δεδομένων)`;
+                return;
+            }
+
+            const step = state.forecastPacket.steps[idx];
+            const data = state.mode === 'station' ? step.station : step.hybrid;
+            const srcName = state.mode === 'station' ? '📡 ΣΤΑΘΜΟΣ (+12h)' : '❄️ ΥΒΡΙΔΙΚΟ (+12h)';
+
+            document.getElementById('source-badge').textContent = srcName;
+            document.getElementById('tl-label').textContent = `Ώρα: ${step.timeLabel} (+${idx}h)`;
+            document.getElementById('tl-sub').textContent = `Βεβαιότητα: ${data.prob}%`;
+
+            state.temp = data.temp;
+            // Υπολογισμός RH από Temp & DewPoint
+            const eAct = 6.112 * Math.exp((17.67 * data.dew) / (data.dew + 243.5));
+            const eSat = 6.112 * Math.exp((17.67 * data.temp) / (data.temp + 243.5));
+            state.hum = Math.round(THREE.MathUtils.clamp((eAct / eSat) * 100, 20, 100));
+            state.wind = data.wind;
+            state.dir = data.dir;
+            state.precip = data.precip;
+            state.simHour = step.decHour;
+
+            syncUIAndScene();
+        }
+
+        function resetToLive() {
+            setForecastMode('live');
+        }
+
+        async function fetchLiveStation() {
+            try {
+                const url = `https://api.weather.com/v2/pws/observations/current?stationId=${WU_STATION_ID}&format=json&units=m&numericPrecision=decimal&apiKey=${WU_API_KEY}`;
+                const res = await fetch(url);
+                const json = await res.json();
+                const obs = json.observations[0];
+
+                state.temp = obs.metric.temp;
+                state.hum = obs.humidity;
+                state.wind = obs.metric.windSpeed;
+                state.dir = obs.winddir;
+                state.press = obs.metric.pressure;
+                state.precip = obs.metric.precipTotal;
+                state.simHour = new Date().getHours() + new Date().getMinutes() / 60;
+
+                if (state.mode === 'live') {
+                    document.getElementById('source-badge').textContent = '● LIVE ISAMAR38';
+                    syncUIAndScene();
+                }
+            } catch (e) {
+                syncUIAndScene();
+            }
         }
 
         window.addEventListener('message', (event) => {
-            if (event.data && event.data.type === 'SAMARINA_12H_FORECAST' && event.data.payload) {
-                forecastPacket = event.data.payload;
+            if (event.data && event.data.type === 'SAMARINA_12H_FORECAST') {
+                state.forecastPacket = event.data.payload;
+                if (state.mode !== 'live') {
+                    onTimelineChange(document.getElementById('tl-slider').value);
+                }
             }
         });
 
-        function setDataSource(src) {
-            currentDataSource = src;
-            document.getElementById('btn-src-live').className = 'src-btn' + (src === 'live' ? ' active-live' : '');
-            document.getElementById('btn-src-station').className = 'src-btn' + (src === 'station' ? ' active-station' : '');
-            document.getElementById('btn-src-hybrid').className = 'src-btn' + (src === 'hybrid' ? ' active-hybrid' : '');
+        // Αρχική φόρτωση cached πρόγνωσης αν υπάρχει
+        try {
+            const cached = localStorage.getItem('samarina_12h_forecast_v1');
+            if (cached) state.forecastPacket = JSON.parse(cached);
+        } catch (e) {}
 
-            const timelineEl = document.getElementById('timeline-controls');
-            if (src === 'live') {
-                stopForecastPlay();
-                timelineEl.style.display = 'none';
-                syncLiveWeather();
-            } else {
-                loadStoredForecastPacket();
-                timelineEl.style.display = 'flex';
-                applyForecastHourStep(parseInt(document.getElementById('sl-forecast-hr').value, 10) || 0);
-            }
-        }
+        fetchLiveStation();
+        setInterval(() => {
+            if (state.mode === 'live') fetchLiveStation();
+        }, 180000);
 
-        function applyForecastHourStep(hrs) {
-            if (!forecastPacket || !forecastPacket.steps || !forecastPacket.steps[hrs]) return;
-            const step = forecastPacket.steps[hrs];
-            const data = (currentDataSource === 'hybrid' && step.hybrid) ? step.hybrid : step.station;
-
-            document.getElementById('sl-temp').value = data.temp;
-            document.getElementById('sl-dew').value = data.dew;
-            document.getElementById('sl-wind').value = data.wind;
-            document.getElementById('sl-dir').value = data.dir;
-            document.getElementById('sl-rain').value = data.precip;
-
-            let stepPressure = (data.pressure !== undefined && data.pressure !== null)
-                ? data.pressure
-                : (hrs === 0 ? state.livePressure : null);
-
-            let stepPrecipTotal;
-            if (data.precipTotal !== undefined && data.precipTotal !== null) {
-                stepPrecipTotal = data.precipTotal;
-            } else {
-                let addedPrecip = 0;
-                for (let h = 1; h <= hrs; h++) {
-                    const s = forecastPacket.steps[h];
-                    const d = (currentDataSource === 'hybrid' && s?.hybrid) ? s.hybrid : s?.station;
-                    if (d && !isNaN(Number(d.precip))) {
-                        addedPrecip += Number(d.precip);
-                    }
-                }
-                stepPrecipTotal = (state.livePrecipTotal || 0) + addedPrecip;
-            }
-
-            updatePressureAndTotalHud(stepPressure, stepPrecipTotal);
-
-            const tag = hrs === 0 ? '+0h (Τώρα)' : `+${hrs}h (${step.timeLabel})`;
-            document.getElementById('lbl-fc-step').innerText = tag;
-            document.getElementById('live-status-text').innerText = `${currentDataSource === 'hybrid' ? 'Υβριδικό' : 'Σταθμός'} ${tag}`;
-            recalcPhysics('temp_dew');
-        }
-
-        document.getElementById('sl-forecast-hr').addEventListener('input', (e) => {
-            applyForecastHourStep(parseInt(e.target.value, 10) || 0);
-        });
-
-        function toggleForecastPlay() {
-            const btn = document.getElementById('btn-play-fc');
-            if (forecastPlayTimer) {
-                stopForecastPlay();
-                return;
-            }
-            btn.innerText = '⏸ Pause';
-            btn.classList.add('playing');
-            forecastPlayTimer = setInterval(() => {
-                const slider = document.getElementById('sl-forecast-hr');
-                let next = (parseInt(slider.value, 10) || 0) + 1;
-                if (next > 12) next = 0;
-                slider.value = next;
-                applyForecastHourStep(next);
-            }, 1400);
-        }
-
-        function stopForecastPlay() {
-            if (forecastPlayTimer) {
-                clearInterval(forecastPlayTimer);
-                forecastPlayTimer = null;
-            }
-            const btn = document.getElementById('btn-play-fc');
-            if (btn) {
-                btn.innerText = '▶ Play';
-                btn.classList.remove('playing');
-            }
-        }
-
-        function updateLabels() {
-            [ {el: document.getElementById('lbl-peak'), pos: pinPeak}, {el: document.getElementById('lbl-saddle'), pos: pinSaddle}, {el: document.getElementById('lbl-samarina'), pos: pinSamarina} ].forEach(item => {
-                const v = new THREE.Vector3(item.pos.x, item.pos.y, item.pos.z).project(camera);
-                if (v.z > 1) { item.el.style.display = 'none'; } else {
-                    item.el.style.display = 'block';
-                    item.el.style.left = `${(v.x * 0.5 + 0.5) * window.innerWidth}px`;
-                    item.el.style.top = `${(-(v.y * 0.5) + 0.5) * window.innerHeight}px`;
-                }
-            });
-        }
-
-        async function syncLiveWeather() {
-            loadStoredForecastPacket();
-            try {
-                const res = await fetch(`https://api.weather.com/v2/pws/observations/current?stationId=${WU_STATION_ID}&format=json&units=m&numericPrecision=decimal&apiKey=${WU_API_KEY}`);
-                const data = await res.json();
-                const obs = data.observations[0];
-
-                state.livePressure = obs.metric?.pressure ?? null;
-                state.livePrecipTotal = obs.metric?.precipTotal ?? 0;
-
-                if (currentDataSource === 'live') {
-                    document.getElementById('sl-temp').value = obs.metric.temp;
-                    document.getElementById('sl-dew').value = obs.metric.dewpt;
-                    document.getElementById('sl-wind').value = Math.round(obs.metric.windSpeed);
-                    document.getElementById('sl-dir').value = obs.winddir;
-                    document.getElementById('sl-rain').value = obs.metric.precipRate;
-                    document.getElementById('live-status-text').innerText = `LIVE ISAMAR38`;
-                    updatePressureAndTotalHud(state.livePressure, state.livePrecipTotal);
-                    recalcPhysics('temp_dew');
-                }
-            } catch (e) {
-                if (currentDataSource === 'live') recalcPhysics('temp_dew');
-            }
-        }
-
-        loadRealSmolikasDEM();
-        syncLiveWeather();
-
-        const clock = new THREE.Clock();
-        function animate() {
+        // --- ANIMATION LOOP ---
+        let lastTime = performance.now();
+        function animate(now) {
             requestAnimationFrame(animate);
-            const dt = Math.min(0.05, clock.getDelta());
-            const elapsed = clock.getElapsedTime();
-
-            const rad = (state.dir * Math.PI) / 180;
-            const vx = -Math.sin(rad);
-            const vz = Math.cos(rad);
-            const speedScale = Math.max(1.0, state.wind * 0.3);
-
-            const posArr = windGeo.attributes.position.array;
-            const colArr = windGeo.attributes.color.array;
-
-            for (let i = 0; i < WIND_COUNT; i++) {
-                let x = posArr[i * 3];
-                let y = posArr[i * 3 + 1];
-                let z = posArr[i * 3 + 2];
-
-                const step = speedScale * windData[i].speedOffset * dt;
-                x += vx * step;
-                z += vz * step;
-
-                if (x > HALF_SPAN) x = -HALF_SPAN;
-                if (x < -HALF_SPAN) x = HALF_SPAN;
-                if (z > HALF_SPAN) z = -HALF_SPAN;
-                if (z < -HALF_SPAN) z = HALF_SPAN;
-
-                const groundElev = getElevationMeters(x, z);
-                const groundY = elevToSceneY(groundElev);
-                const targetY = Math.max(y, groundY + windData[i].altOffset);
-                y += (targetY - y) * 0.15;
-                if (y > groundY + 12) y -= 0.05;
-
-                posArr[i * 3] = x;
-                posArr[i * 3 + 1] = y;
-                posArr[i * 3 + 2] = z;
-
-                if (state.wind >= 45) {
-                    colArr[i*3] = 0.94; colArr[i*3+1] = 0.27; colArr[i*3+2] = 0.27;
-                } else if (state.wind >= 25) {
-                    colArr[i*3] = 0.96; colArr[i*3+1] = 0.62; colArr[i*3+2] = 0.04;
-                } else {
-                    colArr[i*3] = 0.22; colArr[i*3+1] = 0.74; colArr[i*3+2] = 0.97;
-                }
-            }
-            windGeo.attributes.position.needsUpdate = true;
-            windGeo.attributes.color.needsUpdate = true;
-
-            if (state.rain > 0) {
-                const pPos = precipGeo.attributes.position.array;
-                const pCol = precipGeo.attributes.color.array;
-                const snowY = elevToSceneY(state.snowline);
-                const rainIntensity = Math.min(2.2, 0.6 + state.rain * 0.18);
-
-                for (let i = 0; i < PRECIP_COUNT; i++) {
-                    let px = pPos[i * 3];
-                    let py = pPos[i * 3 + 1];
-                    let pz = pPos[i * 3 + 2];
-
-                    const isSnow = py >= snowY;
-                    const fallSpeed = (isSnow ? 2.4 : 11.5) * rainIntensity * precipData[i].fallOffset;
-                    const windDrift = (isSnow ? 0.55 : 0.25) * speedScale;
-
-                    py -= fallSpeed * dt;
-                    px += vx * windDrift * dt + (isSnow ? Math.sin(elapsed * 2 + precipData[i].driftPhase) * 0.03 : 0);
-                    pz += vz * windDrift * dt + (isSnow ? Math.cos(elapsed * 2 + precipData[i].driftPhase) * 0.03 : 0);
-
-                    if (px > HALF_SPAN) px = -HALF_SPAN;
-                    if (px < -HALF_SPAN) px = HALF_SPAN;
-                    if (pz > HALF_SPAN) pz = -HALF_SPAN;
-                    if (pz < -HALF_SPAN) pz = HALF_SPAN;
-
-                    const groundY = elevToSceneY(getElevationMeters(px, pz));
-                    if (py <= groundY) {
-                        py = 28 + Math.random() * 8;
-                        px = (Math.random() - 0.5) * (HALF_SPAN * 2);
-                        pz = (Math.random() - 0.5) * (HALF_SPAN * 2);
-                    }
-
-                    pPos[i * 3] = px;
-                    pPos[i * 3 + 1] = py;
-                    pPos[i * 3 + 2] = pz;
-
-                    if (isSnow) {
-                        pCol[i * 3] = 0.96; pCol[i * 3 + 1] = 0.98; pCol[i * 3 + 2] = 1.0;
-                    } else {
-                        pCol[i * 3] = 0.22; pCol[i * 3 + 1] = 0.74; pCol[i * 3 + 2] = 0.98;
-                    }
-                }
-                precipGeo.attributes.position.needsUpdate = true;
-                precipGeo.attributes.color.needsUpdate = true;
-            }
+            const dt = Math.min(0.05, (now - lastTime) / 1000);
+            lastTime = now;
 
             controls.update();
-            updateLabels();
+            updateWindParticles(dt);
+            updatePinsScreenPos();
             renderer.render(scene, camera);
         }
-        animate();
+        animate(performance.now());
 
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
