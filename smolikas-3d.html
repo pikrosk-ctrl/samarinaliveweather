@@ -452,7 +452,7 @@
             });
         }
 
-        function rebuildTerrainGeometry(snowlineMeters) {
+        function rebuildTerrainGeometry(snowlineMeters, hasPrecip = false) {
             const normAttr = terrainGeo.attributes.normal;
             const cForest = new THREE.Color(0x133021);
             const cMeadow = new THREE.Color(0x3f4a32);
@@ -487,7 +487,7 @@
                     tmp.lerp(cRock, Math.min(1, (slope - 0.28) / 0.2));
                 }
 
-                if (elev > snowlineMeters) {
+                if (hasPrecip && elev > snowlineMeters) {
                     const depth = Math.min(1, (elev - snowlineMeters) / 100);
                     tmp.lerp(cSnow, depth * 0.9);
                 }
@@ -615,7 +615,7 @@
             precipPoints.visible = rain > 0;
             precipMat.size = wb <= 0.5 ? 0.38 : 0.28;
 
-            rebuildTerrainGeometry(snowline);
+            rebuildTerrainGeometry(snowline, rain > 0);
         }
 
         ['sl-temp', 'sl-dew', 'sl-wind', 'sl-dir', 'sl-rain'].forEach(id => {
