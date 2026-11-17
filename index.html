@@ -1322,9 +1322,12 @@
                         topAlert.classList.add('alert-storm');
                         topAlert.innerText = `🌥️ ΠΤΩΣΗ ΠΙΕΣΗΣ (${press.toFixed(0)} hPa)`;
                         diagText = `🌥️ <b>Χαμηλές πιέσεις σε πτώση (${press.toFixed(1)} hPa):</b> Μεταβλητός καιρός με νεφώσεις και πιθανότητα τοπικών φαινομένων.${frostNote}`;
+                    } else if (hum < 75 && totalPrecip24 < 1.0) {
+                        topAlert.innerText = `⛅ ΧΑΜΗΛΕΣ ΠΙΕΣΕΙΣ (${press.toFixed(0)} hPa)`;
+                        diagText = `⛅ <b>Χαμηλές πιέσεις (Υβριδικό):</b> Το βαρόμετρο είναι στα ${press.toFixed(1)} hPa, ωστόσο η χαμηλή υγρασία (${hum}%) διατηρεί τον καιρό ήπιο με αραιές νεφώσεις και χωρίς αξιόλογο υετό.${frostNote}`;
                     } else {
                         topAlert.innerText = `⛅ ΧΑΜΗΛΕΣ ΠΙΕΣΕΙΣ (${press.toFixed(0)} hPa)`;
-                        diagText = `⛅ <b>Χαμηλές πιέσεις (Υβριδικό):</b> Το βαρόμετρο είναι στα ${press.toFixed(1)} hPa (άστατος/νεφελώδης καιρός χωρίς αξιόλογο υετό).${frostNote}`;
+                        diagText = `⛅ <b>Χαμηλές πιέσεις (Υβριδικό):</b> Το βαρόμετρο είναι στα ${press.toFixed(1)} hPa με αυξημένη υγρασία (${hum}%) — μεταβλητός/νεφελώδης καιρός με πιθανότητα τοπικών φαινομένων.${frostNote}`;
                     }
                 } else if (press < 1018) {
                     topAlert.innerText = `🌤️ ΚΑΝΟΝΙΚΕΣ ΠΙΕΣΕΙΣ (${press.toFixed(0)} hPa)`;
