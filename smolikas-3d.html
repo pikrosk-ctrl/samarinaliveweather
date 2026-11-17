@@ -125,13 +125,13 @@
         .hud-controls {
             bottom: 8px;
             left: 8px;
-            width: 210px;
+            width: 215px;
             padding: 8px;
             max-height: 38px;
             overflow: hidden;
             transition: max-height 0.3s ease, opacity 0.4s ease, transform 0.4s ease;
         }
-        .hud-controls.expanded { max-height: 280px; }
+        .hud-controls.expanded { max-height: 330px; }
         .ctrl-header {
             display: flex;
             justify-content: space-between;
@@ -150,7 +150,10 @@
         .slider-group { margin-bottom: 2px; }
         .slider-label { display: flex; justify-content: space-between; font-size: 0.62rem; color: #cbd5e1; }
         .slider-label span:last-child { color: #38bdf8; font-weight: 700; }
+        .slider-group.wb-group .slider-label span:first-child { color: #bae6fd; font-weight: 600; }
+        .slider-group.wb-group .slider-label span:last-child { color: #7dd3fc; }
         input[type="range"] { width: 100%; accent-color: #38bdf8; height: 3px; cursor: pointer; }
+        #sl-wb { accent-color: #34d399; }
         .preset-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 4px; }
         .preset-btn { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; padding: 3px 2px; border-radius: 4px; font-size: 0.58rem; font-weight: 600; text-align: center; cursor: pointer; }
 
@@ -219,6 +222,10 @@
             <div class="slider-group">
                 <div class="slider-label"><span>Σημείο Δρόσου (°C)</span><span id="lbl-dew">6.0°C</span></div>
                 <input type="range" id="sl-dew" min="-18" max="20" step="0.5" value="6">
+            </div>
+            <div class="slider-group wb-group">
+                <div class="slider-label"><span>💧 Υγρό Θερμόμετρο (°C)</span><span id="lbl-wb">6.8°C</span></div>
+                <input type="range" id="sl-wb" min="-16" max="22" step="0.1" value="6.8">
             </div>
             <div class="slider-group">
                 <div class="slider-label"><span>Άνεμος (km/h)</span><span id="lbl-wind">12 km/h</span></div>
@@ -400,6 +407,25 @@
         const windPoints = new THREE.Points(windGeo, windMat);
         scene.add(windPoints);
 
+        // Δυναμικά σωματίδια υετού (Χιόνι / Βροχή βάσει Υγρού Θερμομέτρου)
+        const PRECIP_COUNT = 900;
+        const precipGeo = new THREE.BufferGeometry();
+        const precipPos = new Float32Array(PRECIP_COUNT * 3);
+        const precipCol = new Float32Array(PRECIP_COUNT * 3);
+        const precipData = [];
+        for (let i = 0; i < PRECIP_COUNT; i++) {
+            precipPos[i * 3] = (Math.random() - 0.5) * (HALF_SPAN * 2);
+            precipPos[i * 3 + 1] = Math.random() * 34;
+            precipPos[i * 3 + 2] = (Math.random() - 0.5) * (HALF_SPAN * 2);
+            precipData.push({ fallOffset: 0.75 + Math.random() * 0.5, driftPhase: Math.random() * Math.PI * 2 });
+        }
+        precipGeo.setAttribute('position', new THREE.BufferAttribute(precipPos, 3));
+        precipGeo.setAttribute('color', new THREE.BufferAttribute(precipCol, 3));
+        const precipMat = new THREE.PointsMaterial({ size: 0.34, vertexColors: true, transparent: true, opacity: 0.88 });
+        const precipPoints = new THREE.Points(precipGeo, precipMat);
+        precipPoints.visible = false;
+        scene.add(precipPoints);
+
         const coordsPeak = latLonToSceneXZ(40.0908, 20.9261);
         const coordsSaddle = latLonToSceneXZ(40.0975, 20.9685);
         const coordsSamarina = latLonToSceneXZ(40.1050, 21.0180);
@@ -478,30 +504,79 @@
             return temp * Math.atan(0.151977 * Math.sqrt(h + 8.313659)) + Math.atan(temp + h) - Math.atan(h - 1.676331) + 0.00391838 * Math.pow(h, 1.5) * Math.atan(0.023101 * h) - 4.686035;
         }
 
-        let state = { wind: 12, dir: 240, wetBulb: 6.7 };
+        function calcWetBulbFromTempDew(temp, dew) {
+            const clampedDew = Math.min(temp, dew);
+            const rh = Math.min(100, Math.max(5, (Math.exp((17.67 * clampedDew) / (clampedDew + 243.5)) / Math.exp((17.67 * temp) / (temp + 243.5))) * 100));
+            return calcWetBulb(temp, rh);
+        }
 
-        function recalcPhysics() {
-            const baseTemp = parseFloat(document.getElementById('sl-temp').value);
-            const baseDew = parseFloat(document.getElementById('sl-dew').value);
+        // Αντίστροφος υπολογισμός Σημείου Δρόσου από Θερμοκρασία & Υγρό Θερμόμετρο (δυαδική αναζήτηση)
+        function solveDewFromTempWetBulb(temp, targetWb) {
+            let low = -35.0;
+            let high = temp;
+            for (let i = 0; i < 24; i++) {
+                const mid = (low + high) * 0.5;
+                const wb = calcWetBulbFromTempDew(temp, mid);
+                if (wb < targetWb) low = mid;
+                else high = mid;
+            }
+            return (low + high) * 0.5;
+        }
+
+        let state = { wind: 12, dir: 240, wetBulb: 6.8, rain: 0, snowline: 2419 };
+
+        function recalcPhysics(sourceSlider = 'temp_dew') {
+            const slTemp = document.getElementById('sl-temp');
+            const slDew = document.getElementById('sl-dew');
+            const slWb = document.getElementById('sl-wb');
+
+            let baseTemp = parseFloat(slTemp.value);
+            let baseDew = parseFloat(slDew.value);
+            let wb;
+
+            if (sourceSlider === 'wb') {
+                // Ο χρήστης κίνησε απευθείας το slider του Υγρού Θερμομέτρου
+                wb = parseFloat(slWb.value);
+                if (wb > baseTemp) {
+                    baseTemp = Math.min(25, Math.round(wb * 2) / 2);
+                    slTemp.value = baseTemp;
+                }
+                const minPossibleWb = calcWetBulb(baseTemp, 5);
+                if (wb < minPossibleWb) {
+                    wb = minPossibleWb;
+                    slWb.value = wb.toFixed(1);
+                }
+                baseDew = solveDewFromTempWetBulb(baseTemp, wb);
+                baseDew = Math.max(-18, Math.min(20, Math.round(baseDew * 2) / 2));
+                slDew.value = baseDew;
+                // Επαναϋπολογισμός ακριβούς wb από τις στρογγυλεμένες τιμές
+                wb = calcWetBulbFromTempDew(baseTemp, baseDew);
+            } else {
+                // Κινήθηκε η Θερμοκρασία ή το Σημείο Δρόσου (ή ήρθαν live/forecast δεδομένα)
+                if (baseDew > baseTemp) {
+                    baseDew = baseTemp;
+                    slDew.value = baseDew;
+                }
+                wb = calcWetBulbFromTempDew(baseTemp, baseDew);
+                slWb.value = wb.toFixed(1);
+            }
+
             const wind = parseFloat(document.getElementById('sl-wind').value);
             const dir = parseFloat(document.getElementById('sl-dir').value);
             const rain = parseFloat(document.getElementById('sl-rain').value);
 
-            // Επιστημονική ορογραφική βαθμίδα (Lapse Rate): πτώση ~0.65°C ανά 100μ για την κορυφή (Σμόλικας στα 2637μ)
-            const altitudeDiffKm = (2637 - 1450) / 1000;
-            const peakTemp = baseTemp - (altitudeDiffKm * 6.5);
-            const peakDew = baseDew - (altitudeDiffKm * 5.0);
-
-            const rh = Math.min(100, Math.max(10, (Math.exp((17.67*baseDew)/(baseDew+243.5)) / Math.exp((17.67*baseTemp)/(baseTemp+243.5))) * 100));
-            const wb = calcWetBulb(baseTemp, rh);
+            // Υψόμετρο χιονόπτωσης (όπου Tw = 0.5°C με υγρή θερμοβαθμίδα 6.5°C/1000μ)
             const snowline = Math.round(1450 + ((wb - 0.5) / 6.5) * 1000);
 
             state.wind = wind;
             state.dir = dir;
             state.wetBulb = wb;
+            state.rain = rain;
+            state.snowline = snowline;
 
             document.getElementById('lbl-temp').innerText = `${baseTemp.toFixed(1)}°C`;
             document.getElementById('lbl-dew').innerText = `${baseDew.toFixed(1)}°C`;
+            document.getElementById('lbl-wb').innerText = `${wb.toFixed(1)}°C`;
             document.getElementById('lbl-wind').innerText = `${wind} km/h`;
             document.getElementById('lbl-dir').innerText = `${dir}°`;
             document.getElementById('lbl-rain').innerText = `${rain.toFixed(1)} mm/h`;
@@ -511,14 +586,22 @@
             document.getElementById('val-wind').innerText = `${wind} km/h`;
             document.getElementById('val-snowline').innerText = snowline <= 1450 ? `Χιόνι στο χωριό` : `${snowline} μ.`;
 
+            precipPoints.visible = rain > 0;
+            precipMat.size = wb <= 0.5 ? 0.38 : 0.28;
+
             rebuildTerrainGeometry(snowline);
         }
 
         ['sl-temp', 'sl-dew', 'sl-wind', 'sl-dir', 'sl-rain'].forEach(id => {
             document.getElementById(id).addEventListener('input', () => {
                 stopForecastPlay();
-                recalcPhysics();
+                recalcPhysics('temp_dew');
             });
+        });
+
+        document.getElementById('sl-wb').addEventListener('input', () => {
+            stopForecastPlay();
+            recalcPhysics('wb');
         });
 
         function applyPreset(type) {
@@ -530,7 +613,7 @@
             } else if (type === 'fog') {
                 document.getElementById('sl-temp').value = 2.5; document.getElementById('sl-dew').value = 2.3; document.getElementById('sl-wind').value = 6; document.getElementById('sl-rain').value = 0.0;
             }
-            recalcPhysics();
+            recalcPhysics('temp_dew');
         }
 
         function loadStoredForecastPacket() {
@@ -583,7 +666,7 @@
             const tag = hrs === 0 ? '+0h (Τώρα)' : `+${hrs}h (${step.timeLabel})`;
             document.getElementById('lbl-fc-step').innerText = tag;
             document.getElementById('live-status-text').innerText = `${currentDataSource === 'hybrid' ? 'Υβριδικό' : 'Σταθμός'} ${tag}`;
-            recalcPhysics();
+            recalcPhysics('temp_dew');
         }
 
         document.getElementById('sl-forecast-hr').addEventListener('input', (e) => {
@@ -643,10 +726,10 @@
                     document.getElementById('sl-dir').value = obs.winddir;
                     document.getElementById('sl-rain').value = obs.metric.precipRate;
                     document.getElementById('live-status-text').innerText = `LIVE ISAMAR38`;
-                    recalcPhysics();
+                    recalcPhysics('temp_dew');
                 }
             } catch (e) {
-                if (currentDataSource === 'live') recalcPhysics();
+                if (currentDataSource === 'live') recalcPhysics('temp_dew');
             }
         }
 
@@ -701,6 +784,54 @@
             }
             windGeo.attributes.position.needsUpdate = true;
             windGeo.attributes.color.needsUpdate = true;
+
+            // Ενημέρωση σωματιδίων υετού (Χιόνι πάνω από snowline, Βροχή κάτω από snowline)
+            if (state.rain > 0) {
+                const pPos = precipGeo.attributes.position.array;
+                const pCol = precipGeo.attributes.color.array;
+                const snowY = elevToSceneY(state.snowline);
+                const rainIntensity = Math.min(2.2, 0.6 + state.rain * 0.18);
+
+                for (let i = 0; i < PRECIP_COUNT; i++) {
+                    let px = pPos[i * 3];
+                    let py = pPos[i * 3 + 1];
+                    let pz = pPos[i * 3 + 2];
+
+                    const isSnow = py >= snowY;
+                    const fallSpeed = (isSnow ? 2.4 : 11.5) * rainIntensity * precipData[i].fallOffset;
+                    const windDrift = (isSnow ? 0.55 : 0.25) * speedScale;
+
+                    py -= fallSpeed * dt;
+                    px += vx * windDrift * dt + (isSnow ? Math.sin(elapsed * 2 + precipData[i].driftPhase) * 0.03 : 0);
+                    pz += vz * windDrift * dt + (isSnow ? Math.cos(elapsed * 2 + precipData[i].driftPhase) * 0.03 : 0);
+
+                    if (px > HALF_SPAN) px = -HALF_SPAN;
+                    if (px < -HALF_SPAN) px = HALF_SPAN;
+                    if (pz > HALF_SPAN) pz = -HALF_SPAN;
+                    if (pz < -HALF_SPAN) pz = HALF_SPAN;
+
+                    const groundY = elevToSceneY(getElevationMeters(px, pz));
+                    if (py <= groundY) {
+                        py = 28 + Math.random() * 8;
+                        px = (Math.random() - 0.5) * (HALF_SPAN * 2);
+                        pz = (Math.random() - 0.5) * (HALF_SPAN * 2);
+                    }
+
+                    pPos[i * 3] = px;
+                    pPos[i * 3 + 1] = py;
+                    pPos[i * 3 + 2] = pz;
+
+                    if (isSnow) {
+                        // Καθαρό λευκό χιονιού
+                        pCol[i * 3] = 0.96; pCol[i * 3 + 1] = 0.98; pCol[i * 3 + 2] = 1.0;
+                    } else {
+                        // Γαλάζιο σταγόνων βροχής
+                        pCol[i * 3] = 0.22; pCol[i * 3 + 1] = 0.74; pCol[i * 3 + 2] = 0.98;
+                    }
+                }
+                precipGeo.attributes.position.needsUpdate = true;
+                precipGeo.attributes.color.needsUpdate = true;
+            }
 
             controls.update();
             updateLabels();
