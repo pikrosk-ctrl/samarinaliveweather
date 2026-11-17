@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Δορυφορική Ροή & Νέφωση — Σμόλικας / Σαμαρίνα</title>
+    <title>3D Δορυφορική Ροή & 12h Πρόγνωση — Σμόλικας / Σαμαρίνα</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -24,28 +24,28 @@
 
         .hud-top {
             position: fixed;
-            top: 14px;
+            top: 12px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(15, 23, 42, 0.84);
+            background: rgba(15, 23, 42, 0.88);
             border: 1px solid rgba(56, 189, 248, 0.35);
             backdrop-filter: blur(8px);
-            padding: 10px 20px;
+            padding: 9px 18px;
             border-radius: 12px;
             text-align: center;
             z-index: 20;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-            max-width: 92vw;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.65);
+            max-width: 94vw;
         }
         .hud-top h1 {
-            font-size: 0.96rem;
+            font-size: 0.94rem;
             color: #e0f2fe;
             letter-spacing: 0.3px;
         }
         .hud-top p {
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             color: #94a3b8;
-            margin-top: 3px;
+            margin-top: 2px;
         }
         .badges-row {
             display: flex;
@@ -63,7 +63,7 @@
             background: rgba(16, 185, 129, 0.15);
             border: 1px solid rgba(16, 185, 129, 0.45);
             color: #34d399;
-            font-size: 0.71rem;
+            font-size: 0.7rem;
             font-weight: 700;
         }
         .dem-pill {
@@ -75,7 +75,7 @@
             background: rgba(56, 189, 248, 0.14);
             border: 1px solid rgba(56, 189, 248, 0.4);
             color: #7dd3fc;
-            font-size: 0.71rem;
+            font-size: 0.7rem;
             font-weight: 600;
         }
         .time-pill {
@@ -87,7 +87,7 @@
             background: rgba(251, 191, 36, 0.14);
             border: 1px solid rgba(251, 191, 36, 0.45);
             color: #fde68a;
-            font-size: 0.71rem;
+            font-size: 0.7rem;
             font-weight: 600;
             cursor: pointer;
             transition: background 0.2s, border-color 0.2s;
@@ -102,6 +102,84 @@
             border-radius: 50%;
             background: #10b981;
             box-shadow: 0 0 8px #10b981;
+        }
+
+        /* 12-Hour Forecast Timeline Bar */
+        .timeline-box {
+            margin-top: 8px;
+            padding-top: 7px;
+            border-top: 1px solid rgba(51, 65, 85, 0.75);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .source-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        .src-btn {
+            background: #0f172a;
+            color: #94a3b8;
+            border: 1px solid #334155;
+            padding: 3px 9px;
+            border-radius: 6px;
+            font-size: 0.69rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .src-btn:hover { color: #e2e8f0; border-color: #64748b; }
+        .src-btn.active-live {
+            background: rgba(16, 185, 129, 0.22);
+            color: #34d399;
+            border-color: #10b981;
+        }
+        .src-btn.active-station {
+            background: rgba(52, 211, 153, 0.2);
+            color: #6ee7b7;
+            border-color: #34d399;
+        }
+        .src-btn.active-hybrid {
+            background: rgba(56, 189, 248, 0.22);
+            color: #7dd3fc;
+            border-color: #38bdf8;
+        }
+        .timeline-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+        .play-btn {
+            background: #0284c7;
+            color: #fff;
+            border: none;
+            padding: 3px 9px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            min-width: 64px;
+        }
+        .play-btn:hover { background: #0ea5e9; }
+        .play-btn.playing { background: #d97706; }
+        #sl-forecast-hr {
+            width: 170px;
+            accent-color: #38bdf8;
+            height: 4px;
+            cursor: pointer;
+        }
+        .fc-step-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #e0f2fe;
+            background: #0f172a;
+            border: 1px solid #334155;
+            padding: 2px 8px;
+            border-radius: 6px;
+            min-width: 115px;
         }
 
         .hud-stats {
@@ -240,9 +318,10 @@
         .marker-label.samarina span { color: #34d399; }
 
         @media (max-width: 768px) {
-            .hud-top { top: 44px; padding: 7px 12px; }
-            .hud-top h1 { font-size: 0.8rem; }
+            .hud-top { top: 44px; padding: 7px 10px; }
+            .hud-top h1 { font-size: 0.78rem; }
             .hud-top p { display: none; }
+            #sl-forecast-hr { width: 110px; }
             .hud-stats {
                 top: auto;
                 bottom: 14px;
@@ -265,7 +344,7 @@
     <div id="canvas-container"></div>
 
     <div class="hud-top">
-        <h1>3D Ορογραφική Ροή & Νέφωση — Σμόλικας / Σαμαρίνα</h1>
+        <h1>3D Ορογραφική Ροή & 12h Πρόγνωση — Σμόλικας / Σαμαρίνα</h1>
         <p>Περιστροφή: Αριστερό κλικ • Ζουμ: Ροδέλα • Μετακίνηση: Δεξί κλικ • Βορράς (N) ↑</p>
         <div class="badges-row">
             <div class="live-pill">
@@ -273,7 +352,20 @@
                 <span id="live-status-text">Σύνδεση με ISAMAR38...</span>
             </div>
             <div class="dem-pill" id="dem-status-text">🛰️ Εκκίνηση DEM...</div>
-            <button class="time-pill" id="time-mode-btn" onclick="cycleTimeMode()" title="Αλλαγή φωτισμού (Auto / Ημέρα / Σούρουπο / Νύχτα)">🌙 Νύχτα (Auto)</button>
+            <button class="time-pill" id="time-mode-btn" onclick="cycleTimeMode()" title="Αλλαγή φωτισμού (Auto / Ημέρα / Σούρουπο / Νύχτα)">☀️ Ημέρα (Auto)</button>
+        </div>
+
+        <div class="timeline-box">
+            <div class="source-tabs">
+                <button class="src-btn active-live" id="btn-src-live" onclick="setDataSource('live')">🟢 Live Τώρα</button>
+                <button class="src-btn" id="btn-src-station" onclick="setDataSource('station')">📡 Πρόγνωση Σταθμού (+12h)</button>
+                <button class="src-btn" id="btn-src-hybrid" onclick="setDataSource('hybrid')">❄️ Υβριδικό (+12h)</button>
+            </div>
+            <div class="timeline-controls" id="timeline-controls" style="display:none;">
+                <button class="play-btn" id="btn-play-fc" onclick="toggleForecastPlay()">▶ Play</button>
+                <input type="range" id="sl-forecast-hr" min="0" max="12" step="1" value="0">
+                <span class="fc-step-badge" id="lbl-fc-step">+0h (Τώρα)</span>
+            </div>
         </div>
     </div>
 
@@ -290,7 +382,7 @@
     <div class="hud-controls">
         <div class="ctrl-header">
             <span>Παράμετροι & Προσομοίωση</span>
-            <button class="btn-live-sync" onclick="syncLiveWeather()">Live</button>
+            <button class="btn-live-sync" onclick="setDataSource('live')">Live</button>
         </div>
         <div class="slider-group">
             <div class="slider-label"><span>Θερμοκρασία (°C)</span><span id="lbl-temp">8.0°C</span></div>
@@ -349,6 +441,10 @@
         const DEM_CACHE_KEY = "smolikas_real_dem_24x24_v5";
 
         let realDemGrid = null;
+        let forecastPacket = null;
+        let currentDataSource = 'live'; // 'live' | 'station' | 'hybrid'
+        let forecastPlayTimer = null;
+        let forecastOverrideDecHour = null;
 
         function latLonToSceneXZ(lat, lon) {
             const u = (lon - GEO_BOUNDS.lonMin) / (GEO_BOUNDS.lonMax - GEO_BOUNDS.lonMin);
@@ -532,7 +628,6 @@
         controls.maxDistance = 90;
         controls.target.set(-2, 10.0, -1);
 
-        // --- Dynamic Time-of-Day Lighting & Sky ---
         const hemiLight = new THREE.HemisphereLight(0x93c5fd, 0x1e293b, 0.65);
         scene.add(hemiLight);
 
@@ -544,7 +639,6 @@
         rimLight.position.set(-40, 22, -30);
         scene.add(rimLight);
 
-        // Subtle Starfield for Night & Dusk
         const STAR_COUNT = 600;
         const starGeo = new THREE.BufferGeometry();
         const starPos = new Float32Array(STAR_COUNT * 3);
@@ -582,22 +676,22 @@
         function updateTimeOfDayLighting() {
             const mode = TIME_MODES[timeModeIndex];
             const now = new Date();
-            let decHour = now.getHours() + now.getMinutes() / 60;
+            let decHour = (forecastOverrideDecHour !== null && mode === 'auto')
+                ? forecastOverrideDecHour
+                : (now.getHours() + now.getMinutes() / 60);
 
             if (mode === 'day') decHour = 13.0;
             else if (mode === 'dusk') decHour = 18.7;
             else if (mode === 'night') decHour = 2.0;
 
-            // Sun elevation curve: peaks at 13:00 (+1), lowest at 01:00 (-1)
             const solarAngle = ((decHour - 7.0) / 12.0) * Math.PI;
-            const sunElevation = Math.sin(solarAngle); // -1 (midnight) to +1 (noon)
+            const sunElevation = Math.sin(solarAngle);
 
             let skyColor, fogColor, sunColor, hemiSky, hemiGround, rimColor;
             let sunIntensity, hemiIntensity, rimIntensity, starOpacity, cloudTint;
             let phaseIcon, phaseName;
 
             if (sunElevation > 0.25) {
-                // Full Alpine Day
                 const t = Math.min(1, (sunElevation - 0.25) / 0.75);
                 skyColor = lerpColorHex(0x163256, 0x1d4678, t);
                 fogColor = lerpColorHex(0x1b3a63, 0x26528a, t);
@@ -613,8 +707,7 @@
                 phaseIcon = "☀️";
                 phaseName = "Ημέρα";
             } else if (sunElevation > -0.22) {
-                // Dawn / Dusk Golden-Violet Twilight
-                const t = (sunElevation + 0.22) / 0.47; // 0 = deep twilight, 1 = bright golden hour
+                const t = (sunElevation + 0.22) / 0.47;
                 skyColor = lerpColorHex(0x0b1122, 0x2a1b36, t);
                 fogColor = lerpColorHex(0x10172b, 0x3b233e, t);
                 sunColor = lerpColorHex(0xf97316, 0xfbbf24, t);
@@ -629,10 +722,9 @@
                 phaseIcon = decHour < 12 ? "🌄" : "🌅";
                 phaseName = decHour < 12 ? "Αυγή" : "Σούρουπο";
             } else {
-                // Deep Alpine Night (Moonlight)
                 skyColor = new THREE.Color(0x050914);
                 fogColor = new THREE.Color(0x070d1c);
-                sunColor = new THREE.Color(0x93c5fd); // Cool moonlight
+                sunColor = new THREE.Color(0x93c5fd);
                 hemiSky = new THREE.Color(0x3b5998);
                 hemiGround = new THREE.Color(0x111827);
                 rimColor = new THREE.Color(0x38bdf8);
@@ -656,12 +748,10 @@
             rimLight.intensity = rimIntensity;
             starMat.opacity = starOpacity;
 
-            // Sun / Moon arc across the sky
             if (sunElevation > -0.22) {
                 const az = ((decHour - 6.0) / 12.0) * Math.PI;
                 sunLight.position.set(Math.cos(az) * 55, Math.max(12, sunElevation * 62), Math.sin(az) * 35);
             } else {
-                // High moon position so Smolikas snow & ridges stay crisp at night
                 sunLight.position.set(-32, 48, 34);
             }
 
@@ -671,8 +761,10 @@
 
             const btn = document.getElementById('time-mode-btn');
             if (btn) {
+                const hh = String(Math.floor(decHour) % 24).padStart(2, '0');
+                const mm = String(Math.round((decHour - Math.floor(decHour)) * 60) % 60).padStart(2, '0');
                 const suffix = mode === 'auto'
-                    ? ` (Auto ${now.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' })})`
+                    ? ` (${forecastOverrideDecHour !== null ? 'Πρόγν. ' : 'Auto '}${hh}:${mm})`
                     : '';
                 btn.innerText = `${phaseIcon} ${phaseName}${suffix}`;
             }
@@ -978,12 +1070,18 @@
 
         ['sl-temp', 'sl-dew', 'sl-wind', 'sl-dir', 'sl-rain'].forEach(id => {
             document.getElementById(id).addEventListener('input', () => {
+                stopForecastPlay();
+                forecastOverrideDecHour = null;
+                updateTimeOfDayLighting();
                 document.getElementById('live-status-text').innerText = 'Προσομοίωση Χρήστη (Manual)';
                 recalcPhysics();
             });
         });
 
         function applyPreset(type) {
+            stopForecastPlay();
+            forecastOverrideDecHour = null;
+            updateTimeOfDayLighting();
             document.getElementById('live-status-text').innerText = 'Προσομοίωση Χρήστη (Preset)';
             if (type === 'snow') {
                 document.getElementById('sl-temp').value = -1.5;
@@ -1007,25 +1105,180 @@
             recalcPhysics();
         }
 
+        function buildStandaloneStation12h(obs) {
+            const temp = obs.metric.temp;
+            const dew = obs.metric.dewpt;
+            const wind = obs.metric.windSpeed;
+            const dir = obs.winddir;
+            const rate = obs.metric.precipRate;
+            const spread = temp - dew;
+            const now = new Date();
+            const baseDate = new Date(now);
+            baseDate.setMinutes(0, 0, 0);
+            const currentHour = now.getHours() + now.getMinutes() / 60;
+            const diurnalFactor = (h) => -Math.cos(((h - 4) / 24) * 2 * Math.PI);
+            const baseSwing = (spread > 4 && wind < 12) ? 3.8 : 2.2;
+            const isNortherly = (dir >= 315 || dir <= 65);
+            const isSoutherly = (dir >= 135 && dir <= 250);
+
+            const steps = [];
+            for (let hrs = 0; hrs <= 12; hrs++) {
+                const fDate = new Date(baseDate.getTime() + hrs * 3600 * 1000);
+                const tLabel = fDate.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
+                const targetHour = (currentHour + hrs) % 24;
+                const diurnalDelta = (diurnalFactor(targetHour) - diurnalFactor(currentHour)) * baseSwing;
+                let adv = 0;
+                if (isNortherly && wind > 5) adv = -0.12 * Math.min(wind, 35) * (hrs / 12);
+                else if (isSoutherly && wind > 5) adv = 0.08 * Math.min(wind, 35) * (hrs / 12);
+
+                const predT = Number((temp + diurnalDelta + adv).toFixed(1));
+                const predDew = Number(Math.min(predT, dew + diurnalDelta * 0.35).toFixed(1));
+                const stepObj = {
+                    temp: predT,
+                    dew: predDew,
+                    wind: Math.round(wind),
+                    dir: dir,
+                    precip: Number((rate * Math.max(0, 1 - hrs / 8)).toFixed(1)),
+                    snowCm: 0,
+                    prob: Math.max(65, Math.round(96 - hrs * 1.2))
+                };
+                steps.push({
+                    hrs,
+                    timeLabel: tLabel,
+                    decHour: fDate.getHours() + fDate.getMinutes() / 60,
+                    station: stepObj,
+                    hybrid: stepObj
+                });
+            }
+            return { generatedAt: Date.now(), hasHybridModel: false, steps };
+        }
+
+        function loadStoredForecastPacket() {
+            try {
+                const raw = localStorage.getItem('samarina_12h_forecast_v1');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed && Array.isArray(parsed.steps) && parsed.steps.length >= 13) {
+                        forecastPacket = parsed;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'SAMARINA_12H_FORECAST' && event.data.payload) {
+                forecastPacket = event.data.payload;
+                if (currentDataSource !== 'live') {
+                    applyForecastHourStep(parseInt(document.getElementById('sl-forecast-hr').value, 10) || 0);
+                }
+            }
+        });
+
+        function setDataSource(src) {
+            currentDataSource = src;
+            document.getElementById('btn-src-live').className = 'src-btn' + (src === 'live' ? ' active-live' : '');
+            document.getElementById('btn-src-station').className = 'src-btn' + (src === 'station' ? ' active-station' : '');
+            document.getElementById('btn-src-hybrid').className = 'src-btn' + (src === 'hybrid' ? ' active-hybrid' : '');
+
+            const timelineEl = document.getElementById('timeline-controls');
+            if (src === 'live') {
+                stopForecastPlay();
+                forecastOverrideDecHour = null;
+                updateTimeOfDayLighting();
+                timelineEl.style.display = 'none';
+                syncLiveWeather();
+            } else {
+                loadStoredForecastPacket();
+                timelineEl.style.display = 'flex';
+                const hr = parseInt(document.getElementById('sl-forecast-hr').value, 10) || 0;
+                applyForecastHourStep(hr);
+            }
+        }
+
+        function applyForecastHourStep(hrs) {
+            if (!forecastPacket || !forecastPacket.steps || !forecastPacket.steps[hrs]) return;
+            const step = forecastPacket.steps[hrs];
+            const data = (currentDataSource === 'hybrid' && step.hybrid) ? step.hybrid : step.station;
+
+            document.getElementById('sl-temp').value = data.temp;
+            document.getElementById('sl-dew').value = data.dew;
+            document.getElementById('sl-wind').value = data.wind;
+            document.getElementById('sl-dir').value = data.dir;
+            document.getElementById('sl-rain').value = data.precip;
+
+            const tag = hrs === 0 ? '+0h (Τώρα)' : `+${hrs}h (${step.timeLabel})`;
+            document.getElementById('lbl-fc-step').innerText = tag;
+
+            const srcLabel = currentDataSource === 'hybrid' ? 'Υβριδική Πρόγνωση' : 'Πρόγνωση Σταθμού';
+            document.getElementById('live-status-text').innerText = `${srcLabel} ${tag}`;
+
+            forecastOverrideDecHour = step.decHour;
+            updateTimeOfDayLighting();
+            recalcPhysics();
+        }
+
+        document.getElementById('sl-forecast-hr').addEventListener('input', (e) => {
+            stopForecastPlay();
+            applyForecastHourStep(parseInt(e.target.value, 10) || 0);
+        });
+
+        function toggleForecastPlay() {
+            const btn = document.getElementById('btn-play-fc');
+            if (forecastPlayTimer) {
+                stopForecastPlay();
+                return;
+            }
+            btn.innerText = '⏸ Pause';
+            btn.classList.add('playing');
+            forecastPlayTimer = setInterval(() => {
+                const slider = document.getElementById('sl-forecast-hr');
+                let next = (parseInt(slider.value, 10) || 0) + 1;
+                if (next > 12) next = 0;
+                slider.value = next;
+                applyForecastHourStep(next);
+            }, 1400);
+        }
+
+        function stopForecastPlay() {
+            if (forecastPlayTimer) {
+                clearInterval(forecastPlayTimer);
+                forecastPlayTimer = null;
+            }
+            const btn = document.getElementById('btn-play-fc');
+            if (btn) {
+                btn.innerText = '▶ Play';
+                btn.classList.remove('playing');
+            }
+        }
+
         async function syncLiveWeather() {
+            loadStoredForecastPacket();
             try {
                 const url = `https://api.weather.com/v2/pws/observations/current?stationId=${WU_STATION_ID}&format=json&units=m&numericPrecision=decimal&apiKey=${WU_API_KEY}`;
                 const res = await fetch(url);
                 const data = await res.json();
                 const obs = data.observations[0];
 
-                document.getElementById('sl-temp').value = obs.metric.temp;
-                document.getElementById('sl-dew').value = obs.metric.dewpt;
-                document.getElementById('sl-wind').value = Math.round(obs.metric.windSpeed);
-                document.getElementById('sl-dir').value = obs.winddir;
-                document.getElementById('sl-rain').value = obs.metric.precipRate;
+                if (!forecastPacket) {
+                    forecastPacket = buildStandaloneStation12h(obs);
+                }
 
-                const timeStr = new Date().toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
-                document.getElementById('live-status-text').innerText = `LIVE ISAMAR38 (${timeStr})`;
-                recalcPhysics();
+                if (currentDataSource === 'live') {
+                    document.getElementById('sl-temp').value = obs.metric.temp;
+                    document.getElementById('sl-dew').value = obs.metric.dewpt;
+                    document.getElementById('sl-wind').value = Math.round(obs.metric.windSpeed);
+                    document.getElementById('sl-dir').value = obs.winddir;
+                    document.getElementById('sl-rain').value = obs.metric.precipRate;
+
+                    const timeStr = new Date().toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
+                    document.getElementById('live-status-text').innerText = `LIVE ISAMAR38 (${timeStr})`;
+                    recalcPhysics();
+                }
             } catch (err) {
-                document.getElementById('live-status-text').innerText = 'Offline / Προεπιλογή';
-                recalcPhysics();
+                if (currentDataSource === 'live') {
+                    document.getElementById('live-status-text').innerText = 'Offline / Προεπιλογή';
+                    recalcPhysics();
+                }
             }
         }
 
