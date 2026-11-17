@@ -481,27 +481,32 @@
         let state = { wind: 12, dir: 240, wetBulb: 6.7 };
 
         function recalcPhysics() {
-            const temp = parseFloat(document.getElementById('sl-temp').value);
-            const dew = parseFloat(document.getElementById('sl-dew').value);
+            const baseTemp = parseFloat(document.getElementById('sl-temp').value);
+            const baseDew = parseFloat(document.getElementById('sl-dew').value);
             const wind = parseFloat(document.getElementById('sl-wind').value);
             const dir = parseFloat(document.getElementById('sl-dir').value);
             const rain = parseFloat(document.getElementById('sl-rain').value);
 
-            const rh = Math.min(100, Math.max(10, (Math.exp((17.67*dew)/(dew+243.5)) / Math.exp((17.67*temp)/(temp+243.5))) * 100));
-            const wb = calcWetBulb(temp, rh);
+            // Επιστημονική ορογραφική βαθμίδα (Lapse Rate): πτώση ~0.65°C ανά 100μ για την κορυφή (Σμόλικας στα 2637μ)
+            const altitudeDiffKm = (2637 - 1450) / 1000;
+            const peakTemp = baseTemp - (altitudeDiffKm * 6.5);
+            const peakDew = baseDew - (altitudeDiffKm * 5.0);
+
+            const rh = Math.min(100, Math.max(10, (Math.exp((17.67*baseDew)/(baseDew+243.5)) / Math.exp((17.67*baseTemp)/(baseTemp+243.5))) * 100));
+            const wb = calcWetBulb(baseTemp, rh);
             const snowline = Math.round(1450 + ((wb - 0.5) / 6.5) * 1000);
 
             state.wind = wind;
             state.dir = dir;
             state.wetBulb = wb;
 
-            document.getElementById('lbl-temp').innerText = `${temp.toFixed(1)}°C`;
-            document.getElementById('lbl-dew').innerText = `${dew.toFixed(1)}°C`;
+            document.getElementById('lbl-temp').innerText = `${baseTemp.toFixed(1)}°C`;
+            document.getElementById('lbl-dew').innerText = `${baseDew.toFixed(1)}°C`;
             document.getElementById('lbl-wind').innerText = `${wind} km/h`;
             document.getElementById('lbl-dir').innerText = `${dir}°`;
             document.getElementById('lbl-rain').innerText = `${rain.toFixed(1)} mm/h`;
 
-            document.getElementById('val-temp').innerText = `${temp.toFixed(1)}°C`;
+            document.getElementById('val-temp').innerText = `${baseTemp.toFixed(1)}°C`;
             document.getElementById('val-wb').innerText = `${wb.toFixed(1)}°C`;
             document.getElementById('val-wind').innerText = `${wind} km/h`;
             document.getElementById('val-snowline').innerText = snowline <= 1450 ? `Χιόνι στο χωριό` : `${snowline} μ.`;
