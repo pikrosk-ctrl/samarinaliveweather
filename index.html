@@ -770,7 +770,7 @@
         const WU_STATION_ID = "ISAMAR38";
         const WU_API_KEY = "5c94ee0c13f240ec94ee0c13f2b0ecd9";
         const STATS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ_y9OVAjf5gRIJN7ZKm_OuR_fP5UFcu2YWX3XNU7PRxSouu3L2-kPh6Rk1u3VP-pdBjOTIo22t3mN/pub?gid=409751746&single=true&output=csv";
-        const OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast?latitude=40.105&longitude=21.018&elevation=1450&hourly=temperature_2m,precipitation,precipitation_probability,snowfall,freezing_level_height,weather_code,wind_speed_10m,wind_direction_10m,dew_point_2m,cloud_cover&daily=sunrise,sunset,daylight_duration&models=best_match&timezone=Europe%2FAthens&forecast_days=3";
+        const OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast?latitude=40.105&longitude=21.018&elevation=1450&hourly=temperature_2m,precipitation,precipitation_probability,snowfall,freezing_level_height,weather_code,wind_speed_10m,wind_direction_10m,dew_point_2m,cloud_cover&daily=sunrise,sunset,daylight_duration&models=best_match&timezone=Europe%2FAthens&forecast_days=2";
         const LARISSA_METEO_URL = "https://api.open-meteo.com/v1/forecast?latitude=39.639&longitude=22.419&current=temperature_2m&timezone=Europe%2FAthens";
         const ARCHIVE_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ_y9OVAjf5gRIJN7ZKm_OuR_fP5UFcu2YWX3XNU7PRxSouu3L2-kPh6Rk1u3VP-pdBjOTIo22t3mN/pub?gid=1184894056&single=true&output=csv";
 
@@ -1037,11 +1037,11 @@
 
             const idxNow = omData.hourly.time.findIndex(t => t.startsWith(nowIsoPrefix));
             const idxTarget = omData.hourly.time.findIndex(t => t.startsWith(targetIsoPrefix));
-            if (idxTarget === -1) {
+            if (idxTarget === -1 || typeof omData.hourly.temperature_2m[idxTarget] !== 'number') {
                 return { ...localPred, station: localPred, wTempStationPct: 100, wPrecipStationPct: 100, isHybrid: false };
             }
 
-            const modelTempNow = idxNow !== -1 ? omData.hourly.temperature_2m[idxNow] : temp;
+            const modelTempNow = (idxNow !== -1 && typeof omData.hourly.temperature_2m[idxNow] === 'number') ? omData.hourly.temperature_2m[idxNow] : temp;
             const initialBias = temp - modelTempNow;
             const decayedBias = initialBias * Math.max(0, 1 - (hrs / 24));
             const correctedModelTemp = omData.hourly.temperature_2m[idxTarget] + decayedBias;
@@ -1053,12 +1053,12 @@
             const wPrecipModel = 1 - wPrecipStation;
 
             const hybridTemp = Number(((localPred.temp * wTempStation) + (correctedModelTemp * wTempModel)).toFixed(1));
-            const modelDew = omData.hourly.dew_point_2m?.[idxTarget] ?? localPred.dew;
+            const modelDew = (typeof omData.hourly.dew_point_2m?.[idxTarget] === 'number') ? omData.hourly.dew_point_2m[idxTarget] : localPred.dew;
             const hybridDew = Number(Math.min(hybridTemp, (localPred.dew * wTempStation) + (modelDew * wTempModel)).toFixed(1));
             const hybridTw = estimateFutureWetBulb(hybridTemp, hybridDew);
 
-            const modelWind = omData.hourly.wind_speed_10m?.[idxTarget] ?? localPred.wind;
-            const modelDir = omData.hourly.wind_direction_10m?.[idxTarget] ?? localPred.dir;
+            const modelWind = (typeof omData.hourly.wind_speed_10m?.[idxTarget] === 'number') ? omData.hourly.wind_speed_10m[idxTarget] : localPred.wind;
+            const modelDir = (typeof omData.hourly.wind_direction_10m?.[idxTarget] === 'number') ? omData.hourly.wind_direction_10m[idxTarget] : localPred.dir;
             const hybridWind = Math.round((localPred.wind * wTempStation) + (modelWind * wTempModel));
             const hybridDir = Math.round(modelDir);
 
