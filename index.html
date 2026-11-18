@@ -1,3 +1,5 @@
+HTML
+
 <!DOCTYPE html>
 <html lang="el">
 <head>
@@ -405,6 +407,28 @@
         .footer-card p { font-size: 0.8rem; color: #cbd5e1; margin: 0; }
         .footer-disclaimer { padding-top: 12px; border-top: 1px solid rgba(51, 65, 85, 0.6); font-size: 0.78rem; color: #94a3b8; text-align: center; }
         .footer-disclaimer strong { color: #fde68a; }
+
+        /* --- Επιπλέον Βελτιστοποίηση για Κινητά (< 640px) --- */
+        .mobile-swipe-hint {
+            display: none;
+            font-size: 0.72rem;
+            color: #94a3b8;
+            text-align: right;
+            margin-bottom: 4px;
+        }
+        @media (max-width: 640px) {
+            body { padding: 8px; gap: 10px; }
+            .title h1 { font-size: 1.05rem; }
+            .top-bar { padding: 10px 12px; }
+            .btn-3d-launch, .alert-box { font-size: 0.8rem; padding: 6px 10px; }
+            .s-val { font-size: 1.1rem; }
+            .s-sub { font-size: 0.68rem; }
+            .chart-container { height: 230px; padding: 8px 10px; }
+            .windy-frame-wrap { height: 300px; }
+            .mobile-swipe-hint { display: block; }
+            .meteogram-strip { scroll-snap-type: x mandatory; }
+            .mg-cell { scroll-snap-align: start; min-width: 58px; }
+        }
     </style>
 </head>
 <body>
@@ -422,7 +446,7 @@
             <div id="roadStatus" class="alert-box">🛣️ Έλεγχος δρόμου...</div>
             <div id="topAlert" class="alert-box">Έλεγχος συνθηκών...</div>
             <div class="visitor-badge" title="Συνολικές επισκέψεις σελίδας">
-                <img src="https://visitor-badge.laobi.icu/badge?page_id=samarinaliveweather&left_color=%230f172a&right_color=%230284c7&left_text=%CE%95%CF%80%CE%B9%CF%83%CE%BA%CE%AD%CF%88%CE%B5%CE%B9%CF%82" alt="Επισκέψεις">
+                <img src="https://visitor-badge.laobi.icu/badge?page_id=samarinaliveweather&left_color=%230f172a&right_color=%230284c7&left_text=%CE%95%CF%80%CE%B9%CF%83%CE%BA%CE%ەی%CF%83%CE%B5%CE%B9%CF%82" alt="Επισκέψεις">
             </div>
         </div>
     </div>
@@ -564,6 +588,7 @@
             </div>
 
             <div id="viewMeteogram48">
+                <div class="mobile-swipe-hint">← Σύρετε οριζόντια για όλο το 48ωρο →</div>
                 <div id="meteogramStrip" class="meteogram-strip"></div>
                 <div class="chart-container">
                     <canvas id="meteogramChart"></canvas>
@@ -1037,7 +1062,9 @@
 
             const idxNow = omData.hourly.time.findIndex(t => t.startsWith(nowIsoPrefix));
             const idxTarget = omData.hourly.time.findIndex(t => t.startsWith(targetIsoPrefix));
-            if (idxTarget === -1 || typeof omData.hourly.temperature_2m[idxTarget] !== 'number') {
+            
+            // Ασφαλιστικός έλεγχος τύπων για την αποφυγή τυχόν NaN°C
+            if (idxTarget === -1 || typeof omData.hourly.temperature_2m[idxTarget] !== 'number' || isNaN(omData.hourly.temperature_2m[idxTarget])) {
                 return { ...localPred, station: localPred, wTempStationPct: 100, wPrecipStationPct: 100, isHybrid: false };
             }
 
@@ -1312,7 +1339,6 @@
                     if (closestObs !== null) rawTrend = Number((press - closestObs).toFixed(1));
                 }
 
-                // Εξομάλυνση τάσης πίεσης με localStorage
                 const nowMs = Date.now();
                 let pHist = [];
                 try { pHist = JSON.parse(localStorage.getItem('isamar38_trend_history') || '[]'); } catch (e) {}
@@ -1382,7 +1408,6 @@
                     <span>💨 Μέγ. Ριπή: <b>${maxDayGust} km/h</b></span>
                     <span>❄️ Εκτιμ. Νέο Χιόνι (24h): <b>${estSnowCm24.toFixed(1)} cm</b></span>`;
 
-                // 24ωρες κάρτες (Υβριδικό + Σταθμός σε εναλλαγή)
                 let hybridHtml = '', stationHtml = '';
                 for (let hrs = 3; hrs <= 24; hrs += 3) {
                     const futureDate = new Date(baseDate.getTime() + hrs * 3600 * 1000);
@@ -1418,7 +1443,6 @@
                 cached24CardsHtml = { hybrid: hybridHtml, station: stationHtml };
                 switch24CardsSource(current24CardsSource);
 
-                // 48ωρη Πρόγνωση & Μετεώγραμμα
                 const data48 = buildHybrid48hData(baseDate, temp, dew, hum, press, trend, wind, dir, rate, omData);
                 document.getElementById('forecast48Grid').innerHTML = data48.summaryBlocks.map(b => `
                     <div class="f-card-48">
@@ -1432,7 +1456,6 @@
 
                 renderMeteogram(data48.steps3h);
 
-                // Alerts & Διάγνωση
                 const hazards = getMountainHazards({ temp, hum, wind, gust, rain, rate, chill, spread, estSnowCm24 });
                 const roadEl = document.getElementById('roadStatus');
                 roadEl.className = 'alert-box';
@@ -1463,7 +1486,6 @@
                     : '';
                 diagBox.innerHTML = diagText + hazardsHtml;
 
-                // Ωριαίο Γράφημα 24ώρου (Tab 2)
                 document.getElementById('chartVerdict').innerHTML = minTemp24 <= 0.5
                     ? `🧊 <b>Ξαστεριά &amp; Παγετός:</b> Η θερμοκρασία πέφτει έως τους <b>${minTemp24.toFixed(1)}°C</b> — προσοχή σε παγετό.`
                     : `☀️ <b>Εξέλιξη 24ώρου:</b> Ελάχιστη <b>${minTemp24.toFixed(1)}°C</b>, συνολικός εκτιμώμενος υετός <b>${totalPrecip24.toFixed(1)} mm</b>.`;
@@ -1640,7 +1662,7 @@
             <div class="footer-grid">
                 <div class="footer-card">
                     <h4>📡 Ζωντανή Τηλεμετρία (ISAMAR38)</h4>
-                    <p>Μετρήσεις από τον ιδιωτικό μετεωρολογικό σταθμό Bresser 5-in-1 στη Σαμαρίνα με αυτόματη διόρθωση απογευματινής σκίασης κτιρίου (14:00–16:30) και υπολογισμό θερμοκρασίας υγρού βολβού (Stull Wet-Bulb).</p>
+                    <p>Μετρήσεις από τον ιδιωτικό μετεωρολογικό σταθμό Bresser 5-in-1 τη Σαμαρίνα με αυτόματη διόρθωση απογευματινής σκίασης κτιρίου (14:00–16:30) και υπολογισμό θερμοκρασίας υγρού βολβού (Stull Wet-Bulb).</p>
                 </div>
                 <div class="footer-card">
                     <h4>❄️ Υβριδικό Μοντέλο Πρόγνωσης</h4>
