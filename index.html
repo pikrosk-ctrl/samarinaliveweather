@@ -837,7 +837,7 @@
                             <div class="ai-sub-note" id="invLapseNote">Υψομετρική διαφορά: 1.380 μ.</div>
                         </div>
                         <div id="invStatusBadge" class="ai-badge inv-normal">
-                            Υπολογισμός θερμοβαθμίδας...
+                            Υπολογισμός διαφοράς θερμοκρασίας...
                         </div>
                     </div>
 
@@ -1111,21 +1111,21 @@
                 diffEl.innerText = `${sign}${deltaT.toFixed(1)}°C`;
 
                 const lapsePer100m = ((larTemp - samTemp) / 13.8).toFixed(2);
-                lapseNoteEl.innerText = `Θερμοβαθμίδα: ${lapsePer100m}°C / 100μ. (Κανονική: ~0.65°C)`;
+                lapseNoteEl.innerText = `Πτώση ${lapsePer100m}°C ανά 100μ. (αναμενόμενη: ~0.65°C)`;
 
                 invBadgeEl.className = "ai-badge";
                 if (deltaT > 0) {
                     diffEl.style.color = "#f87171";
                     invBadgeEl.classList.add("inv-active");
-                    invBadgeEl.innerText = `🔥 ΕΝΕΡΓΗ ΘΕΡΜΟΚΡΑΣΙΑΚΗ ΑΝΑΣΤΡΟΦΗ — Η Σαμαρίνα είναι κατά +${deltaT.toFixed(1)}°C θερμότερη από τη Λάρισα!`;
+                    invBadgeEl.innerText = `☀️ ΑΝΑΣΤΡΟΦΗ: ΠΙΟ ΖΕΣΤΑ ΣΤΗ ΣΑΜΑΡΙΝΑ ΑΠΟ ΤΟΝ ΚΑΜΠΟ (+${deltaT.toFixed(1)}°C)`;
                 } else if (deltaT > -6.0) {
                     diffEl.style.color = "#fbbf24";
                     invBadgeEl.classList.add("inv-weak");
-                    invBadgeEl.innerText = `⚠️ ΑΣΘΕΝΗΣ ΘΕΡΜΟΒΑΘΜΙΔΑ / ΕΓΚΛΩΒΙΣΜΟΣ ΨΥΧΟΥΣ ΣΤΟΝ ΚΑΜΠΟ`;
+                    invBadgeEl.innerText = `🌫️ ΚΡΥΟ ΣΤΟΝ ΚΑΜΠΟ — ΗΠΙΑ ΨΗΛΑ (Διαφορά ${deltaT.toFixed(1)}°C)`;
                 } else {
                     diffEl.style.color = "#38bdf8";
                     invBadgeEl.classList.add("inv-normal");
-                    invBadgeEl.innerText = `✅ ΚΑΝΟΝΙΚΗ ΘΕΡΜΟΒΑΘΜΙΔΑ ΥΨΟΜΕΤΡΟΥ (Διαφορά ${deltaT.toFixed(1)}°C)`;
+                    invBadgeEl.innerText = `🏔️ ΦΥΣΙΟΛΟΓΙΚΗ ΔΡΟΣΙΑ ΒΟΥΝΟΥ (Διαφορά ${deltaT.toFixed(1)}°C)`;
                 }
             }
 
