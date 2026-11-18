@@ -279,6 +279,7 @@
         .f-temp { font-size: 1.05rem; font-weight: bold; color: #38bdf8; }
         .f-card-solo .f-temp { color: #34d399; }
         .f-snow { font-size: 0.74rem; color: #bae6fd; margin-top: 2px; }
+        .f-wind { font-size: 0.71rem; color: #94a3b8; margin-top: 2px; font-weight: 500; }
         .f-weight { font-size: 0.62rem; color: #64748b; margin-top: 2px; line-height: 1.25; }
         .f-prob {
             display: inline-block;
@@ -893,6 +894,22 @@
             return arr[(val % 16)];
         }
 
+        function kmhToBeaufort(kmh) {
+            if (kmh < 1) return 0;
+            if (kmh <= 5) return 1;
+            if (kmh <= 11) return 2;
+            if (kmh <= 19) return 3;
+            if (kmh <= 28) return 4;
+            if (kmh <= 38) return 5;
+            if (kmh <= 49) return 6;
+            if (kmh <= 61) return 7;
+            if (kmh <= 74) return 8;
+            if (kmh <= 88) return 9;
+            if (kmh <= 102) return 10;
+            if (kmh <= 117) return 11;
+            return 12;
+        }
+
         function getForecastIcon(precip, snowCm, wetBulb, temp, isActiveRainNow) {
             if (snowCm >= 0.3 || ((precip >= 0.5 || isActiveRainNow) && wetBulb <= 0.5)) return '❄️';
             if (precip >= 0.5 || isActiveRainNow) return '🌧️';
@@ -1141,7 +1158,7 @@
                 document.getElementById('stPress').innerText = `${press.toFixed(1)} hPa`;
                 document.getElementById('stHum').innerText = `${hum}%`;
                 document.getElementById('stSpread').innerText = `Απόσταση: ${spread.toFixed(1)}°C`;
-                document.getElementById('stWind').innerText = `${wind} km/h`;
+                document.getElementById('stWind').innerText = `${wind} km/h (${kmhToBeaufort(wind)} Bf)`;
                 document.getElementById('stDir').innerText = `Διεύθ.: ${degToCompass(dir)} (${dir}°)`;
                 document.getElementById('stRain').innerText = `${rain} mm`;
                 document.getElementById('stRate').innerText = `Ρυθμός: ${rate} mm/h`;
@@ -1363,6 +1380,7 @@
 
                     const hProbClass = pred.prob >= 85 ? 'prob-high' : (pred.prob >= 72 ? 'prob-med' : 'prob-low');
                     const hIcon = getForecastIcon(pred.precip, pred.snowCm, pred.wetBulb, pred.temp, activeNow);
+                    const hBf = kmhToBeaufort(pred.wind);
 
                     const weightLabel = pred.isHybrid
                         ? `<div class="f-weight">Θερμ: ${pred.wTempStationPct}% Στ. | Υετός: ${100 - pred.wPrecipStationPct}% Μοντ.</div>`
@@ -1374,6 +1392,7 @@
                             <div class="f-icon">${hIcon}</div>
                             <div class="f-temp">${pred.temp.toFixed(1)}°C</div>
                             <div class="f-snow">${pred.snowCm > 0 ? 'Χιόνι: ' + pred.snowCm + 'cm' : (pred.precip > 0 ? 'Υετός: ' + pred.precip + 'mm' : 'Ξηρό')}</div>
+                            <div class="f-wind">💨 ${pred.wind} km/h (${hBf} Bf) ${degToCompass(pred.dir)}</div>
                             ${weightLabel}
                             <div class="f-prob ${hProbClass}">Βεβαιότ.: ${pred.prob}%</div>
                         </div>
@@ -1381,6 +1400,7 @@
 
                     const sProbClass = st.prob >= 85 ? 'prob-high' : (st.prob >= 72 ? 'prob-med' : 'prob-low');
                     const sIcon = getForecastIcon(st.precip, st.snowCm, st.wetBulb, st.temp, activeNow);
+                    const sBf = kmhToBeaufort(st.wind);
 
                     stationGrid.innerHTML += `
                         <div class="f-card-solo">
@@ -1388,6 +1408,7 @@
                             <div class="f-icon">${sIcon}</div>
                             <div class="f-temp">${st.temp.toFixed(1)}°C</div>
                             <div class="f-snow">${st.snowCm > 0 ? 'Χιόνι: ' + st.snowCm + 'cm' : (st.precip > 0 ? 'Υετός: ' + st.precip + 'mm' : 'Ξηρό')}</div>
+                            <div class="f-wind">💨 ${st.wind} km/h (${sBf} Bf) ${degToCompass(st.dir)}</div>
                             <div class="f-prob ${sProbClass}">Βεβαιότ.: ${st.prob}%</div>
                         </div>
                     `;
