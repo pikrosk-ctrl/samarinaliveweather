@@ -907,7 +907,7 @@
                 hazards.push({ id: "extreme_chill", level: severe ? "danger" : "warn", badge: severe ? `🥶 ΑΚΡΑΙΟ ΨΥΧΟΣ (${chill.toFixed(0)}°C)` : `🥶 ΙΣΧΥΡΟ WIND CHILL (${chill.toFixed(0)}°C)`, detail: `Αίσθηση ψύχους ${chill.toFixed(1)}°C με άνεμο ${wind} km/h.` });
             }
             if (gust >= 60) {
-                hazards.push({ id: "gale_gusts", level: "danger", badge: `💨 ΘΥΕΛΛΩΔΕΙΣ ΡΙΠΕΣ (${gust} km/h)`, detail: `Πολύ ισχυρές ριπές ανέμου στη Σαμαρίνα.` });
+                hazards.push({ id: "gale_gusts", level: "danger", badge: `💨 ΘΥΕΛΛΩΔΕΙΣ ΡΙΠΕΣ (${gust} km/h)`, detail: `Πολύ ισχυρές ριπές ανέμου τη Σαμαρίνα.` });
             }
             return hazards;
         }
@@ -1061,7 +1061,6 @@
             const idxNow = omData.hourly.time.findIndex(t => t.startsWith(nowIsoPrefix));
             const idxTarget = omData.hourly.time.findIndex(t => t.startsWith(targetIsoPrefix));
             
-            // Ασφαλιστικός έλεγχος τύπων για την αποφυγή τυχόν NaN°C
             if (idxTarget === -1 || typeof omData.hourly.temperature_2m[idxTarget] !== 'number' || isNaN(omData.hourly.temperature_2m[idxTarget])) {
                 return { ...localPred, station: localPred, wTempStationPct: 100, wPrecipStationPct: 100, isHybrid: false };
             }
@@ -1576,7 +1575,11 @@
             if (!canvas || !archiveRecords.length) return;
             const filter = document.getElementById("archiveMonthFilter").value;
             const targetMonth = filter === "ALL" ? String(archiveRecords[0].Date).slice(0, 7) : filter;
-            const monthRecords = archiveRecords.filter(r => String(r.Date).startsWith(targetMonth)).slice().reverse();
+            
+            // Εφαρμογή του ίδιου φίλτρου (Samples >= 20) και στο μηνιαίο γράφημα
+            const validRecords = archiveRecords.filter(r => Number(r.Samples || 0) >= 20);
+            const monthRecords = validRecords.filter(r => String(r.Date).startsWith(targetMonth)).slice().reverse();
+            
             const labels = monthRecords.map(r => `${String(r.Date).split("-")[2]}/${String(r.Date).split("-")[1]}`);
 
             if (monthlyArchiveChartInstance) monthlyArchiveChartInstance.destroy();
@@ -1607,9 +1610,17 @@
 
         function renderArchiveCards() {
             const filter = document.getElementById("archiveMonthFilter").value;
-            const filtered = filter === "ALL" ? archiveRecords : archiveRecords.filter(r => String(r.Date).startsWith(filter));
-            document.getElementById("archiveCountBadge").innerText = `${filtered.length} καταγεγραμμένες ημέρες`;
-            if (!filtered.length) return;
+            
+            // 🛑 Εφαρμογή φίλτρου: Εξαίρεση ημερών με λιγότερες από 20 ώρες δειγματοληψίας (π.χ. ημιτελείς μέρες)
+            const validRecords = archiveRecords.filter(r => Number(r.Samples || 0) >= 20);
+            
+            const filtered = filter === "ALL" ? validRecords : validRecords.filter(r => String(r.Date).startsWith(filter));
+            document.getElementById("archiveCountBadge").innerText = `${filtered.length} πλήρεις καταγεγραμμένες ημέρες`;
+            if (!filtered.length) {
+                document.getElementById("monthlySummaryBox").innerHTML = `<p style="color:#94a3b8;">Δεν υπάρχουν πλήρεις ημέρες με επαρκείς δειγματοληψίες.</p>`;
+                document.getElementById("dailyCardsGrid").innerHTML = "";
+                return;
+            }
 
             const absMin = Math.min(...filtered.map(r => Number(r.Tmin))).toFixed(1);
             const absMax = Math.max(...filtered.map(r => Number(r.Tmax))).toFixed(1);
