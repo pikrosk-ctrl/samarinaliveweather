@@ -63,6 +63,7 @@
         }
         .alert-snow { background: #0284c7; color: #ffffff; box-shadow: 0 0 15px rgba(2,132,199,0.6); }
         .alert-storm { background: #d97706; color: #ffffff; }
+        .alert-offline { background: #78350f; color: #fef3c7; border: 1px solid #f59e0b; }
         .road-ok { background: #065f46; color: #d1fae5; border: 1px solid #10b981; }
         .road-warn { background: #78350f; color: #fef3c7; border: 1px solid #f59e0b; }
         .road-danger { background: #7f1d1d; color: #fee2e2; border: 1px solid #ef4444; }
@@ -219,6 +220,11 @@
             font-size: 0.9rem;
             line-height: 1.4;
             color: #e0f2fe;
+        }
+        .smart-box.offline-box {
+            border-left-color: #f59e0b;
+            background: rgba(120, 53, 15, 0.25);
+            color: #fef3c7;
         }
         .hazard-list {
             display: flex;
@@ -692,7 +698,7 @@
             if (tempC <= -3) {
                 banner.style.display = 'block';
                 if (tempC <= -6) {
-                    banner.style.background = '#7f1d1d'; // Βαθύ κόκκινο για ακραίο παγετό
+                    banner.style.background = '#7f1d1d';
                     icon.textContent = '🚨';
                     msg.textContent = `ΣΥΝΑΓΕΡΜΟΣ ΑΚΡΑΙΟΥ ΠΑΓΕΤΟΥ (${tempC}°C): Άμεση ανάγκη αποστράγγισης εσωτερικών δικτύων στα κλειστά σπίτια της Σαμαρίνας!`;
                 } else {
@@ -1107,7 +1113,15 @@
                 const omData = omRes && omRes.ok ? await omRes.json() : null;
                 const obs = wuData.observations[0];
 
-                document.getElementById('hybridBadge').innerText = omData ? "🟢 ICON/ECMWF + ISAMAR38" : "🟡 Μόνο ISAMAR38";
+                // Έλεγχος παλαιότητας δεδομένων σταθμού (> 20 λεπτά = εκτός σύνδεσης / διακοπή ρεύματος)
+                const obsEpochMs = obs.epoch ? (obs.epoch * 1000) : (obs.obsTimeUtc ? new Date(obs.obsTimeUtc).getTime() : Date.now());
+                const obsAgeMinutes = (Date.now() - obsEpochMs) / 60000;
+                const isStationOffline = obsAgeMinutes > 20;
+                const lastObsTimeStr = new Date(obsEpochMs).toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
+
+                document.getElementById('hybridBadge').innerText = isStationOffline
+                    ? "🟠 Offline Σταθμός — Μόνο ICON/ECMWF"
+                    : (omData ? "🟢 ICON/ECMWF + ISAMAR38" : "🟡 Μόνο ISAMAR38");
 
                 const temp = obs.metric.temp;
                 const dew = obs.metric.dewpt;
@@ -1122,7 +1136,39 @@
                 const spread = temp - dew;
                 const wetBulb = calcWetBulb(temp, hum);
 
-                // Ενεργοποίηση ελέγχου παγετού βάσει της τρέχουσας θερμοκρασίας του σταθμού
+                document.getElementById('stTemp').innerText = `${temp.toFixed(1)}°C`;
+                document.getElementById('stDew').innerText = `Σ.Δ.: ${dew.toFixed(1)}°C | Υγρό: ${wetBulb.toFixed(1)}°C`;
+                document.getElementById('stPress').innerText = `${press.toFixed(1)} hPa`;
+                document.getElementById('stHum').innerText = `${hum}%`;
+                document.getElementById('stSpread').innerText = `Απόσταση: ${spread.toFixed(1)}°C`;
+                document.getElementById('stWind').innerText = `${wind} km/h`;
+                document.getElementById('stDir').innerText = `Διεύθ.: ${degToCompass(dir)} (${dir}°)`;
+                document.getElementById('stRain').innerText = `${rain} mm`;
+                document.getElementById('stRate').innerText = `Ρυθμός: ${rate} mm/h`;
+                document.getElementById('stChill').innerText = `${chill.toFixed(1)}°C`;
+
+                const diagBox = document.getElementById('smartDiagnosis');
+                diagBox.classList.remove('offline-box');
+
+                // Αν ο σταθμός είναι εκτός σύνδεσης, παγώνουμε τους τοπικούς υπολογισμούς & ενημερώνουμε καθαρά
+                if (isStationOffline) {
+                    document.getElementById('stTrend').innerText = `Τάση 3ωρου: -- (Offline)`;
+                    document.getElementById('lastUpdate').innerHTML = `<span style="color:#fbbf24;">⚠️ Τελευτ. λήψη: ${lastObsTimeStr}</span>`;
+
+                    const topAlert = document.getElementById('topAlert');
+                    topAlert.className = 'alert-box alert-offline';
+                    topAlert.innerText = `⚠️ ΣΤΑΘΜΟΣ ΕΚΤΟΣ ΣΥΝΔΕΣΗΣ (${lastObsTimeStr})`;
+
+                    const roadEl = document.getElementById('roadStatus');
+                    roadEl.className = 'alert-box road-warn';
+                    roadEl.innerText = '🛣️ Δρόμος: Αναμονή σύνδεσης σταθμού';
+
+                    diagBox.classList.add('offline-box');
+                    diagBox.innerHTML = `⚠️ <b>Ο σταθμός ISAMAR38 είναι προσωρινά εκτός σύνδεσης:</b> Τελευταία καταγραφή στις <b>${lastObsTimeStr}</b> (πριν από ${Math.round(obsAgeMinutes)} λεπτά — πιθανή διακοπή ρεύματος ή Wi-Fi στη Σαμαρίνα). Οι τιμές του σταθμού δεν είναι τρέχουσες και οι τοπικοί υπολογισμοί έχουν παγώσει μέχρι να επανέλθει η σύνδεση.`;
+                    return;
+                }
+
+                // Ενεργοποίηση ελέγχου παγετού βάσει της τρέχουσας (ζωντανής) θερμοκρασίας του σταθμού
                 updateFrostWarning(temp);
 
                 let rawTrend = 0;
@@ -1178,17 +1224,7 @@
                     trend = rawTrend;
                 }
 
-                document.getElementById('stTemp').innerText = `${temp.toFixed(1)}°C`;
-                document.getElementById('stDew').innerText = `Σ.Δ.: ${dew.toFixed(1)}°C | Υγρό: ${wetBulb.toFixed(1)}°C`;
-                document.getElementById('stPress').innerText = `${press.toFixed(1)} hPa`;
                 document.getElementById('stTrend').innerText = `Τάση 3ωρου: ${trend >= 0 ? '+' : ''}${trend.toFixed(1)} hPa`;
-                document.getElementById('stHum').innerText = `${hum}%`;
-                document.getElementById('stSpread').innerText = `Απόσταση: ${spread.toFixed(1)}°C`;
-                document.getElementById('stWind').innerText = `${wind} km/h`;
-                document.getElementById('stDir').innerText = `Διεύθ.: ${degToCompass(dir)} (${dir}°)`;
-                document.getElementById('stRain').innerText = `${rain} mm`;
-                document.getElementById('stRate').innerText = `Ρυθμός: ${rate} mm/h`;
-                document.getElementById('stChill').innerText = `${chill.toFixed(1)}°C`;
                 document.getElementById('lastUpdate').innerText = `Ενημ.: ${new Date().toLocaleTimeString('el-GR', {hour:'2-digit', minute:'2-digit'})}`;
 
                 let minDayT = temp, maxDayT = temp, maxDayGust = gust;
@@ -1462,7 +1498,7 @@
                     ).join('') + '</div>';
                 }
 
-                document.getElementById('smartDiagnosis').innerHTML = diagText + hazardsHtml;
+                diagBox.innerHTML = diagText + hazardsHtml;
 
                 // 1. Αυτόματη Ημερομηνία & Ώρα 24ώρου στον τίτλο του γραφήματος
                 const endDate24 = new Date(baseDate.getTime() + 24 * 3600 * 1000);
@@ -1501,20 +1537,17 @@
                 verdictEl.className = 'chart-verdict-bar';
 
                 if (firstSigPrecipIdx >= 3) {
-                    // Νέο μέτωπο που έρχεται αργότερα μέσα στο 24ωρο
                     const fenoType = hasSnowInChart ? 'χιονόπτωση' : 'βροχόπτωση';
                     verdictEl.classList.add(hasSnowInChart ? 'verdict-snow' : 'verdict-rain');
                     const spreadNote = maxSpreadDiff >= 1.5 ? ` (άνοιγμα ψαλίδας ${maxSpreadDiff.toFixed(1)}°C γύρω στις ${chartLabels[maxSpreadIdx]})` : '';
                     verdictEl.innerHTML = `${hasSnowInChart ? '❄️' : '🌧️'} <b>Επερχόμενα φαινόμενα:</b> Αναμένεται <b>${fenoType}</b> από τις <b>${chartLabels[firstSigPrecipIdx]}</b> (κορύφωση στις ${chartLabels[peakPrecipIdx]})${spreadNote}.`;
-                } else if (firstAnyPrecipIdx !== -1 && totalChartPrecip < 3.5 && peakPrecipIdx <= 3) {
-                    // Ασθενής/υπολειμματικός υετός που ξεκινά τώρα και εξασθενεί
+                } else if (firstAnyPrecipIdx !== -1 && peakPrecipVal < 1.0 && totalChartPrecip < 5.0 && peakPrecipIdx <= 3) {
                     verdictEl.classList.add(hasSnowInChart ? 'verdict-snow' : 'verdict-rain');
-                    verdictEl.innerHTML = `🌦️ <b>Ασθενής παροδικός υετός:</b> Παρατηρούνται ασθενείς βροχοπτώσεις/ψιχάλες τις επόμενες ώρες (έως τις ${chartLabels[peakPrecipIdx]}), με σταδιακή βελτίωση και χωρίς αξιόλογη επιδείνωση στη συνέχεια.`;
+                    verdictEl.innerHTML = `🌦️ <b>Ασθενής παροδικός υετός:</b> Αναμένονται ασθενείς βροχοπτώσεις/ψιχάλες τις επόμενες ώρες (μέγιστο ~${peakPrecipVal.toFixed(1)} mm/h γύρω στις ${chartLabels[peakPrecipIdx]}), με σταδιακή εξασθένηση στη συνέχεια.`;
                 } else if (firstAnyPrecipIdx !== -1) {
-                    // Ενεργός ή συνεχόμενος υετός
                     const fenoType = hasSnowInChart ? 'χιονόπτωση' : 'βροχόπτωση';
                     verdictEl.classList.add(hasSnowInChart ? 'verdict-snow' : 'verdict-rain');
-                    verdictEl.innerHTML = `${hasSnowInChart ? '❄️' : '🌧️'} <b>Φαινόμενα σε εξέλιξη:</b> Καταγράφεται <b>${fenoType}</b> από τις <b>${chartLabels[firstAnyPrecipIdx]}</b> (μέγιστη ένταση γύρω στις ${chartLabels[peakPrecipIdx]}).`;
+                    verdictEl.innerHTML = `${hasSnowInChart ? '❄️' : '🌧️'} <b>Φαινόμενα σε εξέλιξη / προσεχώς:</b> Αναμένεται <b>${fenoType}</b> από τις <b>${chartLabels[firstAnyPrecipIdx]}</b> (μέγιστη ένταση ${peakPrecipVal.toFixed(1)} mm/h γύρω στις ${chartLabels[peakPrecipIdx]}).`;
                 } else if (maxSpreadDiff >= 2.2) {
                     verdictEl.innerHTML = `☁️ <b>Έλευση νεφώσεων χωρίς υετό:</b> Οι δύο καμπύλες αποκλίνουν έως <b>${maxSpreadDiff.toFixed(1)}°C</b> (γύρω στις ${chartLabels[maxSpreadIdx]}), δείχνοντας συννεφιά που συγκρατεί τη νυχτερινή ψύξη χωρίς βροχή.`;
                 } else if (minTemp24 <= 0.5) {
