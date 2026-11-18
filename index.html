@@ -334,6 +334,38 @@
         .sb-station .sb-pct { color: #34d399; }
         .sb-hybrid .sb-pct { color: #38bdf8; }
 
+        .chart-range-badge {
+            font-size: 0.78rem;
+            color: #38bdf8;
+            background: #0f172a;
+            border: 1px solid #334155;
+            padding: 3px 9px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+        .chart-verdict-bar {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 7px;
+            background: #0f172a;
+            border-left: 4px solid #38bdf8;
+            font-size: 0.83rem;
+            color: #e2e8f0;
+            line-height: 1.4;
+        }
+        .chart-verdict-bar.verdict-rain {
+            border-left-color: #3b82f6;
+            background: rgba(30, 58, 138, 0.25);
+        }
+        .chart-verdict-bar.verdict-snow {
+            border-left-color: #bae6fd;
+            background: rgba(14, 165, 233, 0.22);
+        }
+        .chart-verdict-bar.verdict-frost {
+            border-left-color: #ef4444;
+            background: rgba(127, 29, 29, 0.28);
+        }
+
         .chart-container {
             position: relative;
             height: 275px;
@@ -582,7 +614,13 @@
     <div class="panel">
         <div class="panel-header">
             <span>📈 ΩΡΙΑΙΟ ΓΡΑΦΗΜΑ 24ΩΡΟΥ: ΥΒΡΙΔΙΚΗ ΘΕΡΜΟΚΡΑΣΙΑ vs ΚΑΘΑΡΟΣ ΣΤΑΘΜΟΣ & ΥΕΤΟΣ</span>
-            <span style="font-size:0.78rem; color:#94a3b8;">Σύγκριση ISAMAR38 (διακεκομμένη πράσινη) με Υβριδικό ICON/ECMWF (συνεχής μπλε)</span>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <span id="chartDateRange" class="chart-range-badge">📅 Πρόγνωση 24ώρου</span>
+                <span style="font-size:0.78rem; color:#94a3b8;">Σύγκριση ISAMAR38 (πράσινη) με Υβριδικό (μπλε)</span>
+            </div>
+        </div>
+        <div id="chartVerdict" class="chart-verdict-bar">
+            🔍 Ανάλυση καμπυλών 24ώρου...
         </div>
         <div class="chart-container">
             <canvas id="weatherChart"></canvas>
@@ -1425,6 +1463,52 @@
                 }
 
                 document.getElementById('smartDiagnosis').innerHTML = diagText + hazardsHtml;
+
+                // 1. Αυτόματη Ημερομηνία & Ώρα 24ώρου στον τίτλο του γραφήματος
+                const endDate24 = new Date(baseDate.getTime() + 24 * 3600 * 1000);
+                const fmtDate = d => d.toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
+                document.getElementById('chartDateRange').innerText = `📅 ${fmtDate(baseDate)} → ${fmtDate(endDate24)}`;
+
+                // 2. Αυτοματοποιημένη «Ετυμηγορία Καμπυλών» (Read-Only ανάλυση για επισκέπτες)
+                let maxSpreadIdx = 0;
+                let maxSpreadDiff = 0;
+                let firstPrecipIdx = -1;
+                let peakPrecipIdx = -1;
+                let peakPrecipVal = 0;
+                let hasSnowInChart = false;
+
+                for (let i = 1; i <= 24; i++) {
+                    const diff = Math.abs(chartTemps[i] - chartStationTemps[i]);
+                    if (diff > maxSpreadDiff) {
+                        maxSpreadDiff = diff;
+                        maxSpreadIdx = i;
+                    }
+                    const totalHrWet = chartPrecip[i] + chartSnow[i];
+                    if (totalHrWet >= 0.2 && firstPrecipIdx === -1) {
+                        firstPrecipIdx = i;
+                    }
+                    if (totalHrWet > peakPrecipVal) {
+                        peakPrecipVal = totalHrWet;
+                        peakPrecipIdx = i;
+                    }
+                    if (chartSnow[i] > 0) hasSnowInChart = true;
+                }
+
+                const verdictEl = document.getElementById('chartVerdict');
+                verdictEl.className = 'chart-verdict-bar';
+
+                if (firstPrecipIdx !== -1) {
+                    const fenoType = hasSnowInChart ? 'χιονόπτωση' : 'βροχόπτωση';
+                    verdictEl.classList.add(hasSnowInChart ? 'verdict-snow' : 'verdict-rain');
+                    verdictEl.innerHTML = `${hasSnowInChart ? '❄️' : '🌧️'} <b>Επερχόμενα φαινόμενα:</b> Η ψαλίδα των καμπυλών ανοίγει (${maxSpreadDiff.toFixed(1)}°C διαφορά γύρω στις ${chartLabels[maxSpreadIdx]}), προμηνύοντας <b>${fenoType}</b> από τις <b>${chartLabels[firstPrecipIdx]}</b> (κορύφωση στις ${chartLabels[peakPrecipIdx]}).`;
+                } else if (maxSpreadDiff >= 2.2) {
+                    verdictEl.innerHTML = `☁️ <b>Έλευση νεφώσεων χωρίς υετό:</b> Οι δύο καμπύλες αποκλίνουν έως <b>${maxSpreadDiff.toFixed(1)}°C</b> (γύρω στις ${chartLabels[maxSpreadIdx]}), δείχνοντας συννεφιά που συγκρατεί τη νυχτερινή ψύξη χωρίς αξιόλογη βροχή.`;
+                } else if (minTemp24 <= 0.5) {
+                    verdictEl.classList.add('verdict-frost');
+                    verdictEl.innerHTML = `🧊 <b>Ξαστεριά & Παγετός χωρίς φαινόμενα:</b> Οι καμπύλες ταυτίζονται και πέφτουν έως τους <b>${minTemp24.toFixed(1)}°C</b> (κάτω από την κόκκινη γραμμή 0°C) — προσοχή σε παγετό στον δρόμο.`;
+                } else {
+                    verdictEl.innerHTML = `☀️ <b>Σταθερός & ξηρός καιρός:</b> Η μπλε και η πράσινη καμπύλη κινούνται παράλληλα (χωρίς άνοιγμα ψαλίδας) και δεν αναμένονται φαινόμενα το επόμενο 24ωρο.`;
+                }
 
                 const ctx = document.getElementById('weatherChart').getContext('2d');
                 const tempGradient = ctx.createLinearGradient(0, 0, 0, 250);
