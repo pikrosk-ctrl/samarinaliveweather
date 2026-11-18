@@ -1472,9 +1472,11 @@
                 // 2. Αυτοματοποιημένη «Ετυμηγορία Καμπυλών» (Read-Only ανάλυση για επισκέπτες)
                 let maxSpreadIdx = 0;
                 let maxSpreadDiff = 0;
-                let firstPrecipIdx = -1;
+                let firstSigPrecipIdx = -1; // Βροχή/χιόνι >= 0.5 mm/h
+                let firstAnyPrecipIdx = -1; // Ασθενής υετός >= 0.2 mm/h
                 let peakPrecipIdx = -1;
                 let peakPrecipVal = 0;
+                let totalChartPrecip = 0;
                 let hasSnowInChart = false;
 
                 for (let i = 1; i <= 24; i++) {
@@ -1484,9 +1486,10 @@
                         maxSpreadIdx = i;
                     }
                     const totalHrWet = chartPrecip[i] + chartSnow[i];
-                    if (totalHrWet >= 0.2 && firstPrecipIdx === -1) {
-                        firstPrecipIdx = i;
-                    }
+                    totalChartPrecip += totalHrWet;
+
+                    if (totalHrWet >= 0.2 && firstAnyPrecipIdx === -1) firstAnyPrecipIdx = i;
+                    if (totalHrWet >= 0.5 && firstSigPrecipIdx === -1) firstSigPrecipIdx = i;
                     if (totalHrWet > peakPrecipVal) {
                         peakPrecipVal = totalHrWet;
                         peakPrecipIdx = i;
@@ -1497,15 +1500,26 @@
                 const verdictEl = document.getElementById('chartVerdict');
                 verdictEl.className = 'chart-verdict-bar';
 
-                if (firstPrecipIdx !== -1) {
+                if (firstSigPrecipIdx >= 3) {
+                    // Νέο μέτωπο που έρχεται αργότερα μέσα στο 24ωρο
                     const fenoType = hasSnowInChart ? 'χιονόπτωση' : 'βροχόπτωση';
                     verdictEl.classList.add(hasSnowInChart ? 'verdict-snow' : 'verdict-rain');
-                    verdictEl.innerHTML = `${hasSnowInChart ? '❄️' : '🌧️'} <b>Επερχόμενα φαινόμενα:</b> Η ψαλίδα των καμπυλών ανοίγει (${maxSpreadDiff.toFixed(1)}°C διαφορά γύρω στις ${chartLabels[maxSpreadIdx]}), προμηνύοντας <b>${fenoType}</b> από τις <b>${chartLabels[firstPrecipIdx]}</b> (κορύφωση στις ${chartLabels[peakPrecipIdx]}).`;
+                    const spreadNote = maxSpreadDiff >= 1.5 ? ` (άνοιγμα ψαλίδας ${maxSpreadDiff.toFixed(1)}°C γύρω στις ${chartLabels[maxSpreadIdx]})` : '';
+                    verdictEl.innerHTML = `${hasSnowInChart ? '❄️' : '🌧️'} <b>Επερχόμενα φαινόμενα:</b> Αναμένεται <b>${fenoType}</b> από τις <b>${chartLabels[firstSigPrecipIdx]}</b> (κορύφωση στις ${chartLabels[peakPrecipIdx]})${spreadNote}.`;
+                } else if (firstAnyPrecipIdx !== -1 && totalChartPrecip < 3.5 && peakPrecipIdx <= 3) {
+                    // Ασθενής/υπολειμματικός υετός που ξεκινά τώρα και εξασθενεί
+                    verdictEl.classList.add(hasSnowInChart ? 'verdict-snow' : 'verdict-rain');
+                    verdictEl.innerHTML = `🌦️ <b>Ασθενής παροδικός υετός:</b> Παρατηρούνται ασθενείς βροχοπτώσεις/ψιχάλες τις επόμενες ώρες (έως τις ${chartLabels[peakPrecipIdx]}), με σταδιακή βελτίωση και χωρίς αξιόλογη επιδείνωση στη συνέχεια.`;
+                } else if (firstAnyPrecipIdx !== -1) {
+                    // Ενεργός ή συνεχόμενος υετός
+                    const fenoType = hasSnowInChart ? 'χιονόπτωση' : 'βροχόπτωση';
+                    verdictEl.classList.add(hasSnowInChart ? 'verdict-snow' : 'verdict-rain');
+                    verdictEl.innerHTML = `${hasSnowInChart ? '❄️' : '🌧️'} <b>Φαινόμενα σε εξέλιξη:</b> Καταγράφεται <b>${fenoType}</b> από τις <b>${chartLabels[firstAnyPrecipIdx]}</b> (μέγιστη ένταση γύρω στις ${chartLabels[peakPrecipIdx]}).`;
                 } else if (maxSpreadDiff >= 2.2) {
-                    verdictEl.innerHTML = `☁️ <b>Έλευση νεφώσεων χωρίς υετό:</b> Οι δύο καμπύλες αποκλίνουν έως <b>${maxSpreadDiff.toFixed(1)}°C</b> (γύρω στις ${chartLabels[maxSpreadIdx]}), δείχνοντας συννεφιά που συγκρατεί τη νυχτερινή ψύξη χωρίς αξιόλογη βροχή.`;
+                    verdictEl.innerHTML = `☁️ <b>Έλευση νεφώσεων χωρίς υετό:</b> Οι δύο καμπύλες αποκλίνουν έως <b>${maxSpreadDiff.toFixed(1)}°C</b> (γύρω στις ${chartLabels[maxSpreadIdx]}), δείχνοντας συννεφιά που συγκρατεί τη νυχτερινή ψύξη χωρίς βροχή.`;
                 } else if (minTemp24 <= 0.5) {
                     verdictEl.classList.add('verdict-frost');
-                    verdictEl.innerHTML = `🧊 <b>Ξαστεριά & Παγετός χωρίς φαινόμενα:</b> Οι καμπύλες ταυτίζονται και πέφτουν έως τους <b>${minTemp24.toFixed(1)}°C</b> (κάτω από την κόκκινη γραμμή 0°C) — προσοχή σε παγετό στον δρόμο.`;
+                    verdictEl.innerHTML = `🧊 <b>Ξαστεριά & Παγετός χωρίς φαινόμενα:</b> Οι καμπύλες ταυτίζονται και πέφτουν έως τους <b>${minTemp24.toFixed(1)}°C</b> (κάτω από το 0°C) — προσοχή σε παγετό στον δρόμο.`;
                 } else {
                     verdictEl.innerHTML = `☀️ <b>Σταθερός & ξηρός καιρός:</b> Η μπλε και η πράσινη καμπύλη κινούνται παράλληλα (χωρίς άνοιγμα ψαλίδας) και δεν αναμένονται φαινόμενα το επόμενο 24ωρο.`;
                 }
