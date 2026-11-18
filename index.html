@@ -221,41 +221,55 @@
         .inv-active { background: rgba(127, 29, 29, 0.45); border: 1px solid #ef4444; color: #fecaca; }
         .astro-shade-badge { background: rgba(120, 53, 15, 0.35); border: 1px solid rgba(245, 158, 11, 0.5); color: #fde68a; }
 
-        /* Ενιαίο Panel 3 Προγνώσεων (Πλήρες Πλάτος) */
-        .triple-forecast-grid {
+        /* 2-Column Καθαρή Πρόγνωση (24h Υβριδική + 48h 12ωρα) */
+        .dual-forecast-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: 1.35fr 1fr;
             gap: 12px;
         }
-        @media (max-width: 1100px) {
-            .triple-forecast-grid { grid-template-columns: 1fr; }
+        @media (max-width: 960px) {
+            .dual-forecast-grid { grid-template-columns: 1fr; }
         }
         .tf-column {
             background: #0f172a;
             border: 1px solid #334155;
             border-radius: 8px;
-            padding: 10px;
+            padding: 10px 12px;
             display: flex;
             flex-direction: column;
             gap: 8px;
         }
-        .tf-col-station { border-top: 3px solid #10b981; }
         .tf-col-hybrid24 { border-top: 3px solid #38bdf8; }
         .tf-col-hybrid48 { border-top: 3px solid #a855f7; }
         .tf-col-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.82rem;
+            font-size: 0.85rem;
             font-weight: 700;
             padding-bottom: 6px;
             border-bottom: 1px solid #1e293b;
+            gap: 6px;
+            flex-wrap: wrap;
         }
-        .tf-col-station .tf-col-header { color: #34d399; }
         .tf-col-hybrid24 .tf-col-header { color: #38bdf8; }
         .tf-col-hybrid48 .tf-col-header { color: #c084fc; }
 
-        .forecast-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+        .source-pill-group { display: inline-flex; gap: 4px; background: #1e293b; padding: 2px; border-radius: 6px; border: 1px solid #334155; }
+        .source-pill {
+            background: transparent;
+            color: #94a3b8;
+            border: none;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .source-pill.active-pill { background: #0284c7; color: #ffffff; }
+        .source-pill.active-pill-st { background: #059669; color: #ffffff; }
+
+        .forecast-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
         .forecast-cards-48 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
         @media (max-width: 500px) {
             .station-grid { grid-template-columns: repeat(2, 1fr); }
@@ -263,26 +277,42 @@
         }
         .f-card, .f-card-solo, .f-card-48 {
             background: #1e293b;
-            padding: 7px 5px;
+            padding: 8px 6px;
             border-radius: 7px;
             text-align: center;
             border: 1px solid #334155;
         }
-        .f-card-solo { border-color: rgba(16, 185, 129, 0.3); }
-        .f-card-48 { border-color: rgba(168, 85, 247, 0.35); padding: 9px 8px; }
-        .f-time { font-size: 0.76rem; color: #94a3b8; font-weight: 600; }
-        .f-icon { font-size: 1.25rem; margin: 2px 0; }
-        .f-temp { font-size: 0.98rem; font-weight: bold; color: #38bdf8; }
+        .f-card-solo { border-color: rgba(16, 185, 129, 0.35); }
+        .f-card-48 { border-color: rgba(168, 85, 247, 0.35); padding: 10px 8px; }
+        .f-time { font-size: 0.78rem; color: #94a3b8; font-weight: 600; }
+        .f-icon { font-size: 1.35rem; margin: 3px 0; }
+        .f-temp { font-size: 1.02rem; font-weight: bold; color: #38bdf8; }
         .f-card-solo .f-temp { color: #34d399; }
-        .f-card-48 .f-temp { color: #e9d5ff; font-size: 0.95rem; }
-        .f-snow { font-size: 0.7rem; color: #bae6fd; margin-top: 2px; }
-        .f-wind { font-size: 0.68rem; color: #94a3b8; margin-top: 2px; }
-        .f-prob { display: inline-block; margin-top: 4px; padding: 1px 5px; border-radius: 4px; font-size: 0.64rem; font-weight: 600; background: #0f172a; }
+        .f-card-48 .f-temp { color: #e9d5ff; font-size: 0.98rem; }
+        .f-snow { font-size: 0.72rem; color: #bae6fd; margin-top: 2px; }
+        .f-wind { font-size: 0.7rem; color: #94a3b8; margin-top: 2px; }
+        .f-prob { display: inline-block; margin-top: 4px; padding: 1px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 600; background: #0f172a; }
         .prob-high { color: #34d399; border: 1px solid rgba(52, 211, 153, 0.35); }
         .prob-med { color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); }
         .prob-low { color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.35); }
 
-        /* Μετεώγραμμα & Γραφήματα */
+        /* Ενιαίο Panel Γραφημάτων με Tabs */
+        .chart-tabs-group { display: flex; gap: 6px; flex-wrap: wrap; }
+        .chart-mode-tab {
+            background: #0f172a;
+            color: #94a3b8;
+            border: 1px solid #334155;
+            padding: 5px 12px;
+            border-radius: 7px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .chart-mode-tab.active {
+            background: rgba(2, 132, 199, 0.28);
+            color: #38bdf8;
+            border-color: #38bdf8;
+        }
         .meteogram-strip {
             display: grid;
             grid-template-columns: repeat(16, minmax(52px, 1fr));
@@ -304,14 +334,10 @@
         .mg-ico { font-size: 1.05rem; margin: 2px 0; }
         .mg-w { color: #cbd5e1; font-size: 0.64rem; }
 
-        .chart-range-badge { font-size: 0.78rem; color: #38bdf8; background: #0f172a; border: 1px solid #334155; padding: 3px 9px; border-radius: 6px; font-weight: 600; }
         .chart-verdict-bar { margin-bottom: 10px; padding: 8px 12px; border-radius: 7px; background: #0f172a; border-left: 4px solid #38bdf8; font-size: 0.83rem; color: #e2e8f0; }
-        .chart-verdict-bar.verdict-rain { border-left-color: #3b82f6; background: rgba(30, 58, 138, 0.25); }
-        .chart-verdict-bar.verdict-snow { border-left-color: #bae6fd; background: rgba(14, 165, 233, 0.22); }
-        .chart-verdict-bar.verdict-frost { border-left-color: #ef4444; background: rgba(127, 29, 29, 0.28); }
         .chart-container {
             position: relative;
-            height: 265px;
+            height: 270px;
             width: 100%;
             background: linear-gradient(180deg, #0f172a 0%, #0b1222 100%);
             border-radius: 8px;
@@ -367,8 +393,9 @@
         .modal-3d-box { position: relative; width: 100%; max-width: 1320px; height: 88dvh; background: #060a12; border: 1px solid #334155; border-radius: 12px; overflow: hidden; }
         .modal-3d-close { position: absolute; top: 12px; left: 12px; z-index: 10001; background: #ef4444; color: #ffffff; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; }
 
+        /* Footer */
         .footer-bar { text-align: center; font-size: 0.8rem; color: #64748b; padding: 4px 0 8px 0; }
-        .site-methodology-footer { margin-top: 18px; padding: 24px 16px 32px; background: rgba(15, 23, 42, 0.92); border-top: 1px solid rgba(56, 189, 248, 0.28); color: #cbd5e1; font-size: 0.85rem; line-height: 1.6; }
+        .site-methodology-footer { margin-top: 12px; padding: 24px 16px 32px; background: rgba(15, 23, 42, 0.92); border-top: 1px solid rgba(56, 189, 248, 0.28); color: #cbd5e1; font-size: 0.85rem; line-height: 1.6; border-radius: 10px; }
         .footer-inner { max-width: 1100px; margin: 0 auto; }
         .site-methodology-footer h3 { color: #e0f2fe; font-size: 1rem; margin-bottom: 10px; }
         .footer-lead { color: #94a3b8; margin-bottom: 18px; }
@@ -388,10 +415,10 @@
     <div class="top-bar">
         <div class="title">
             <h1>🏔️ ΣΑΜΑΡΙΝΑ ΓΡΕΒΕΝΩΝ (1.450μ.) — LIVE WEATHER</h1>
-            <span>Σταθμός: Bresser 5-in-1 (ISAMAR38) | Κάμερα: Σαμαρίνα Χωριό | Υβριδική & Αυτόνομη Πρόγνωση</span>
+            <span>Σταθμός: Bresser 5-in-1 (ISAMAR38) | Κάμερα: Σαμαρίνα Χωριό | Υβριδική &amp; Αυτόνομη Πρόγνωση</span>
         </div>
         <div class="top-badges">
-            <button onclick="openSmolikas3D()" class="btn-3d-launch">🏔️ 3D Ροή Αέρα & 12h Πρόγνωση</button>
+            <button onclick="openSmolikas3D()" class="btn-3d-launch">🏔️ 3D Ροή Αέρα &amp; 12h Πρόγνωση</button>
             <div id="roadStatus" class="alert-box">🛣️ Έλεγχος δρόμου...</div>
             <div id="topAlert" class="alert-box">Έλεγχος συνθηκών...</div>
             <div class="visitor-badge" title="Συνολικές επισκέψεις σελίδας">
@@ -401,8 +428,8 @@
     </div>
 
     <div class="view-switch-bar">
-        <button id="btnLiveView" onclick="switchDashboardView('live')" class="tab-switch-btn active-tab">📡 Ζωντανός Καιρός & Πρόγνωση</button>
-        <button id="btnArchiveView" onclick="switchDashboardView('archive')" class="tab-switch-btn">📜 Ιστορικό Αρχείο & Κάρτες</button>
+        <button id="btnLiveView" onclick="switchDashboardView('live')" class="tab-switch-btn active-tab">📡 Ζωντανός Καιρός &amp; Πρόγνωση</button>
+        <button id="btnArchiveView" onclick="switchDashboardView('archive')" class="tab-switch-btn">📜 Ιστορικό Αρχείο &amp; Κάρτες</button>
     </div>
 
     <!-- ΕΝΟΤΗΤΑ 1: ΖΩΝΤΑΝΟ DASHBOARD -->
@@ -498,67 +525,60 @@
             </div>
         </div>
 
-        <!-- 2. ΕΝΙΑΙΟ PANEL 3 ΠΡΟΓΝΩΣΕΩΝ (Κάτω από την κάμερα, σε πλήρες πλάτος) -->
+        <!-- 2. ΚΑΘΑΡΗ 2-ΣΤΗΛΗ ΠΡΟΓΝΩΣΗ (24ωρη Υβριδική + 48ωρη ανά 12ωρο) -->
         <div class="panel">
             <div class="panel-header">
-                <span>🔮 ΠΡΟΓΝΩΣΗ ΚΑΙΡΟΥ ΣΑΜΑΡΙΝΑΣ: ΑΥΤΟΝΟΜΟΣ ΣΤΑΘΜΟΣ 24h • ΥΒΡΙΔΙΚΟ 24h • ΥΒΡΙΔΙΚΟ 48h</span>
+                <span>🔮 ΠΡΟΓΝΩΣΗ ΚΑΙΡΟΥ ΣΑΜΑΡΙΝΑΣ (24ΩΡΟ &amp; 48ΩΡΟ)</span>
                 <span id="hybridBadge" style="font-size:0.78rem; color:#38bdf8;">Συγχρονισμός...</span>
             </div>
-            <div class="triple-forecast-grid">
-                <div class="tf-column tf-col-station">
+            <div class="dual-forecast-grid">
+                <div class="tf-column tf-col-hybrid24" id="col24Container">
                     <div class="tf-col-header">
-                        <span>📡 24h ΑΥΤΟΝΟΜΟΣ ΣΤΑΘΜΟΣ</span>
-                        <span style="font-size:0.7rem; color:#94a3b8;">Zambretti & Ψυχρομετρία</span>
-                    </div>
-                    <div class="forecast-cards" id="stationForecastGrid"></div>
-                </div>
-
-                <div class="tf-column tf-col-hybrid24">
-                    <div class="tf-col-header">
-                        <span>❄️ 24h ΥΒΡΙΔΙΚΗ ΠΡΟΓΝΩΣΗ</span>
-                        <span style="font-size:0.7rem; color:#94a3b8;">ISAMAR38 + ICON/ECMWF</span>
+                        <span id="col24Title">❄️ 24ωρη Υβριδική Πρόγνωση (Ανά 3ωρο)</span>
+                        <div class="source-pill-group">
+                            <button id="pillHybrid24" class="source-pill active-pill" onclick="switch24CardsSource('hybrid')">Υβριδικό</button>
+                            <button id="pillStation24" class="source-pill" onclick="switch24CardsSource('station')">Μόνο Σταθμός</button>
+                        </div>
                     </div>
                     <div class="forecast-cards" id="forecastGrid"></div>
                 </div>
 
                 <div class="tf-column tf-col-hybrid48">
                     <div class="tf-col-header">
-                        <span>📅 48h ΥΒΡΙΔΙΚΗ ΕΞΕΛΙΞΗ (12ωρα)</span>
-                        <span style="font-size:0.7rem; color:#94a3b8;">Ελάχ./Μέγ. &amp; Φαινόμενα</span>
+                        <span>📅 Πρόγνωση 48 Ωρών (Ανά 12ωρο)</span>
+                        <span style="font-size:0.72rem; color:#94a3b8;">Ελάχ. / Μέγ. &amp; Φαινόμενα</span>
                     </div>
                     <div class="forecast-cards-48" id="forecast48Grid"></div>
                 </div>
             </div>
         </div>
 
-        <!-- 3. 48ΩΡΟ ΜΕΤΕΩΓΡΑΜΜΑ (Πλήρες πλάτος) -->
+        <!-- 3. ΕΝΙΑΙΟ PANEL ΓΡΑΦΗΜΑΤΩΝ ΜΕ TABS (48ωρο Μετεώγραμμα | 24ωρο Εργαστηριακό) -->
         <div class="panel">
             <div class="panel-header">
-                <span>📊 48ΩΡΟ ΜΕΤΕΩΓΡΑΜΜΑ ΣΑΜΑΡΙΝΑΣ (ΥΒΡΙΔΙΚΗ ΘΕΡΜΟΚΡΑΣΙΑ • ΥΕΤΟΣ/ΧΙΟΝΙ • ΑΝΕΜΟΣ ΑΝΑ 3ΩΡΟ)</span>
-                <span id="meteogramRange" class="chart-range-badge">📅 Επόμενες 48 ώρες</span>
-            </div>
-            <div id="meteogramStrip" class="meteogram-strip"></div>
-            <div class="chart-container">
-                <canvas id="meteogramChart"></canvas>
-            </div>
-        </div>
-
-        <!-- 4. ΩΡΙΑΙΟ ΓΡΑΦΗΜΑ 24ΩΡΟΥ -->
-        <div class="panel">
-            <div class="panel-header">
-                <span>📈 ΩΡΙΑΙΟ ΓΡΑΦΗΜΑ 24ΩΡΟΥ: ΥΒΡΙΔΙΚΗ ΘΕΡΜΟΚΡΑΣΙΑ vs ΚΑΘΑΡΟΣ ΣΤΑΘΜΟΣ & ΥΕΤΟΣ</span>
-                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                    <span id="chartDateRange" class="chart-range-badge">📅 Πρόγνωση 24ώρου</span>
-                    <span style="font-size:0.78rem; color:#94a3b8;">Σύγκριση ISAMAR38 (πράσινη) με Υβριδικό (μπλε)</span>
+                <span id="unifiedChartTitle">📊 48ΩΡΟ ΜΕΤΕΩΓΡΑΜΜΑ ΣΑΜΑΡΙΝΑΣ (ΘΕΡΜΟΚΡΑΣΙΑ • ΥΕΤΟΣ/ΧΙΟΝΙ • ΑΝΕΜΟΣ ΑΝΑ 3ΩΡΟ)</span>
+                <div class="chart-tabs-group">
+                    <button id="tabMeteogram48" class="chart-mode-tab active" onclick="switchUnifiedChartMode('meteogram48')">📊 48ωρο Μετεώγραμμα</button>
+                    <button id="tabLab24" class="chart-mode-tab" onclick="switchUnifiedChartMode('lab24')">📈 24ωρο Εργαστηριακό (Σταθμός vs Υβριδικό)</button>
                 </div>
             </div>
-            <div id="chartVerdict" class="chart-verdict-bar">🔍 Ανάλυση καμπυλών 24ώρου...</div>
-            <div class="chart-container">
-                <canvas id="weatherChart"></canvas>
+
+            <div id="viewMeteogram48">
+                <div id="meteogramStrip" class="meteogram-strip"></div>
+                <div class="chart-container">
+                    <canvas id="meteogramChart"></canvas>
+                </div>
+            </div>
+
+            <div id="viewLab24" style="display:none;">
+                <div id="chartVerdict" class="chart-verdict-bar">🔍 Ανάλυση καμπυλών 24ώρου...</div>
+                <div class="chart-container">
+                    <canvas id="weatherChart"></canvas>
+                </div>
             </div>
         </div>
 
-        <!-- 5. SCOREBOARD ΑΚΡΙΒΕΙΑΣ (Ανάμεσα στο Γράφημα και το Windy) -->
+        <!-- 4. SCOREBOARD ΑΚΡΙΒΕΙΑΣ -->
         <div class="panel">
             <div class="panel-header">
                 <span>🏆 ΔΙΠΛΟ SCOREBOARD ΑΚΡΙΒΕΙΑΣ: ΣΤΑΘΜΟΣ vs ΥΒΡΙΔΙΚΟ</span>
@@ -590,10 +610,10 @@
             </div>
         </div>
 
-        <!-- 6. ΖΩΝΤΑΝΟΣ ΧΑΡΤΗΣ WINDY -->
+        <!-- 5. ΖΩΝΤΑΝΟΣ ΧΑΡΤΗΣ WINDY -->
         <div class="panel">
             <div class="panel-header">
-                <span>🗺️ ΖΩΝΤΑΝΟΣ ΧΑΡΤΗΣ ΠΙΝΔΟΥ & ΣΜΟΛΙΚΑ (WINDY — ΣΑΜΑΡΙΝΑ 40.105°N, 21.018°E)</span>
+                <span>🗺️ ΖΩΝΤΑΝΟΣ ΧΑΡΤΗΣ ΠΙΝΔΟΥ &amp; ΣΜΟΛΙΚΑ (WINDY — ΣΑΜΑΡΙΝΑ 40.105°N, 21.018°E)</span>
                 <div class="windy-layer-tabs">
                     <button class="windy-tab active" onclick="setWindyOverlay('rain', this)">🌧️ Βροχή / Ραντάρ</button>
                     <button class="windy-tab" onclick="setWindyOverlay('snowAccu', this)">❄️ Νέο Χιόνι</button>
@@ -667,6 +687,52 @@
         }
 
         let latest12hForecastPacket = null;
+        let cached24CardsHtml = { hybrid: '', station: '' };
+        let current24CardsSource = 'hybrid';
+
+        function switch24CardsSource(source) {
+            current24CardsSource = source;
+            const grid = document.getElementById('forecastGrid');
+            const title = document.getElementById('col24Title');
+            const pillH = document.getElementById('pillHybrid24');
+            const pillS = document.getElementById('pillStation24');
+
+            if (source === 'station') {
+                title.innerText = '📡 24ωρη Πρόγνωση Αυτόνομου Σταθμού';
+                title.style.color = '#34d399';
+                pillH.className = 'source-pill';
+                pillS.className = 'source-pill active-pill-st';
+                if (cached24CardsHtml.station) grid.innerHTML = cached24CardsHtml.station;
+            } else {
+                title.innerText = '❄️ 24ωρη Υβριδική Πρόγνωση (Ανά 3ωρο)';
+                title.style.color = '#38bdf8';
+                pillH.className = 'source-pill active-pill';
+                pillS.className = 'source-pill';
+                if (cached24CardsHtml.hybrid) grid.innerHTML = cached24CardsHtml.hybrid;
+            }
+        }
+
+        function switchUnifiedChartMode(mode) {
+            const vM48 = document.getElementById('viewMeteogram48');
+            const vL24 = document.getElementById('viewLab24');
+            const tM48 = document.getElementById('tabMeteogram48');
+            const tL24 = document.getElementById('tabLab24');
+            const title = document.getElementById('unifiedChartTitle');
+
+            if (mode === 'lab24') {
+                vM48.style.display = 'none';
+                vL24.style.display = 'block';
+                tM48.classList.remove('active');
+                tL24.classList.add('active');
+                title.innerText = '📈 ΩΡΙΑΙΟ ΓΡΑΦΗΜΑ 24ΩΡΟΥ: ΥΒΡΙΔΙΚΗ ΘΕΡΜΟΚΡΑΣΙΑ vs ΑΥΤΟΝΟΜΟΣ ΣΤΑΘΜΟΣ';
+            } else {
+                vL24.style.display = 'none';
+                vM48.style.display = 'block';
+                tL24.classList.remove('active');
+                tM48.classList.add('active');
+                title.innerText = '📊 48ΩΡΟ ΜΕΤΕΩΓΡΑΜΜΑ ΣΑΜΑΡΙΝΑΣ (ΘΕΡΜΟΚΡΑΣΙΑ • ΥΕΤΟΣ/ΧΙΟΝΙ • ΑΝΕΜΟΣ ΑΝΑ 3ΩΡΟ)';
+            }
+        }
 
         function openSmolikas3D() {
             const modal = document.getElementById('modal-3d');
@@ -1053,7 +1119,7 @@
             }
 
             const windows = [
-                { title: "Επόμ. 12ωρο", start: 1, end: 12 },
+                { title: "Επόμενο 12ωρο", start: 1, end: 12 },
                 { title: "+12h έως +24h", start: 13, end: 24 },
                 { title: "+24h έως +36h", start: 25, end: 36 },
                 { title: "+36h έως +48h", start: 37, end: 47 }
@@ -1246,7 +1312,17 @@
                     if (closestObs !== null) rawTrend = Number((press - closestObs).toFixed(1));
                 }
 
-                const trend = rawTrend;
+                // Εξομάλυνση τάσης πίεσης με localStorage
+                const nowMs = Date.now();
+                let pHist = [];
+                try { pHist = JSON.parse(localStorage.getItem('isamar38_trend_history') || '[]'); } catch (e) {}
+                pHist.push({ t: nowMs, v: rawTrend });
+                pHist = pHist.filter(item => (nowMs - item.t) <= 30 * 60 * 1000);
+                try { localStorage.setItem('isamar38_trend_history', JSON.stringify(pHist)); } catch (e) {}
+                const trend = pHist.length > 0
+                    ? Number((pHist.reduce((acc, item) => acc + item.v, 0) / pHist.length).toFixed(1))
+                    : rawTrend;
+
                 document.getElementById('stTrend').innerText = `Τάση 3ωρου: ${trend >= 0 ? '+' : ''}${trend.toFixed(1)} hPa`;
                 document.getElementById('lastUpdate').innerText = `Ενημ.: ${new Date().toLocaleTimeString('el-GR', {hour:'2-digit', minute:'2-digit'})}`;
 
@@ -1306,12 +1382,8 @@
                     <span>💨 Μέγ. Ριπή: <b>${maxDayGust} km/h</b></span>
                     <span>❄️ Εκτιμ. Νέο Χιόνι (24h): <b>${estSnowCm24.toFixed(1)} cm</b></span>`;
 
-                // 3 Στήλες Προγνώσεων
-                const hybridGrid = document.getElementById('forecastGrid');
-                const stationGrid = document.getElementById('stationForecastGrid');
-                hybridGrid.innerHTML = '';
-                stationGrid.innerHTML = '';
-
+                // 24ωρες κάρτες (Υβριδικό + Σταθμός σε εναλλαγή)
+                let hybridHtml = '', stationHtml = '';
                 for (let hrs = 3; hrs <= 24; hrs += 3) {
                     const futureDate = new Date(baseDate.getTime() + hrs * 3600 * 1000);
                     const tStr = futureDate.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
@@ -1321,7 +1393,7 @@
 
                     const hProbClass = pred.prob >= 85 ? 'prob-high' : (pred.prob >= 72 ? 'prob-med' : 'prob-low');
                     const hIcon = getForecastIcon(pred.precip, pred.snowCm, pred.wetBulb, pred.temp, activeNow);
-                    hybridGrid.innerHTML += `
+                    hybridHtml += `
                         <div class="f-card">
                             <div class="f-time">${tStr}</div>
                             <div class="f-icon">${hIcon}</div>
@@ -1333,7 +1405,7 @@
 
                     const sProbClass = st.prob >= 85 ? 'prob-high' : (st.prob >= 72 ? 'prob-med' : 'prob-low');
                     const sIcon = getForecastIcon(st.precip, st.snowCm, st.wetBulb, st.temp, activeNow);
-                    stationGrid.innerHTML += `
+                    stationHtml += `
                         <div class="f-card-solo">
                             <div class="f-time">${tStr}</div>
                             <div class="f-icon">${sIcon}</div>
@@ -1343,6 +1415,8 @@
                             <div class="f-prob ${sProbClass}">${st.prob}%</div>
                         </div>`;
                 }
+                cached24CardsHtml = { hybrid: hybridHtml, station: stationHtml };
+                switch24CardsSource(current24CardsSource);
 
                 // 48ωρη Πρόγνωση & Μετεώγραμμα
                 const data48 = buildHybrid48hData(baseDate, temp, dew, hum, press, trend, wind, dir, rate, omData);
@@ -1389,11 +1463,7 @@
                     : '';
                 diagBox.innerHTML = diagText + hazardsHtml;
 
-                // Ωριαίο Γράφημα 24ώρου
-                const endDate24 = new Date(baseDate.getTime() + 24 * 3600 * 1000);
-                const fmtDate = d => d.toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
-                document.getElementById('chartDateRange').innerText = `📅 ${fmtDate(baseDate)} → ${fmtDate(endDate24)}`;
-
+                // Ωριαίο Γράφημα 24ώρου (Tab 2)
                 document.getElementById('chartVerdict').innerHTML = minTemp24 <= 0.5
                     ? `🧊 <b>Ξαστεριά &amp; Παγετός:</b> Η θερμοκρασία πέφτει έως τους <b>${minTemp24.toFixed(1)}°C</b> — προσοχή σε παγετό.`
                     : `☀️ <b>Εξέλιξη 24ώρου:</b> Ελάχιστη <b>${minTemp24.toFixed(1)}°C</b>, συνολικός εκτιμώμενος υετός <b>${totalPrecip24.toFixed(1)} mm</b>.`;
@@ -1524,15 +1594,26 @@
             const absMin = Math.min(...filtered.map(r => Number(r.Tmin))).toFixed(1);
             const absMax = Math.max(...filtered.map(r => Number(r.Tmax))).toFixed(1);
             const totalPrecip = filtered.reduce((a, b) => a + Number(b.PrecipSum || 0), 0).toFixed(1);
+            const frostDays = filtered.filter(r => Number(r.Tmin) <= 0).length;
+
+            const dirCounts = {};
+            filtered.forEach(r => { if (r.DomDirText && r.DomDirText !== "--") dirCounts[r.DomDirText] = (dirCounts[r.DomDirText] || 0) + 1; });
+            const topDirs = Object.entries(dirCounts).sort((a, b) => b[1] - a[1]).slice(0, 4);
+            const windBarsHtml = topDirs.map(([dir, cnt]) => {
+                const pct = Math.round((cnt / filtered.length) * 100);
+                return `<div class="wind-bar-row"><span style="width:42px; font-weight:700;">${dir}</span><div class="wind-bar-track"><div class="wind-bar-fill" style="width:${pct}%;"></div></div><span style="width:36px; text-align:right; color:#94a3b8;">${pct}%</span></div>`;
+            }).join("");
 
             document.getElementById("monthlySummaryBox").innerHTML = `
-                <div class="climate-card-highlight"><div class="climate-card-header"><span>🌡️ Θερμοκρασιακά Ακραία</span><span>${filtered.length} ημ.</span></div><div class="climate-stat-row"><span>Απόλυτη Ελάχιστη:</span><strong style="color:#38bdf8;">${absMin}°C</strong></div><div class="climate-stat-row"><span>Απόλυτη Μέγιστη:</span><strong style="color:#fb923c;">${absMax}°C</strong></div></div>
-                <div class="climate-card-highlight"><div class="climate-card-header"><span>❄️ Υετός Περιόδου</span><span>1.450 μ.</span></div><div class="climate-stat-row"><span>Συνολικός Υετός:</span><strong style="color:#60a5fa;">${totalPrecip} mm</strong></div></div>`;
+                <div class="climate-card-highlight"><div class="climate-card-header"><span>🌡️ Θερμοκρασιακά Ακραία</span><span>${filtered.length} ημ.</span></div><div class="climate-stat-row"><span>Απόλυτη Ελάχιστη:</span><strong style="color:#38bdf8;">${absMin}°C</strong></div><div class="climate-stat-row"><span>Απόλυτη Μέγιστη:</span><strong style="color:#fb923c;">${absMax}°C</strong></div><div class="climate-stat-row"><span>Ημέρες Παγετού (≤0°C):</span><strong style="color:#bae6fd;">${frostDays} ημέρες</strong></div></div>
+                <div class="climate-card-highlight"><div class="climate-card-header"><span>❄️ Υετός Περιόδου</span><span>1.450 μ.</span></div><div class="climate-stat-row"><span>Συνολικός Υετός:</span><strong style="color:#60a5fa;">${totalPrecip} mm</strong></div></div>
+                <div class="climate-card-highlight"><div class="climate-card-header"><span>🧭 Επικρατούντες Άνεμοι</span><span>Ανεμολόγιο</span></div>${windBarsHtml || '<div style="color:#94a3b8; font-size:0.82rem;">Δεν υπάρχουν επαρκή δεδομένα.</div>'}</div>`;
 
             renderMonthlyArchiveChart();
             document.getElementById("dailyCardsGrid").innerHTML = filtered.map(r => {
                 const [y, m, d] = String(r.Date).split("-");
-                return `<div class="climate-card" style="background:#0f172a;"><div class="climate-card-header"><span>📅 ${d}/${m}/${y}</span><span>${r.Samples} ώρ.</span></div><div class="climate-stat-row"><span>Ελάχ. / Μέγ.:</span><span><strong style="color:#38bdf8;">${r.Tmin}°C</strong> / <strong style="color:#fb923c;">${r.Tmax}°C</strong></span></div><div class="climate-stat-row"><span>Υετός:</span><strong>${r.PrecipSum} mm</strong></div></div>`;
+                const isFrost = Number(r.Tmin) <= 0;
+                return `<div class="climate-card" style="background:#0f172a;"><div class="climate-card-header"><span>📅 ${d}/${m}/${y}</span>${isFrost ? '<span class="badge-frost">❄️ Παγετός</span>' : `<span style="font-size:0.75rem; color:#94a3b8;">${r.Samples} ώρ.</span>`}</div><div class="climate-stat-row"><span>Ελάχ. / Μέγ.:</span><span><strong style="color:#38bdf8;">${r.Tmin}°C</strong> / <strong style="color:#fb923c;">${r.Tmax}°C</strong></span></div><div class="climate-stat-row"><span>Υετός / Άνεμος:</span><strong>${r.PrecipSum} mm • ${r.DomDirText || '--'}</strong></div></div>`;
             }).join("");
         }
 
@@ -1556,7 +1637,21 @@
         <div class="footer-inner">
             <h3>ℹ️ Σημείωση Μεθοδολογίας &amp; Σκοπού Δημιουργίας</h3>
             <p class="footer-lead">Η πλατφόρμα δημιουργήθηκε για τη Σαμαρίνα και τον Σμόλικα στα <strong>1.450 μέτρα</strong>, λειτουργώντας ως <strong>εργαλείο τοπικής παρατήρησης (nowcasting) και μικροκλιματικής ανάλυσης</strong>.</p>
-            <div class="footer-disclaimer">Για επίσημες προγνώσεις να συμβουλεύεστε πάντοτε την <strong>Εθνική Μετεωρολογική Υπηρεσία (ΕΜΥ)</strong> και την <strong>Πολιτική Προστασία</strong>.</div>
+            <div class="footer-grid">
+                <div class="footer-card">
+                    <h4>📡 Ζωντανή Τηλεμετρία (ISAMAR38)</h4>
+                    <p>Μετρήσεις από τον ιδιωτικό μετεωρολογικό σταθμό Bresser 5-in-1 στη Σαμαρίνα με αυτόματη διόρθωση απογευματινής σκίασης κτιρίου (14:00–16:30) και υπολογισμό θερμοκρασίας υγρού βολβού (Stull Wet-Bulb).</p>
+                </div>
+                <div class="footer-card">
+                    <h4>❄️ Υβριδικό Μοντέλο Πρόγνωσης</h4>
+                    <p>Συνδυάζει την πραγματική τάση του τοπικού σταθμού (βαρόμετρο, σημείο δρόσου, άνεμος) με αριθμητικά μοντέλα υψηλής ανάλυσης (ICON / ECMWF) με δυναμική διόρθωση σφάλματος (bias correction).</p>
+                </div>
+                <div class="footer-card">
+                    <h4>🏔️ Μικροκλίμα &amp; Ορεινή Ασφάλεια</h4>
+                    <p>Ενσωματώνει τοπικό υπολογισμό σκίασης από τον ορεινό όγκο του Σμόλικα, δείκτη θερμοκρασιακής αναστροφής με τον κάμπο της Λάρισας και εκτίμηση παγετού οδοστρώματος.</p>
+                </div>
+            </div>
+            <div class="footer-disclaimer">Για επίσημες προγνώσεις και έκτακτα δελτία να συμβουλεύεστε πάντοτε την <strong>Εθνική Μετεωρολογική Υπηρεσία (ΕΜΥ)</strong> και την <strong>Πολιτική Προστασία</strong>.</div>
         </div>
     </footer>
     <script data-goatcounter="https://samarinaweather.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
