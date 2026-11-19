@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Μικρά Μαθήματα Ορεινής Μετεωρολογίας — Σαμαρίνα (1.450μ.)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #0b1120;
+            color: #f1f5f9;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            line-height: 1.65;
+            padding: 16px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        /* Top Navigation */
+        .top-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            background: #131c31;
+            border: 1px solid #26344d;
+            border-radius: 12px;
+            padding: 14px 18px;
+            margin-bottom: 18px;
+        }
+        .brand-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #38bdf8;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .brand-sub {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+        .back-btn {
+            background: #0284c7;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 9px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s;
+            border: 1px solid #38bdf8;
+        }
+        .back-btn:hover {
+            background: #0369a1;
+        }
+
+        /* Intro Banner */
+        .intro-box {
+            background: linear-gradient(135deg, #162238 0%, #0f172a 100%);
+            border: 1px solid #2a3b59;
+            border-left: 4px solid #38bdf8;
+            border-radius: 12px;
+            padding: 18px 20px;
+            margin-bottom: 20px;
+        }
+        .intro-box h1 {
+            font-size: 20px;
+            color: #f8fafc;
+            margin-bottom: 8px;
+        }
+        .intro-box p {
+            font-size: 14px;
+            color: #cbd5e1;
+        }
+
+        /* Filter Pills */
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+        .filter-btn {
+            background: #1e293b;
+            color: #cbd5e1;
+            border: 1px solid #334155;
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-btn:hover {
+            border-color: #38bdf8;
+            color: #ffffff;
+        }
+        .filter-btn.active {
+            background: #0284c7;
+            color: #ffffff;
+            border-color: #38bdf8;
+        }
+
+        /* Lesson Cards */
+        .lessons-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .lesson-card {
+            background: #131c31;
+            border: 1px solid #26344d;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+        .lesson-card:hover {
+            border-color: #3b527a;
+        }
+        .lesson-header {
+            padding: 16px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            user-select: none;
+        }
+        .lesson-header-left {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+        }
+        .lesson-icon {
+            font-size: 26px;
+            background: #1e293b;
+            width: 46px;
+            height: 46px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border: 1px solid #334155;
+        }
+        .lesson-tag {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+        }
+        .tag-snow { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+        .tag-inv { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+        .tag-safety { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+        .tag-storm { background: rgba(167, 139, 250, 0.15); color: #a78bfa; }
+
+        .lesson-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #f8fafc;
+        }
+        .lesson-subtitle {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+        .toggle-icon {
+            font-size: 18px;
+            color: #38bdf8;
+            font-weight: bold;
+            transition: transform 0.25s;
+            flex-shrink: 0;
+        }
+        .lesson-card.open .toggle-icon {
+            transform: rotate(180deg);
+        }
+        .lesson-body {
+            display: none;
+            padding: 0 20px 20px 20px;
+            border-top: 1px solid #1e293b;
+            color: #e2e8f0;
+            font-size: 14.5px;
+        }
+        .lesson-card.open .lesson-body {
+            display: block;
+            padding-top: 16px;
+        }
+        .lesson-body p {
+            margin-bottom: 12px;
+        }
+        .lesson-body ul {
+            margin: 10px 0 14px 20px;
+        }
+        .lesson-body li {
+            margin-bottom: 6px;
+        }
+        .samarina-example {
+            background: #0f172a;
+            border: 1px solid #2a3b59;
+            border-left: 3px solid #10b981;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-top: 12px;
+            font-size: 13.5px;
+        }
+        .samarina-example strong {
+            color: #34d399;
+        }
+        .rule-box {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-top: 10px;
+            font-size: 13.5px;
+            color: #fde68a;
+        }
+
+        /* Glossary Section */
+        .glossary-section {
+            margin-top: 26px;
+            background: #131c31;
+            border: 1px solid #26344d;
+            border-radius: 12px;
+            padding: 18px 20px;
+        }
+        .glossary-section h2 {
+            font-size: 16px;
+            color: #38bdf8;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .glossary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 12px;
+        }
+        .glossary-item {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .glossary-term {
+            font-weight: 700;
+            color: #f8fafc;
+            font-size: 13.5px;
+            margin-bottom: 4px;
+        }
+        .glossary-desc {
+            font-size: 12.5px;
+            color: #94a3b8;
+        }
+
+        footer {
+            text-align: center;
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 24px;
+            padding-bottom: 12px;
+        }
+
+        @media (max-width: 600px) {
+            .lesson-header { padding: 14px; }
+            .lesson-body { padding: 0 14px 16px 14px; }
+            .lesson-title { font-size: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div>
+            <div class="brand-title">📚 Μικρά Μαθήματα Ορεινής Μετεωρολογίας</div>
+            <div class="brand-sub">Κατανοώντας τον καιρό της Σαμαρίνας (1.450μ.) & του Σμόλικα με απλά λόγια</div>
+        </div>
+        <a href="index.html" class="back-btn">← Επιστροφή στον Ζωντανό Καιρό</a>
+    </div>
+
+    <div class="intro-box">
+        <h1>Γιατί ο καιρός στα 1.450 μέτρα έχει τους δικούς του κανόνες;</h1>
+        <p>Ο μετεωρολογικός σταθμός <strong>ISAMAR38</strong> στη Σαμαρίνα καταγράφει καθημερινά φαινόμενα που συχνά ξαφνιάζουν όσους ανεβαίνουν από τον κάμπο: χιόνι ενώ το θερμόμετρο δείχνει πάνω από το μηδέν, παγωμένους δρόμους χωρίς να έχει βρέξει, ή λιακάδα με 12°C στο χωριό την ώρα που η Λάρισα έχει παγωνιά και ομίχλη. Παρακάτω θα βρεις σύντομους, πρακτικούς οδηγούς για να διαβάζεις τα δεδομένα του σταθμού σαν έμπειρος παρατηρητής βουνού.</p>
+    </div>
+
+    <div class="filters">
+        <button class="filter-btn active" onclick="filterLessons('all', this)">Όλα τα Μαθήματα (6)</button>
+        <button class="filter-btn" onclick="filterLessons('snow', this)">❄️ Χιόνι & Πάγος</button>
+        <button class="filter-btn" onclick="filterLessons('inv', this)">🌡️ Αναστροφή & Βαρόμετρο</button>
+        <button class="filter-btn" onclick="filterLessons('mountain', this)">🏔️ Μικροκλίμα Σμόλικα</button>
+    </div>
+
+    <div class="lessons-list">
+
+        <!-- Μάθημα 1 -->
+        <div class="lesson-card open" data-cat="inv">
+            <div class="lesson-header" onclick="toggleCard(this)">
+                <div class="lesson-header-left">
+                    <div class="lesson-icon">🌡️</div>
+                    <div>
+                        <span class="lesson-tag tag-inv">Αναστροφή</span>
+                        <div class="lesson-title">1. Θερμοκρασιακή Αναστροφή: Γιατί η Σαμαρίνα έχει «ζέστη» και η Λάρισα παγωνιά;</div>
+                        <div class="lesson-subtitle">Πώς ο κρύος αέρας «λιμνάζει» στους κάμπους ενώ τα ψηλά χωριά λιάζονται</div>
+                    </div>
+                </div>
+                <div class="toggle-icon">▼</div>
+            </div>
+            <div class="lesson-body">
+                <p>Υπό κανονικές συνθήκες, όσο ανεβαίνουμε σε υψόμετρο η θερμοκρασία πέφτει (περίπου <strong>0,65°C ανά 100 μέτρα</strong>). Δηλαδή, η Σαμαρίνα (1.450μ.) θα έπρεπε να είναι κανονικά περίπου <strong>9°C πιο κρύα</strong> από τη Λάρισα (70μ.).</p>
+                <p>Όμως, τις νύχτες με <strong>ξαστεριά και άπνοια</strong> (συνήθως όταν επικρατεί αντικυκλώνας / υψηλές πιέσεις), συμβαίνει το αντίστροφο:</p>
+                <ul>
+                    <li>Το έδαφος χάνει γρήγορα τη θερμότητά του προς τον καθαρό ουρανό και παγώνει τον αέρα που ακουμπά πάνω του.</li>
+                    <li>Ο <strong>ψυχρός αέρας είναι πιο βαρύς</strong> από τον θερμό. Έτσι, κυλάει από τις πλαγιές των βουνών προς τα χαμηλά και «λιμνάζει» στους κάμπους και στις κλειστές κοιλάδες (Λάρισα, Γρεβενά, Κοζάνη).</li>
+                    <li>Αντίθετα, στα 1.450 μέτρα της Σαμαρίνας ο αέρας μένει πιο ξηρός και πιο θερμός.</li>
+                </ul>
+                <div class="samarina-example">
+                    <strong>🔎 Τι να κοιτάς στη σελίδα:</strong> Στο πλαίσιο <em>«ΑΝΑΣΤΡΟΦΗ (ΣΑΜΑΡΙΝΑ vs ΛΑΡΙΣΑ)»</em>, όταν η <strong>Διαφορά ΔΤ</strong> είναι θετική (π.χ. +3°C ή +5°C), έχουμε θερμοκρασιακή αναστροφή: στα 1.450μ. έχει ήλιο και διαύγεια, ενώ στον κάμπο επικρατεί κρύο και συχνά ομίχλη.
+                </div>
+            </div>
+        </div>
+
+        <!-- Μάθημα 2 -->
+        <div class="lesson-card" data-cat="snow">
+            <div class="lesson-header" onclick="toggleCard(this)">
+                <div class="lesson-header-left">
+                    <div class="lesson-icon">❄️</div>
+                    <div>
+                        <span class="lesson-tag tag-snow">Χιονόπτωση</span>
+                        <div class="lesson-title">2. Υγρός Βολβός (Wet-Bulb): Γιατί χιονίζει στη Σαμαρίνα ακόμα και στους +2°C;</div>
+                        <div class="lesson-subtitle">Το μυστικό που ξεχωρίζει τη βροχή από το χιόνι στα ορεινά</div>
+                    </div>
+                </div>
+                <div class="toggle-icon">▼</div>
+            </div>
+            <div class="lesson-body">
+                <p>Πολλοί πιστεύουν ότι για να χιονίσει πρέπει το θερμόμετρο να δείχνει 0°C ή κάτω από το μηδέν. Στην πράξη, στη Σαμαρίνα βλέπουμε συχνά πυκνή χιονόπτωση με θερμοκρασία <strong>+1,5°C ή ακόμα και +2,5°C</strong>!</p>
+                <p>Αυτό εξηγείται από τη <strong>Θερμοκρασία Υγρού Βολβού (Wet-Bulb)</strong>. Όταν πέφτει μια νιφάδα μέσα σε ξηρό αέρα (χαμηλή υγρασία, π.χ. 50%–65%), ένα μέρος της εξατμίζεται. Η εξάτμιση «κλέβει» θερμότητα από τον γύρω αέρα, ψύχοντάς τον απότομα και επιτρέποντας στη νιφάδα να φτάσει άθικτη στο έδαφος.</p>
+                <div class="rule-box">
+                    <strong>📏 Ο κανόνας του Υγρού Βολβού στη σελίδα μας:</strong><br>
+                    • <strong>Υγρός Βολβός ≤ 0,5°C:</strong> Τα φαινόμενα πέφτουν ως <strong>καθαρό χιόνι</strong>.<br>
+                    • <strong>Υγρός Βολβός 0,5°C έως 1,5°C:</strong> Χιονόνερο ή «βαρύ» υγρό χιόνι.<br>
+                    • <strong>Υγρός Βολβός > 1,5°C:</strong> Βροχή (ακόμα κι αν η θερμοκρασία αέρα φαίνεται χαμηλή).
+                </div>
+                <div class="samarina-example">
+                    <strong>🔎 Τι να κοιτάς στη σελίδα:</strong> Κάτω από τη μεγάλη ένδειξη θερμοκρασίας του σταθμού ISAMAR38 γράφει πάντα <em>«Σ.Δ. (Σημείο Δρόσου) | Υγρό (Υγρός Βολβός)»</em>. Αν πλησιάζει κακοκαιρία και το «Υγρό» είναι κάτω από 0,5°C, ετοιμάσου για χιόνι!
+                </div>
+            </div>
+        </div>
+
+        <!-- Μάθημα 3 -->
+        <div class="lesson-card" data-cat="snow">
+            <div class="lesson-header" onclick="toggleCard(this)">
+                <div class="lesson-header-left">
+                    <div class="lesson-icon">🛣️</div>
+                    <div>
+                        <span class="lesson-tag tag-safety">Οδική Ασφάλεια</span>
+                        <div class="lesson-title">3. «Μαύρος Πάγος» χωρίς Χιονόπτωση: Η ύπουλη παγίδα των ορεινών δρόμων</div>
+                        <div class="lesson-subtitle">Πώς παγώνει η άσφαλτος τις νύχτες με ξαστεριά χωρίς να πέσει σταγόνα βροχής</div>
+                    </div>
+                </div>
+                <div class="toggle-icon">▼</div>
+            </div>
+            <div class="lesson-body">
+                <p>Ο πιο επικίνδυνος πάγος στον δρόμο προς τη Σαμαρίνα δεν είναι αυτός που φαίνεται πάνω στο χιόνι, αλλά ο <strong>«μαύρος πάγος»</strong>: ένα αόρατο, λεπτό φιλμ πάγου πάνω στην άσφαλτο που μοιάζει απλώς με βρεγμένο δρόμο.</p>
+                <p>Σχηματίζεται ακόμα και με τελείως καθαρό ουρανό όταν συνυπάρχουν δύο παράγοντες:</p>
+                <ul>
+                    <li>Η θερμοκρασία του εδάφους (που είναι 1–2°C χαμηλότερη από τον αέρα στο 1,5 μέτρο ύψος του σταθμού) πέφτει κάτω από το <strong>0°C</strong>.</li>
+                    <li>Η υγρασία του αέρα συμπυκνώνεται απευθείας πάνω στην παγωμένη άσφαλτο (πάχνη) ή λιωμένα χιόνια από τις άκρες του δρόμου ξαναπαγώνουν μόλις πέσει ο ήλιος πίσω από τον Σμόλικα.</li>
+                </ul>
+                <div class="samarina-example">
+                    <strong>🔎 Τι να κοιτάς στη σελίδα:</strong> Το πράσινο/κίτρινο/κόκκινο κουμπί <em>«Δρόμος»</em> στην κορυφή της σελίδας και την ώρα <em>«Σκίαση Σμόλικα»</em>. Στις σκιερές στροφές ο δρόμος αρχίζει να παγώνει από το απόγευμα, μόλις ο ήλιος κρυφτεί πίσω από την κορυφογραμμή!
+                </div>
+            </div>
+        </div>
+
+        <!-- Μάθημα 4 -->
+        <div class="lesson-card" data-cat="inv">
+            <div class="lesson-header" onclick="toggleCard(this)">
+                <div class="lesson-header-left">
+                    <div class="lesson-icon">🧭</div>
+                    <div>
+                        <span class="lesson-tag tag-inv">Βαρόμετρο</span>
+                        <div class="lesson-title">4. Τι μας λέει το Βαρόμετρο (hPa) και η «Τάση 3ώρου»;</div>
+                        <div class="lesson-subtitle">Γιατί η μεταβολή της πίεσης είναι πιο σημαντική από τον ίδιο τον αριθμό</div>
+                    </div>
+                </div>
+                <div class="toggle-icon">▼</div>
+            </div>
+            <div class="lesson-body">
+                <p>Η ατμοσφαιρική πίεση μετράει το «βάρος» της στήλης του αέρα πάνω από το κεφάλι μας (αναγμένη στο επίπεδο της θάλασσας, με μέσο όρο τα <strong>1013,2 hPa</strong>).</p>
+                <p>Στην ορεινή μετεωρολογία, σημασία δεν έχει μόνο αν η πίεση είναι υψηλή ή χαμηλή, αλλά <strong>πόσο γρήγορα αλλάζει μέσα σε 3 ώρες (Τάση 3ώρου)</strong>:</p>
+                <ul>
+                    <li><strong>Απότομη πτώση (≤ -3,0 hPa / 3ωρο):</strong> Σημαίνει ότι πλησιάζει βαρομετρικό χαμηλό ή ψυχρό μέτωπο. Ο καιρός χαλάει γρήγορα με ενίσχυση ανέμων και φαινόμενα.</li>
+                    <li><strong>Σταθερή ή ήπια μεταβολή (-1 έως +1 hPa):</strong> Διατήρηση του υπάρχοντος καιρού.</li>
+                    <li><strong>Γρήγορη άνοδος (≥ +2,5 hPa / 3ωρο):</strong> Καθάρισμα του καιρού (συχνά συνοδεύεται από βοριάδες και πτώση θερμοκρασίας τη νύχτα).</li>
+                </ul>
+                <div class="samarina-example">
+                    <strong>🔎 Τι να κοιτάς στη σελίδα:</strong> Στην κάρτα <em>«Πίεση»</em> του σταθμού ISAMAR38, ακριβώς κάτω από τα hPa αναγράφεται ζωντανά η <strong>Τάση 3ωρου</strong> (π.χ. <code>+1.5 hPa</code> ή <code>-2.8 hPa</code>). Αν πέσει κάτω από <code>-3.0 hPa</code>, ενεργοποιείται αυτόματα κόκκινο banner προειδοποίησης!
+                </div>
+            </div>
+        </div>
+
+        <!-- Μάθημα 5 -->
+        <div class="lesson-card" data-cat="mountain">
+            <div class="lesson-header" onclick="toggleCard(this)">
+                <div class="lesson-header-left">
+                    <div class="lesson-icon">⚡</div>
+                    <div>
+                        <span class="lesson-tag tag-storm">Αστάθεια</span>
+                        <div class="lesson-title">5. Αστάθεια & Δείκτης CAPE: Γιατί τα βουνά «γεννούν» ξαφνικές καταιγίδες;</div>
+                        <div class="lesson-subtitle">Πώς δημιουργούνται τα απογευματινά μπουρίνια στον Σμόλικα</div>
+                    </div>
+                </div>
+                <div class="toggle-icon">▼</div>
+            </div>
+            <div class="lesson-body">
+                <p>Την άνοιξη και το καλοκαίρι, ένα πρωινό με απόλυτη λιακάδα στη Σαμαρίνα μπορεί να μετατραπεί μέσα σε 40 λεπτά σε έντονη καταιγίδα με χαλάζι. Ο λόγος είναι η <strong>θερμική αστάθεια</strong>.</p>
+                <p>Ο ήλιος ζεσταίνει τις πλαγιές του Σμόλικα, ο θερμός και υγρός αέρας ανεβαίνει απότομα προς τα πάνω (ανοδικά ρεύματα) και, καθώς συναντά παγωμένο αέρα στα ψηλά στρώματα, συμπυκνώνεται σε τεράστια νέφη καταιγίδας (σωρειτομελανίες).</p>
+                <p>Το πόση «ενέργεια» υπάρχει στην ατμόσφαιρα για τέτοια ανοδικά ρεύματα μετριέται με τον δείκτη <strong>CAPE (J/kg)</strong>:</p>
+                <ul>
+                    <li><strong>0 – 300 J/kg:</strong> Σταθερή ατμόσφαιρα, χωρίς κίνδυνο καταιγίδας.</li>
+                    <li><strong>300 – 1.000 J/kg:</strong> Μέτρια αστάθεια — πιθανές τοπικές απογευματινές μπόρες στις κορυφές.</li>
+                    <li><strong>Πάνω από 1.000 J/kg:</strong> Ισχυρή αστάθεια — υψηλός κίνδυνος καταιγίδων, κεραυνών και χαλαζιού (αποφεύγουμε τις εκτεθειμένες κορυφογραμμές του Σμόλικα).</li>
+                </ul>
+                <div class="samarina-example">
+                    <strong>🔎 Τι να κοιτάς στη σελίδα:</strong> Όταν ο δείκτης CAPE στο επόμενο 24ωρο ξεπεράσει τα 1.000 J/kg, εμφανίζεται αυτόματα στην κορυφή του dashboard προειδοποίηση καταιγίδων και κεραυνικής δραστηριότητας.
+                </div>
+            </div>
+        </div>
+
+        <!-- Μάθημα 6 -->
+        <div class="lesson-card" data-cat="mountain">
+            <div class="lesson-header" onclick="toggleCard(this)">
+                <div class="lesson-header-left">
+                    <div class="lesson-icon">🏔️</div>
+                    <div>
+                        <span class="lesson-tag tag-snow">Μικροκλίμα</span>
+                        <div class="lesson-title">6. Το Μικροκλίμα της Σαμαρίνας: Σκίαση Βουνού, Ανεμολόγιο & Αίσθηση Ψύχους</div>
+                        <div class="lesson-subtitle">Γιατί η τοπογραφία του Σμόλικα κάνει τη Σαμαρίνα μοναδική</div>
+                    </div>
+                </div>
+                <div class="toggle-icon">▼</div>
+            </div>
+            <div class="lesson-body">
+                <p>Η Σαμαρίνα είναι χτισμένη σε υψόμετρο 1.450 μέτρων στις ανατολικές/νοτιοανατολικές πλαγιές του Σμόλικα (2.637μ.). Αυτή η θέση δημιουργεί πολύ ιδιαίτερα τοπικά χαρακτηριστικά:</p>
+                <ul>
+                    <li><strong>Πρόωρη «Δύση» πίσω από τον Σμόλικα:</strong> Ενώ η αστρονομική δύση του ήλιου στον ορίζοντα είναι π.χ. στις 17:16, ο ορεινός όγκος του Σμόλικα κρύβει τον ήλιο από το χωριό νωρίτερα (<em>Σκίαση Σμόλικα</em>). Από εκείνη τη στιγμή η θερμοκρασία αρχίζει να πέφτει απότομα.</li>
+                    <li><strong>Αίσθηση Ψύχους (Wind Chill):</strong> Όταν φυσάει ισχυρός άνεμος, το ανθρώπινο σώμα (όπως και οι εκτεθειμένες σωληνώσεις) χάνει θερμότητα πολύ πιο γρήγορα. Στους 0°C με άνεμο 40 km/h (6 Bf), η αίσθηση ψύχους αντιστοιχεί σε <strong>-7°C</strong>!</li>
+                    <li><strong>Προστασία από Δυτικούς Ανέμους:</strong> Ο όγκος του Σμόλικα λειτουργεί συχνά ως φυσικό «τείχος» απέναντι στους δυτικούς ανέμους από το Ιόνιο, προκαλώντας έντονη ορογραφική βροχή ή χιόνι στην κορυφή.</li>
+                </ul>
+                <div class="samarina-example">
+                    <strong>🔎 Τι να κοιτάς στη σελίδα:</strong> Στην κάρτα <em>«ΑΣΤΡΟΝΟΜΙΚΑ & ΣΚΙΑΣΗ ΣΜΟΛΙΚΑ»</em> βλέπεις την ακριβή ώρα που ο ήλιος κρύβεται πίσω από το βουνό, ενώ στο κουμπί <em>«3D Ροή Αέρα & 12h Πρόγνωση»</em> βλέπεις πώς κινούνται τα ρεύματα αέρα πάνω από το ανάγλυφο του Σμόλικα.
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Γλωσσάρι Όρων -->
+    <div class="glossary-section">
+        <h2>📖 Γρήγορο Λεξικό των Ενδείξεων του Σταθμού</h2>
+        <div class="glossary-grid">
+            <div class="glossary-item">
+                <div class="glossary-term">Σ.Δ. (Σημείο Δρόσου)</div>
+                <div class="glossary-desc">Η θερμοκρασία στην οποία ο αέρας κορεσμένος από υγρασία σχηματίζει δροσιά, ομίχλη ή πάχνη. Όσο πιο κοντά είναι στη θερμοκρασία αέρα, τόσο μεγαλύτερη η υγρασία.</div>
+            </div>
+            <div class="glossary-item">
+                <div class="glossary-term">Υγρό (Υγρός Βολβός)</div>
+                <div class="glossary-desc">Η χαμηλότερη θερμοκρασία που μπορεί να φτάσει ο αέρας μέσω εξάτμισης. Καθορίζει αν ο υετός θα πέσει ως χιόνι (≤ 0,5°C) ή βροχή.</div>
+            </div>
+            <div class="glossary-item">
+                <div class="glossary-term">Υψόμετρο Παγοποίησης</div>
+                <div class="glossary-desc">Το υψόμετρο (σε μέτρα) πάνω από το οποίο η θερμοκρασία της ελεύθερης ατμόσφαιρας πέφτει κάτω από το 0°C.</div>
+            </div>
+            <div class="glossary-item">
+                <div class="glossary-term">Υβριδική Πρόγνωση</div>
+                <div class="glossary-desc">Ο συνδυασμός των πραγματικών μετρήσεων του σταθμού της Σαμαρίνας (ISAMAR38) με τα αριθμητικά μοντέλα ICON & ECMWF για μέγιστη τοπική ακρίβεια.</div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Εκπαιδευτικός Οδηγός Ορεινής Μετεωρολογίας • Σταθμός Σαμαρίνας Γρεβενών (ISAMAR38 — 1.450μ.)
+    </footer>
+
+    <script>
+        function toggleCard(headerEl) {
+            const card = headerEl.parentElement;
+            card.classList.toggle('open');
+        }
+
+        function filterLessons(category, btnEl) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btnEl.classList.add('active');
+
+            document.querySelectorAll('.lesson-card').forEach(card => {
+                if (category === 'all' || card.getAttribute('data-cat') === category) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>
