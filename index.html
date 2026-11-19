@@ -90,7 +90,6 @@
             gap: 6px;
             box-shadow: 0 0 12px rgba(14, 165, 233, 0.35);
         }
-        /* Στυλ για το νέο κουμπί */
         .btn-lessons-launch {
             background: linear-gradient(135deg, #a855f7, #6366f1);
             color: #ffffff;
@@ -488,9 +487,7 @@
             <span>Σταθμός: Bresser 5-in-1 (ISAMAR38) | Κάμερα: Σαμαρίνα Χωριό | Υβριδική &amp; Αυτόνομη Πρόγνωση</span>
         </div>
         <div class="top-badges">
-            <!-- ΝΕΟ ΚΟΥΜΠΙ ΜΑΘΗΜΑΤΩΝ ΚΑΙΡΟΥ -->
             <a href="meteo-lessons.html" class="btn-lessons-launch">📚 Μικρά Μαθήματα Καιρού</a>
-            
             <button onclick="openSmolikas3D()" class="btn-3d-launch">🏔️ 3D Ροή Αέρα &amp; 12h Πρόγνωση</button>
             <div id="roadStatus" class="alert-box">🛣️ Έλεγχος δρόμου...</div>
             <div id="topAlert" class="alert-box">Έλεγχος συνθηκών...</div>
@@ -1408,15 +1405,15 @@
                 const rawStationTemp = obs.metric.temp;
                 const shadowFix = applyBuildingShadowCorrection(rawStationTemp, omData);
                 const temp = shadowFix.temp;
-                const dew = obs.metric.dewpt;
-                const press = obs.metric.pressure;
-                const hum = obs.humidity;
-                const wind = obs.metric.windSpeed;
-                const gust = obs.metric.windGust || wind;
-                const dir = obs.winddir;
-                const rain = obs.metric.precipTotal;
-                const rate = obs.metric.precipRate;
-                const chill = obs.metric.windChill;
+                const dew = typeof obs.metric.dewpt === 'number' ? obs.metric.dewpt : temp;
+                const press = typeof obs.metric.pressure === 'number' ? obs.metric.pressure : 1013.2;
+                const hum = typeof obs.humidity === 'number' ? obs.humidity : 75;
+                const wind = typeof obs.metric.windSpeed === 'number' ? obs.metric.windSpeed : 0;
+                const gust = typeof obs.metric.windGust === 'number' ? obs.metric.windGust : wind;
+                const dir = typeof obs.winddir === 'number' ? obs.winddir : 0;
+                const rain = typeof obs.metric.precipTotal === 'number' ? obs.metric.precipTotal : 0;
+                const rate = typeof obs.metric.precipRate === 'number' ? obs.metric.precipRate : 0;
+                const chill = typeof obs.metric.windChill === 'number' ? obs.metric.windChill : temp;
                 const spread = temp - dew;
                 const wetBulb = calcWetBulb(temp, hum);
 
@@ -1482,18 +1479,31 @@
                 document.getElementById('stTrend').innerText = `Τάση 3ωρου: ${trend >= 0 ? '+' : ''}${trend.toFixed(1)} hPa`;
                 document.getElementById('lastUpdate').innerText = `Ενημ.: ${new Date().toLocaleTimeString('el-GR', {hour:'2-digit', minute:'2-digit'})}`;
 
+                // Ασφαλής υπολογισμός ημερήσιων ακραίων (προστασία από null τιμές WU)
                 let minDayT = temp, maxDayT = temp, maxDayGust = gust, minDayTime = "", maxDayTime = "";
                 if (dayData && dayData.observations && dayData.observations.length > 0) {
-                    minDayT = Infinity; maxDayT = -Infinity; maxDayGust = 0;
+                    let foundMin = Infinity, foundMax = -Infinity, foundGust = 0;
                     dayData.observations.forEach(o => {
-                        const tVal = o.metric.tempLow !== undefined ? o.metric.tempLow : o.metric.tempAvg;
-                        const tHigh = o.metric.tempHigh !== undefined ? o.metric.tempHigh : o.metric.tempAvg;
-                        const gVal = o.metric.windgustHigh || o.metric.windspeedHigh || 0;
+                        if (!o || !o.metric) return;
+                        const tVal = typeof o.metric.tempLow === 'number' ? o.metric.tempLow : o.metric.tempAvg;
+                        const tHigh = typeof o.metric.tempHigh === 'number' ? o.metric.tempHigh : o.metric.tempAvg;
+                        const gVal = typeof o.metric.windgustHigh === 'number' ? o.metric.windgustHigh : o.metric.windspeedHigh;
                         const timeLabel = o.obsTimeLocal ? o.obsTimeLocal.slice(11, 16) : "";
-                        if (tVal < minDayT) { minDayT = tVal; minDayTime = timeLabel ? ` (${timeLabel})` : ""; }
-                        if (tHigh > maxDayT) { maxDayT = tHigh; maxDayTime = timeLabel ? ` (${timeLabel})` : ""; }
-                        if (gVal > maxDayGust) maxDayGust = gVal;
+                        if (typeof tVal === 'number' && !isNaN(tVal) && tVal < foundMin) {
+                            foundMin = tVal;
+                            minDayTime = timeLabel ? ` (${timeLabel})` : "";
+                        }
+                        if (typeof tHigh === 'number' && !isNaN(tHigh) && tHigh > foundMax) {
+                            foundMax = tHigh;
+                            maxDayTime = timeLabel ? ` (${timeLabel})` : "";
+                        }
+                        if (typeof gVal === 'number' && !isNaN(gVal) && gVal > foundGust) {
+                            foundGust = gVal;
+                        }
                     });
+                    if (isFinite(foundMin)) minDayT = foundMin;
+                    if (isFinite(foundMax)) maxDayT = foundMax;
+                    if (foundGust > 0) maxDayGust = foundGust;
                 }
 
                 const fl = omData?.hourly?.freezing_level_height?.[0] ? Math.round(omData.hourly.freezing_level_height[0]) : Math.round(1450 + (temp / 6.5) * 1000);
@@ -1548,8 +1558,8 @@
                 } catch (err) {}
 
                 document.getElementById('dailyExtremes').innerHTML = `
-                    <span>📉 Ελάχ. Ημέρας: <b>${minDayT.toFixed(1)}°C</b>${minDayTime}</span>
-                    <span>📈 Μέγ. Ημέρας: <b>${maxDayT.toFixed(1)}°C</b>${maxDayTime}</span>
+                    <span>📉 Ελάχ. Ημέρας: <b>${Number(minDayT).toFixed(1)}°C</b>${minDayTime}</span>
+                    <span>📈 Μέγ. Ημέρας: <b>${Number(maxDayT).toFixed(1)}°C</b>${maxDayTime}</span>
                     <span>💨 Μέγ. Ριπή: <b>${maxDayGust} km/h</b></span>
                     <span>❄️ Εκτιμ. Νέο Χιόνι (24h): <b>${estSnowCm24.toFixed(1)} cm</b></span>`;
 
