@@ -595,7 +595,21 @@
             </div>
         </div>
 
-        <!-- 2. ΚΑΘΑΡΗ 2-ΣΤΗΛΗ ΠΡΟΓΝΩΣΗ (24ωρη Υβριδική + 48ωρη ανά 12ωρο) -->
+        <!-- 2. ΠΡΑΓΜΑΤΙΚΟ ΓΡΑΦΗΜΑ ΣΤΑΘΜΟΥ 24ΩΡΟΥ (ΣΕ ΕΞΕΛΙΞΗ...) -->
+        <div class="panel">
+            <div class="panel-header">
+                <span style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <span>📈 ΓΡΑΦΗΜΑ ΣΤΑΘΜΟΥ 24ΩΡΟΥ (ΣΕ ΕΞΕΛΙΞΗ...)</span>
+                    <span id="live24hBadge" style="font-size:0.74rem; background:#0f172a; border:1px solid #334155; color:#38bdf8; padding:2px 8px; border-radius:999px;">ISAMAR38 • Φόρτωση...</span>
+                </span>
+                <span id="live24hRange" style="font-size:0.78rem; color:#94a3b8;">Ανανέωση ανά 5 λεπτά</span>
+            </div>
+            <div class="chart-container" style="height:290px;">
+                <canvas id="samarina24hRealtimeChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 3. ΚΑΘΑΡΗ 2-ΣΤΗΛΗ ΠΡΟΓΝΩΣΗ (24ωρη Υβριδική + 48ωρη ανά 12ωρο) -->
         <div class="panel">
             <div class="panel-header">
                 <span>🔮 ΠΡΟΓΝΩΣΗ ΚΑΙΡΟΥ ΣΑΜΑΡΙΝΑΣ (24ΩΡΟ &amp; 48ΩΡΟ)</span>
@@ -623,7 +637,7 @@
             </div>
         </div>
 
-        <!-- 3. ΕΝΙΑΙΟ PANEL ΓΡΑΦΗΜΑΤΩΝ ΜΕ TABS (48ωρο Μετεώγραμμα | 24ωρο Εργαστηριακό) -->
+        <!-- 4. ΕΝΙΑΙΟ PANEL ΓΡΑΦΗΜΑΤΩΝ ΜΕ TABS (48ωρο Μετεώγραμμα | 24ωρο Εργαστηριακό) -->
         <div class="panel">
             <div class="panel-header">
                 <span id="unifiedChartTitle">📊 48ΩΡΟ ΜΕΤΕΩΓΡΑΜΜΑ ΣΑΜΑΡΙΝΑΣ (ΘΕΡΜΟΚΡΑΣΙΑ • ΥΕΤΟΣ/ΧΙΟΝΙ • ΑΝΕΜΟΣ ΑΝΑ 3ΩΡΟ)</span>
@@ -649,7 +663,7 @@
             </div>
         </div>
 
-        <!-- 4. SCOREBOARD ΑΚΡΙΒΕΙΑΣ -->
+        <!-- 5. SCOREBOARD ΑΚΡΙΒΕΙΑΣ -->
         <div class="panel">
             <div class="panel-header">
                 <span>🏆 ΔΙΠΛΟ SCOREBOARD ΑΚΡΙΒΕΙΑΣ: ΣΤΑΘΜΟΣ vs ΥΒΡΙΔΙΚΟ</span>
@@ -681,7 +695,7 @@
             </div>
         </div>
 
-        <!-- 5. ΖΩΝΤΑΝΟΣ ΧΑΡΤΗΣ WINDY -->
+        <!-- 6. ΖΩΝΤΑΝΟΣ ΧΑΡΤΗΣ WINDY -->
         <div class="panel">
             <div class="panel-header">
                 <span>🗺️ ΖΩΝΤΑΝΟΣ ΧΑΡΤΗΣ ΠΙΝΔΟΥ &amp; ΣΜΟΛΙΚΑ (WINDY — ΣΑΜΑΡΙΝΑ 40.105°N, 21.018°E)</span>
@@ -894,6 +908,7 @@
         let weatherChartInstance = null;
         let meteogramChartInstance = null;
         let monthlyArchiveChartInstance = null;
+        let samarina24hChartInstance = null;
         let currentMonthlyParam = "temp";
         let archiveRecords = [];
 
@@ -1362,6 +1377,213 @@
             });
         }
 
+        function renderSamarina24hRealtimeChart(dayData) {
+            const badgeEl = document.getElementById("live24hBadge");
+            const rangeEl = document.getElementById("live24hRange");
+            const canvas = document.getElementById("samarina24hRealtimeChart");
+            if (!canvas) return;
+
+            const now = new Date();
+            const yyyy = now.getFullYear();
+            const mm = String(now.getMonth() + 1).padStart(2, "0");
+            const dd = String(now.getDate()).padStart(2, "0");
+            if (rangeEl) rangeEl.textContent = `${dd}/${mm}/${yyyy} (00:00 – 23:55)`;
+
+            const labels = [];
+            const tempSeries = new Array(288).fill(null);
+            const dewSeries = new Array(288).fill(null);
+            const pressSeries = new Array(288).fill(null);
+            const humSeries = new Array(288).fill(null);
+            const rainSeries = new Array(288).fill(null);
+
+            for (let i = 0; i < 288; i++) {
+                const totalMins = i * 5;
+                const h = String(Math.floor(totalMins / 60)).padStart(2, "0");
+                const m = String(totalMins % 60).padStart(2, "0");
+                labels.push(`${h}:${m}`);
+            }
+
+            const obsList = (dayData && Array.isArray(dayData.observations)) ? dayData.observations : [];
+            if (!obsList.length) {
+                if (badgeEl) badgeEl.textContent = "ISAMAR38 • Αναμονή μετρήσεων";
+                return;
+            }
+
+            let lastValidTime = "--:--";
+
+            obsList.forEach(obs => {
+                if (!obs || !obs.obsTimeLocal || !obs.metric) return;
+                const timePart = obs.obsTimeLocal.split(" ")[1];
+                if (!timePart) return;
+                const [hhStr, mmStr] = timePart.split(":");
+                const hh = parseInt(hhStr, 10);
+                const min = parseInt(mmStr, 10);
+                if (isNaN(hh) || isNaN(min)) return;
+
+                const slotIndex = Math.min(287, Math.floor((hh * 60 + min) / 5));
+                const m = obs.metric;
+
+                const tVal = typeof m.temp === "number" ? m.temp : m.tempAvg;
+                const dVal = typeof m.dewpt === "number" ? m.dewpt : m.dewptAvg;
+                const pVal = typeof m.pressure === "number" ? m.pressure : (m.pressureMax ?? m.pressureMin);
+                const hVal = typeof obs.humidity === "number" ? obs.humidity : obs.humidityAvg;
+                const rVal = typeof m.precipTotal === "number" ? m.precipTotal : null;
+
+                if (typeof tVal === "number" && !isNaN(tVal)) tempSeries[slotIndex] = tVal;
+                if (typeof dVal === "number" && !isNaN(dVal)) dewSeries[slotIndex] = dVal;
+                if (typeof pVal === "number" && !isNaN(pVal)) pressSeries[slotIndex] = pVal;
+                if (typeof hVal === "number" && !isNaN(hVal)) humSeries[slotIndex] = hVal;
+                if (typeof rVal === "number" && !isNaN(rVal)) rainSeries[slotIndex] = rVal;
+
+                lastValidTime = `${hhStr}:${mmStr}`;
+            });
+
+            if (badgeEl) badgeEl.textContent = `ISAMAR38 • Έως ${lastValidTime}`;
+
+            if (samarina24hChartInstance) {
+                samarina24hChartInstance.destroy();
+            }
+
+            samarina24hChartInstance = new Chart(canvas.getContext("2d"), {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: "Θερμοκρασία (°C)",
+                            data: tempSeries,
+                            borderColor: "#ef4444",
+                            backgroundColor: "#ef4444",
+                            borderWidth: 2.2,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            spanGaps: true,
+                            yAxisID: "yTemp",
+                            tension: 0.25,
+                            order: 1
+                        },
+                        {
+                            label: "Σημείο Δρόσου (°C)",
+                            data: dewSeries,
+                            borderColor: "#38bdf8",
+                            backgroundColor: "#38bdf8",
+                            borderWidth: 1.8,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            spanGaps: true,
+                            yAxisID: "yTemp",
+                            tension: 0.25,
+                            order: 2
+                        },
+                        {
+                            label: "Βαρ. Πίεση (hPa)",
+                            data: pressSeries,
+                            borderColor: "#22c55e",
+                            backgroundColor: "#22c55e",
+                            borderWidth: 1.8,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            spanGaps: true,
+                            yAxisID: "yPress",
+                            tension: 0.25,
+                            order: 3
+                        },
+                        {
+                            label: "Βροχή 24ώρου (mm)",
+                            data: rainSeries,
+                            borderColor: "#06b6d4",
+                            backgroundColor: "rgba(6, 182, 212, 0.25)",
+                            borderWidth: 1.5,
+                            fill: true,
+                            pointRadius: 0,
+                            spanGaps: true,
+                            yAxisID: "yRain",
+                            tension: 0.1,
+                            order: 4
+                        },
+                        {
+                            label: "Υγρασία (%)",
+                            data: humSeries,
+                            borderColor: "rgba(129, 140, 248, 0.35)",
+                            backgroundColor: "rgba(129, 140, 248, 0.14)",
+                            borderWidth: 1,
+                            fill: true,
+                            pointRadius: 0,
+                            spanGaps: true,
+                            yAxisID: "yHum",
+                            tension: 0.3,
+                            order: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: "index",
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            position: "top",
+                            labels: {
+                                color: "#cbd5e1",
+                                usePointStyle: true,
+                                boxWidth: 10,
+                                font: { size: 11 }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: "rgba(15, 23, 42, 0.95)",
+                            titleColor: "#f8fafc",
+                            bodyColor: "#e2e8f0",
+                            borderColor: "#334155",
+                            borderWidth: 1
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: "#94a3b8",
+                                maxTicksLimit: 13,
+                                callback: function(val) {
+                                    const lbl = this.getLabelForValue(val);
+                                    return lbl.endsWith(":00") ? lbl : "";
+                                }
+                            },
+                            grid: { color: "rgba(148, 163, 184, 0.1)" }
+                        },
+                        yTemp: {
+                            type: "linear",
+                            position: "left",
+                            title: { display: true, text: "°C", color: "#ef4444", font: { size: 11 } },
+                            ticks: { color: "#f87171", font: { size: 11 } },
+                            grid: { color: "rgba(148, 163, 184, 0.1)" }
+                        },
+                        yPress: {
+                            type: "linear",
+                            position: "right",
+                            title: { display: true, text: "hPa", color: "#22c55e", font: { size: 11 } },
+                            ticks: { color: "#4ade80", font: { size: 11 } },
+                            grid: { drawOnChartArea: false }
+                        },
+                        yHum: {
+                            type: "linear",
+                            display: false,
+                            min: 0,
+                            max: 100
+                        },
+                        yRain: {
+                            type: "linear",
+                            display: false,
+                            min: 0,
+                            suggestedMax: 5
+                        }
+                    }
+                }
+            });
+        }
+
         setInterval(() => {
             const now = new Date();
             document.getElementById('clock').innerText = now.toLocaleDateString('el-GR') + ' ' + now.toLocaleTimeString('el-GR');
@@ -1388,6 +1610,8 @@
                 const omData = omRes && omRes.ok ? await omRes.json() : null;
                 const larData = larRes && larRes.ok ? await larRes.json() : null;
                 const obs = wuData.observations[0];
+
+                renderSamarina24hRealtimeChart(dayData);
 
                 if (!obs || !obs.metric || typeof obs.metric.temp !== 'number' || isNaN(obs.metric.temp)) {
                     throw new Error("Προσωρινή αναμονή έγκυρης μέτρησης από ISAMAR38");
