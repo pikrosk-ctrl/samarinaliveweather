@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://gc.zgo.at; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.forecastweather.gr https://visitor-badge.laobi.icu https://samarinaweather.goatcounter.com; connect-src 'self' https://api.weather.com https://api.open-meteo.com https://docs.google.com https://*.googleusercontent.com https://samarinaweather.goatcounter.com; frame-src 'self' https://embed.windy.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://gc.zgo.at; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://www.forecastweather.gr https://visitor-badge.laobi.icu https://samarinaweather.goatcounter.com https://*.tile.openstreetmap.org https://*.tile.opentopomap.org https://*.basemaps.cartocdn.com; connect-src 'self' https://api.weather.com https://api.open-meteo.com https://docs.google.com https://*.googleusercontent.com https://samarinaweather.goatcounter.com; frame-src 'self' https://embed.windy.com;">
     <title>Ο καιρός στη Σαμαρίνα (1.450μ.) - ISAMAR38</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -107,9 +109,7 @@
             box-shadow: 0 0 12px rgba(168, 85, 247, 0.35);
             transition: opacity 0.2s;
         }
-        .btn-lessons-launch:hover {
-            opacity: 0.95;
-        }
+        .btn-lessons-launch:hover { opacity: 0.95; }
         .visitor-badge {
             display: inline-flex;
             align-items: center;
@@ -258,7 +258,7 @@
         .inv-active { background: rgba(127, 29, 29, 0.45); border: 1px solid #ef4444; color: #fecaca; }
         .astro-shade-badge { background: rgba(120, 53, 15, 0.35); border: 1px solid rgba(245, 158, 11, 0.5); color: #fde68a; }
 
-        /* 2-Column Καθαρή Πρόγνωση (24h Υβριδική + 48h 12ωρα) */
+        /* 2-Column Καθαρή Πρόγνωση */
         .dual-forecast-grid {
             display: grid;
             grid-template-columns: 1.35fr 1fr;
@@ -400,11 +400,210 @@
         .sb-station .sb-pct { color: #34d399; }
         .sb-hybrid .sb-pct { color: #38bdf8; }
 
-        /* Windy */
-        .windy-layer-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+        /* VENTUSKY-STYLE INTERACTIVE WIND STREAMLINES MAP + WINDY SWITCH */
+        .map-mode-switch {
+            display: inline-flex;
+            background: #0f172a;
+            padding: 3px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            gap: 4px;
+        }
+        .map-mode-btn {
+            background: transparent;
+            color: #94a3b8;
+            border: none;
+            padding: 4px 11px;
+            border-radius: 6px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .map-mode-btn.active {
+            background: linear-gradient(135deg, #0284c7, #0ea5e9);
+            color: #ffffff;
+            box-shadow: 0 0 10px rgba(14, 165, 233, 0.35);
+        }
+
+        .vent-map-shell {
+            position: relative;
+            width: 100%;
+            height: 460px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #334155;
+            background: #070d19;
+        }
+        #ventuskyLeafletMap {
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            background: #070d19;
+        }
+        /* Dark / Relief filter για αισθητική Ventusky πάνω στα tiles */
+        #ventuskyLeafletMap .leaflet-tile-pane {
+            filter: brightness(0.68) contrast(1.22) saturate(0.75) hue-rotate(185deg);
+        }
+        #ventuskyHeatCanvas, #ventuskyWindCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        #ventuskyHeatCanvas { z-index: 400; mix-blend-mode: screen; opacity: 0.58; }
+        #ventuskyWindCanvas { z-index: 410; }
+
+        /* Glassmorphism HUD Overlays πάνω στον χάρτη */
+        .vent-hud-top {
+            position: absolute;
+            top: 12px;
+            left: 52px;
+            right: 12px;
+            z-index: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+            flex-wrap: wrap;
+            pointer-events: none;
+        }
+        .vent-glass-card {
+            pointer-events: auto;
+            background: rgba(15, 23, 42, 0.72);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 9px;
+            padding: 6px 10px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+        }
+        .vent-layer-pills {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        .vent-layer-btn {
+            background: transparent;
+            color: #cbd5e1;
+            border: 1px solid transparent;
+            padding: 4px 9px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .vent-layer-btn.active {
+            background: rgba(14, 165, 233, 0.28);
+            color: #38bdf8;
+            border-color: rgba(56, 189, 248, 0.55);
+        }
+        .vent-readout {
+            font-size: 0.76rem;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .vent-readout strong { color: #38bdf8; }
+
+        /* Ventusky Bottom Timeline Bar */
+        .vent-hud-bottom {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            right: 12px;
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            pointer-events: none;
+        }
+        .vent-timeline-box {
+            pointer-events: auto;
+            background: rgba(15, 23, 42, 0.78);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            border-radius: 10px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+        .vent-play-btn {
+            background: linear-gradient(135deg, #0284c7, #38bdf8);
+            color: #0b1120;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            font-weight: 900;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .vent-time-badge {
+            min-width: 118px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #38bdf8;
+            white-space: nowrap;
+        }
+        .vent-slider {
+            flex: 1;
+            accent-color: #38bdf8;
+            cursor: pointer;
+            height: 5px;
+        }
+        .vent-legend-scale {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.68rem;
+            color: #cbd5e1;
+            white-space: nowrap;
+        }
+        .vent-legend-bar {
+            width: 90px;
+            height: 7px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #6366f1, #38bdf8, #10b981, #facc15, #ef4444);
+        }
+
+        /* Peak Pins στον χάρτη */
+        .pindus-pin {
+            background: rgba(15, 23, 42, 0.82);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(56, 189, 248, 0.6);
+            color: #f8fafc;
+            padding: 2px 7px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+            text-align: center;
+        }
+        .pindus-pin-main {
+            background: rgba(2, 132, 199, 0.9);
+            border: 1.5px solid #e0f2fe;
+            color: #ffffff;
+            font-size: 11.5px;
+            box-shadow: 0 0 14px rgba(56, 189, 248, 0.75);
+        }
+
+        /* Windy fallback frame */
+        .windy-layer-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
         .windy-tab { background: #0f172a; color: #94a3b8; border: 1px solid #334155; padding: 4px 10px; border-radius: 6px; font-size: 0.76rem; font-weight: 600; cursor: pointer; }
         .windy-tab.active { background: rgba(2, 132, 199, 0.25); color: #38bdf8; border-color: #38bdf8; }
-        .windy-frame-wrap { position: relative; width: 100%; height: 410px; border-radius: 8px; overflow: hidden; border: 1px solid #334155; background: #0f172a; }
+        .windy-frame-wrap { position: relative; width: 100%; height: 430px; border-radius: 8px; overflow: hidden; border: 1px solid #334155; background: #0f172a; }
         .windy-frame { width: 100%; height: 100%; border: 0; display: block; }
 
         /* Ιστορικό Αρχείο */
@@ -443,7 +642,6 @@
         .footer-disclaimer { padding-top: 12px; border-top: 1px solid rgba(51, 65, 85, 0.6); font-size: 0.78rem; color: #94a3b8; text-align: center; }
         .footer-disclaimer strong { color: #fde68a; }
 
-        /* --- Επιπλέον Βελτιστοποίηση για Κινητά (< 640px) --- */
         .mobile-swipe-hint {
             display: none;
             font-size: 0.72rem;
@@ -459,7 +657,10 @@
             .s-val { font-size: 1.1rem; }
             .s-sub { font-size: 0.68rem; }
             .chart-container { height: 230px; padding: 8px 10px; }
-            .windy-frame-wrap { height: 300px; }
+            .vent-map-shell { height: 390px; }
+            .vent-hud-top { left: 10px; right: 10px; top: 52px; }
+            .vent-legend-scale { display: none; }
+            .windy-frame-wrap { height: 320px; }
             .mobile-swipe-hint { display: block; }
             .meteogram-strip { scroll-snap-type: x mandatory; }
             .mg-cell { scroll-snap-align: start; min-width: 62px; }
@@ -471,7 +672,6 @@
         <span id="frost-icon">⚠️</span> <span id="frost-msg">ΠΡΟΕΙΔΟΠΟΙΗΣΗ ΠΑΓΕΤΟΥ: Κίνδυνος παγώματος δικτύων ύδρευσης!</span>
     </div>
 
-    <!-- ΔΥΝΑΜΙΚΟ ΔΗΜΟΣΙΟ BANNER ΕΙΔΟΠΟΙΗΣΕΩΝ (Νέο Χιόνι, Ψυχρή Λίμνη / CAPE, Αναστροφή) -->
     <div id="public-meteo-banner">
         <div class="pmb-inner">
             <span id="pmb-icon">ℹ️</span>
@@ -505,7 +705,7 @@
 
     <!-- ΕΝΟΤΗΤΑ 1: ΖΩΝΤΑΝΟ DASHBOARD -->
     <div id="liveSection">
-        <!-- 1. ΚΑΜΕΡΑ (Αριστερά) + ΖΩΝΤΑΝΑ ΔΕΔΟΜΕΝΑ & ΑΝΑΣΤΡΟΦΗ (Δεξιά) -->
+        <!-- 1. ΚΑΜΕΡΑ + ΖΩΝΤΑΝΑ ΔΕΔΟΜΕΝΑ & ΑΝΑΣΤΡΟΦΗ -->
         <div class="main-grid">
             <div class="left-col">
                 <div class="panel" style="height:100%;">
@@ -610,7 +810,7 @@
             </div>
         </div>
 
-        <!-- 3. ΚΑΘΑΡΗ 2-ΣΤΗΛΗ ΠΡΟΓΝΩΣΗ (24ωρη Υβριδική + 48ωρη ανά 12ωρο) -->
+        <!-- 3. ΚΑΘΑΡΗ 2-ΣΤΗΛΗ ΠΡΟΓΝΩΣΗ -->
         <div class="panel">
             <div class="panel-header">
                 <span>🔮 ΠΡΟΓΝΩΣΗ ΚΑΙΡΟΥ ΣΑΜΑΡΙΝΑΣ (24ΩΡΟ &amp; 48ΩΡΟ)</span>
@@ -638,7 +838,7 @@
             </div>
         </div>
 
-        <!-- 4. ΕΝΙΑΙΟ PANEL ΓΡΑΦΗΜΑΤΩΝ ΜΕ TABS (48ωρο Μετεώγραμμα | 24ωρο Εργαστηριακό) -->
+        <!-- 4. ΕΝΙΑΙΟ PANEL ΓΡΑΦΗΜΑΤΩΝ ΜΕ TABS -->
         <div class="panel" id="chart24h-section">
             <div class="panel-header">
                 <span id="unifiedChartTitle">📊 48ΩΡΟ ΜΕΤΕΩΓΡΑΜΜΑ ΣΑΜΑΡΙΝΑΣ (ΘΕΡΜΟΚΡΑΣΙΑ • ΥΕΤΟΣ/ΧΙΟΝΙ • ΑΝΕΜΟΣ ΑΝΑ 3ΩΡΟ)</span>
@@ -696,19 +896,63 @@
             </div>
         </div>
 
-        <!-- 6. ΖΩΝΤΑΝΟΣ ΧΑΡΤΗΣ WINDY -->
+        <!-- 6. ΔΙΑΔΡΑΣΤΙΚΟΣ ΧΑΡΤΗΣ ΠΙΝΔΟΥ ΜΕ ΡΕΥΣΤΑ ΙΧΝΗ ΑΝΕΜΟΥ (VENTUSKY STYLE) + WINDY -->
         <div class="panel">
             <div class="panel-header">
-                <span>🗺️ ΖΩΝΤΑΝΟΣ ΧΑΡΤΗΣ ΠΙΝΔΟΥ &amp; ΣΜΟΛΙΚΑ (WINDY — ΣΑΜΑΡΙΝΑ 40.105°N, 21.018°E)</span>
+                <span>🌪️ ΧΑΡΤΗΣ ΡΟΗΣ ΑΝΕΜΩΝ ΠΙΝΔΟΥ &amp; ΣΜΟΛΙΚΑ (ΣΑΜΑΡΙΝΑ 40.105°N, 21.018°E)</span>
+                <div class="map-mode-switch">
+                    <button type="button" id="btnMapVentusky" class="map-mode-btn active" onclick="switchMapEngine('ventusky')">🌪️ Ventusky Wind Streamlines</button>
+                    <button type="button" id="btnMapWindy" class="map-mode-btn" onclick="switchMapEngine('windy')">🗺️ Windy Radar</button>
+                </div>
+            </div>
+
+            <!-- ENGINE A: VENTUSKY-STYLE WIND STREAMLINES + HEATMAP -->
+            <div id="ventuskyEngineWrap">
+                <div class="vent-map-shell" id="ventMapShell">
+                    <div id="ventuskyLeafletMap"></div>
+                    <canvas id="ventuskyHeatCanvas"></canvas>
+                    <canvas id="ventuskyWindCanvas"></canvas>
+
+                    <!-- Glassmorphism Top HUD -->
+                    <div class="vent-hud-top">
+                        <div class="vent-glass-card vent-layer-pills">
+                            <button type="button" class="vent-layer-btn active" onclick="setVentuskyField('temp', this)">🌡️ Θερμοκρασία</button>
+                            <button type="button" class="vent-layer-btn" onclick="setVentuskyField('snow', this)">❄️ Νέο Χιόνι</button>
+                            <button type="button" class="vent-layer-btn" onclick="setVentuskyField('wind', this)">💨 Ένταση Ανέμου</button>
+                        </div>
+                        <div class="vent-glass-card vent-readout" id="ventCursorReadout">
+                            <span>🏔️ Σαμαρίνα: <strong id="ventSamWind">-- km/h</strong> (<span id="ventSamDir">--</span>)</span>
+                            <span>🌡️ <strong id="ventSamTemp">--°C</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Glassmorphism Bottom Timeline -->
+                    <div class="vent-hud-bottom">
+                        <div class="vent-timeline-box">
+                            <button type="button" id="ventPlayBtn" class="vent-play-btn" onclick="toggleVentuskyPlay()" title="Αναπαραγωγή / Παύση 48ώρου">▶</button>
+                            <div class="vent-time-badge" id="ventTimeLabel">Τώρα (Live)</div>
+                            <input type="range" id="ventHourSlider" class="vent-slider" min="0" max="47" value="0" oninput="onVentuskySliderInput(this.value)">
+                            <div class="vent-legend-scale" id="ventLegendWrap">
+                                <span id="ventLegMin">-10°</span>
+                                <div class="vent-legend-bar" id="ventLegBar"></div>
+                                <span id="ventLegMax">+20°C</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ENGINE B: WINDY EMBED (ΠΡΟΑΙΡΕΤΙΚΗ ΕΝΑΛΛΑΓΗ) -->
+            <div id="windyEngineWrap" style="display:none;">
                 <div class="windy-layer-tabs">
                     <button type="button" class="windy-tab active" onclick="setWindyOverlay('rain', this)">🌧️ Βροχή / Ραντάρ</button>
                     <button type="button" class="windy-tab" onclick="setWindyOverlay('snowAccu', this)">❄️ Νέο Χιόνι</button>
                     <button type="button" class="windy-tab" onclick="setWindyOverlay('wind', this)">💨 Άνεμος</button>
                     <button type="button" class="windy-tab" onclick="setWindyOverlay('temp', this)">🌡️ Θερμοκρασία</button>
                 </div>
-            </div>
-            <div class="windy-frame-wrap">
-                <iframe id="windyFrame" class="windy-frame" title="Ζωντανός Χάρτης Windy Πίνδου και Σμόλικα" loading="lazy" src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=%C2%B0C&metricWind=km%2Fh&zoom=9&overlay=rain&product=ecmwf&level=surface&lat=40.105&lon=21.018&detailLat=40.105&detailLon=21.018&detail=false&pressure=true&message=true" frameborder="0"></iframe>
+                <div class="windy-frame-wrap">
+                    <iframe id="windyFrame" class="windy-frame" title="Ζωντανός Χάρτης Windy Πίνδου και Σμόλικα" loading="lazy" src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=%C2%B0C&metricWind=km%2Fh&zoom=9&overlay=rain&product=ecmwf&level=surface&lat=40.105&lon=21.018&detailLat=40.105&detailLon=21.018&detail=false&pressure=true&message=true" frameborder="0"></iframe>
+                </div>
             </div>
         </div>
     </div>
@@ -752,7 +996,7 @@
     </div>
 
     <div class="footer-bar">
-        Σαμαρίνα Live Weather Dashboard (1.450μ.) • Αυτόνομος &amp; Υβριδικός Αλγόριθμος (Stull Wet-Bulb): Bresser 5-in-1 (ISAMAR38) + Open-Meteo (ICON / ECMWF)
+        Σαμαρίνα Live Weather Dashboard (1.450μ.) • Αυτόνομος &amp; Υβριδικός Αλγόριθμος (Stull Wet-Bulb): Bresser 5-in-1 (ISAMAR38) + Open-Meteo (ICON / ECMWF) + Ventusky Wind Streamlines
     </div>
 
     <div id="modal-3d" class="modal-3d-overlay" onclick="if(event.target===this) closeSmolikas3D()">
@@ -810,21 +1054,11 @@
         });
 
         // =========================================================================
-        // 2. ΑΣΦΑΛΕΙΣ ΒΟΗΘΗΤΙΚΕΣ ΣΥΝΑΡΤΗΣΕΙΣ (DOM, ΑΡΙΘΜΟΙ, STORAGE, FETCH)
+        // 2. ΑΣΦΑΛΕΙΣ ΒΟΗΘΗΤΙΚΕΣ ΣΥΝΑΡΤΗΣΕΙΣ
         // =========================================================================
-        function getEl(id) {
-            return document.getElementById(id);
-        }
-
-        function setText(id, text) {
-            const el = getEl(id);
-            if (el) el.innerText = text;
-        }
-
-        function setHtml(id, html) {
-            const el = getEl(id);
-            if (el) el.innerHTML = html;
-        }
+        function getEl(id) { return document.getElementById(id); }
+        function setText(id, text) { const el = getEl(id); if (el) el.innerText = text; }
+        function setHtml(id, html) { const el = getEl(id); if (el) el.innerHTML = html; }
 
         function toFiniteNumber(val, fallback) {
             if (typeof val === "number" && Number.isFinite(val)) return val;
@@ -835,54 +1069,39 @@
             return fallback;
         }
 
-        function clamp(num, min, max) {
-            return Math.min(max, Math.max(min, num));
-        }
+        function clamp(num, min, max) { return Math.min(max, Math.max(min, num)); }
 
         function safeStorageGet(key, fallback = null) {
             try {
                 const raw = localStorage.getItem(key);
                 return raw !== null ? JSON.parse(raw) : fallback;
-            } catch (_) {
-                return fallback;
-            }
+            } catch (_) { return fallback; }
         }
 
         function safeStorageSet(key, value) {
             try {
                 localStorage.setItem(key, JSON.stringify(value));
                 return true;
-            } catch (_) {
-                return false;
-            }
+            } catch (_) { return false; }
         }
 
         async function fetchWithTimeout(url, options = {}, timeoutMs = CONFIG.FETCH_TIMEOUT_MS) {
             const controller = new AbortController();
             const externalSignal = options.signal;
-
             if (externalSignal) {
-                if (externalSignal.aborted) {
-                    controller.abort();
-                } else {
-                    externalSignal.addEventListener("abort", () => controller.abort(), { once: true });
-                }
+                if (externalSignal.aborted) controller.abort();
+                else externalSignal.addEventListener("abort", () => controller.abort(), { once: true });
             }
-
             const timerId = setTimeout(() => controller.abort(), timeoutMs);
             try {
-                return await fetch(url, {
-                    ...options,
-                    signal: controller.signal,
-                    cache: "no-store"
-                });
+                return await fetch(url, { ...options, signal: controller.signal, cache: "no-store" });
             } finally {
                 clearTimeout(timerId);
             }
         }
 
         // =========================================================================
-        // 3. ΚΑΤΑΣΤΑΣΗ ΕΦΑΡΜΟΓΗΣ & CONTROLLERS ΓΙΑ RACE CONDITIONS
+        // 3. ΚΑΤΑΣΤΑΣΗ ΕΦΑΡΜΟΓΗΣ
         // =========================================================================
         let latest12hForecastPacket = null;
         let cached24CardsHtml = { hybrid: "", station: "" };
@@ -908,7 +1127,461 @@
         }
 
         // =========================================================================
-        // 4. UI HANDLERS (GLOBAL ΓΙΑ ΤΑ INLINE ONCLICK)
+        // 4. VENTUSKY-STYLE PINDUS WIND STREAMLINES ENGINE (LEAFLET + 2x CANVAS)
+        // =========================================================================
+        const PINDUS_GRID = Object.freeze({
+            ROWS: 5,
+            COLS: 5,
+            LATS: [39.85, 39.975, 40.10, 40.225, 40.35],
+            LONS: [20.70, 20.8625, 21.025, 21.1875, 21.35],
+            LAT_MIN: 39.85,
+            LAT_MAX: 40.35,
+            LON_MIN: 20.70,
+            LON_MAX: 21.35
+        });
+
+        const ventState = {
+            map: null,
+            heatCanvas: null,
+            windCanvas: null,
+            heatCtx: null,
+            windCtx: null,
+            gridHourly: null, // [hourIndex][row][col] = { u, v, speed, temp, snow }
+            timeLabels: [],
+            hourIdx: 0,
+            fieldMode: "temp", // 'temp' | 'snow' | 'wind'
+            particles: [],
+            animFrameId: null,
+            playTimerId: null,
+            isPlaying: false,
+            lastLiveStation: { temp: 8, wind: 10, dir: 270 }
+        };
+
+        function initVentuskyMap() {
+            const mapEl = getEl("ventuskyLeafletMap");
+            if (!mapEl || typeof L === "undefined" || ventState.map) return;
+
+            const map = L.map("ventuskyLeafletMap", {
+                center: [40.105, 21.018],
+                zoom: 10,
+                minZoom: 8,
+                maxZoom: 13,
+                zoomControl: true,
+                attributionControl: false
+            });
+
+            L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
+                maxZoom: 15,
+                subdomains: "abc"
+            }).addTo(map);
+
+            // Χαρακτηριστικές κορυφές & οικισμοί Πίνδου
+            const landmarks = [
+                { lat: 40.105, lon: 21.018, label: "📍 Σαμαρίνα 1.450μ.", main: true },
+                { lat: 40.089, lon: 20.926, label: "🏔️ Σμόλικας 2.637μ.", main: false },
+                { lat: 40.048, lon: 21.084, label: "⛷️ Βασιλίτσα 2.249μ.", main: false },
+                { lat: 40.025, lon: 20.992, label: "Δίστρατο", main: false },
+                { lat: 40.348, lon: 20.779, label: "🏔️ Γράμμος 2.520μ.", main: false },
+                { lat: 40.084, lon: 21.427, label: "Γρεβενά", main: false }
+            ];
+
+            landmarks.forEach(pt => {
+                L.marker([pt.lat, pt.lon], {
+                    interactive: false,
+                    icon: L.divIcon({
+                        className: "",
+                        html: `<div class="pindus-pin ${pt.main ? "pindus-pin-main" : ""}">${pt.label}</div>`,
+                        iconSize: [130, 22],
+                        iconAnchor: [65, 11]
+                    })
+                }).addTo(map);
+            });
+
+            ventState.map = map;
+            ventState.heatCanvas = getEl("ventuskyHeatCanvas");
+            ventState.windCanvas = getEl("ventuskyWindCanvas");
+            ventState.heatCtx = ventState.heatCanvas ? ventState.heatCanvas.getContext("2d") : null;
+            ventState.windCtx = ventState.windCanvas ? ventState.windCanvas.getContext("2d") : null;
+
+            resizeVentuskyCanvases();
+            spawnVentuskyParticles();
+
+            map.on("move zoom resize", () => {
+                resizeVentuskyCanvases();
+                drawVentuskyHeatmap();
+                resetVentuskyParticles();
+            });
+
+            map.on("mousemove", e => {
+                if (!ventState.gridHourly) return;
+                const sample = sampleGridAtLatLon(e.latlng.lat, e.latlng.lng, ventState.hourIdx);
+                if (!sample) return;
+                const spd = Math.round(sample.speed);
+                const deg = Math.round((Math.atan2(-sample.u, -sample.v) * 180 / Math.PI + 360) % 360);
+                setHtml("ventCursorReadout", `
+                    <span>📍 Σημείο Χάρτη: <strong>${spd} km/h</strong> (${degToCompass(deg)})</span>
+                    <span>🌡️ <strong>${sample.temp.toFixed(1)}°C</strong>${sample.snow > 0 ? ` • ❄️ <strong>${sample.snow.toFixed(1)} cm</strong>` : ""}</span>
+                `);
+            });
+
+            map.on("mouseout", () => {
+                updateVentuskyHeaderReadout();
+            });
+
+            startVentuskyLoop();
+        }
+
+        function resizeVentuskyCanvases() {
+            const shell = getEl("ventMapShell");
+            if (!shell || !ventState.heatCanvas || !ventState.windCanvas) return;
+            const w = shell.clientWidth || 800;
+            const h = shell.clientHeight || 460;
+            ventState.heatCanvas.width = w;
+            ventState.heatCanvas.height = h;
+            ventState.windCanvas.width = w;
+            ventState.windCanvas.height = h;
+        }
+
+        function spawnVentuskyParticles() {
+            const w = ventState.windCanvas?.width || 800;
+            const h = ventState.windCanvas?.height || 460;
+            const count = w < 600 ? 750 : 1350;
+            ventState.particles = [];
+            for (let i = 0; i < count; i++) {
+                ventState.particles.push({
+                    x: Math.random() * w,
+                    y: Math.random() * h,
+                    age: Math.floor(Math.random() * 85),
+                    maxAge: 65 + Math.floor(Math.random() * 55)
+                });
+            }
+        }
+
+        function resetVentuskyParticles() {
+            const w = ventState.windCanvas?.width || 800;
+            const h = ventState.windCanvas?.height || 460;
+            if (ventState.windCtx) ventState.windCtx.clearRect(0, 0, w, h);
+            ventState.particles.forEach(p => {
+                p.x = Math.random() * w;
+                p.y = Math.random() * h;
+                p.age = Math.floor(Math.random() * p.maxAge);
+            });
+        }
+
+        // Διγραμμική παρεμβολή (Bilinear Interpolation) στο 5x5 πλέγμα της Πίνδου
+        function sampleGridAtLatLon(lat, lon, hourIdx) {
+            const hourGrid = ventState.gridHourly?.[hourIdx];
+            if (!hourGrid) return null;
+
+            const normY = ((lat - PINDUS_GRID.LAT_MIN) / (PINDUS_GRID.LAT_MAX - PINDUS_GRID.LAT_MIN)) * (PINDUS_GRID.ROWS - 1);
+            const normX = ((lon - PINDUS_GRID.LON_MIN) / (PINDUS_GRID.LON_MAX - PINDUS_GRID.LON_MIN)) * (PINDUS_GRID.COLS - 1);
+
+            const r0 = clamp(Math.floor(normY), 0, PINDUS_GRID.ROWS - 2);
+            const c0 = clamp(Math.floor(normX), 0, PINDUS_GRID.COLS - 2);
+            const r1 = r0 + 1;
+            const c1 = c0 + 1;
+
+            const fy = clamp(normY - r0, 0, 1);
+            const fx = clamp(normX - c0, 0, 1);
+
+            const g00 = hourGrid[r0][c0];
+            const g10 = hourGrid[r0][c1];
+            const g01 = hourGrid[r1][c0];
+            const g11 = hourGrid[r1][c1];
+
+            const lerp = (a, b, t) => a + (b - a) * t;
+            const u = lerp(lerp(g00.u, g10.u, fx), lerp(g01.u, g11.u, fx), fy);
+            const v = lerp(lerp(g00.v, g10.v, fx), lerp(g01.v, g11.v, fx), fy);
+            const temp = lerp(lerp(g00.temp, g10.temp, fx), lerp(g01.temp, g11.temp, fx), fy);
+            const snow = lerp(lerp(g00.snow, g10.snow, fx), lerp(g01.snow, g11.snow, fx), fy);
+            const speed = Math.hypot(u, v);
+
+            return { u, v, speed, temp, snow };
+        }
+
+        function getVentuskyColor(val, mode) {
+            if (mode === "snow") {
+                if (val <= 0.05) return [15, 23, 42, 0];
+                if (val < 0.5) return [56, 189, 248, 120];
+                if (val < 2.0) return [129, 140, 248, 175];
+                return [232, 121, 249, 215];
+            }
+            if (mode === "wind") {
+                const t = clamp(val / 65, 0, 1);
+                if (t < 0.25) return [14, 165, 233, 95];
+                if (t < 0.5) return [16, 185, 129, 130];
+                if (t < 0.75) return [250, 204, 21, 165];
+                return [239, 68, 68, 200];
+            }
+            // Θερμοκρασία (-10°C έως +25°C)
+            const t = clamp((val + 10) / 35, 0, 1);
+            if (t < 0.22) return [99, 102, 241, 145];   // Βαθύ παγωμένο μωβ-μπλε
+            if (t < 0.35) return [56, 189, 248, 135];   // Κυανό (γύρω στο 0°C)
+            if (t < 0.58) return [16, 185, 129, 125];   // Σμαραγδί / Πράσινο
+            if (t < 0.78) return [250, 204, 21, 140];   // Κίτρινο
+            return [239, 68, 68, 165];                  // Θερμό κόκκινο
+        }
+
+        function drawVentuskyHeatmap() {
+            const ctx = ventState.heatCtx;
+            const canvas = ventState.heatCanvas;
+            const map = ventState.map;
+            if (!ctx || !canvas || !map || !ventState.gridHourly) return;
+
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            const step = 18;
+            for (let y = 0; y < h; y += step) {
+                for (let x = 0; x < w; x += step) {
+                    const ll = map.containerPointToLatLng([x + step * 0.5, y + step * 0.5]);
+                    const s = sampleGridAtLatLon(ll.lat, ll.lng, ventState.hourIdx);
+                    if (!s) continue;
+                    const metricVal = ventState.fieldMode === "snow" ? s.snow : (ventState.fieldMode === "wind" ? s.speed : s.temp);
+                    const [r, g, b, a] = getVentuskyColor(metricVal, ventState.fieldMode);
+                    if (a > 0) {
+                        ctx.fillStyle = `rgba(${r},${g},${b},${(a / 255).toFixed(2)})`;
+                        ctx.fillRect(x, y, step + 1, step + 1);
+                    }
+                }
+            }
+        }
+
+        function startVentuskyLoop() {
+            if (ventState.animFrameId) cancelAnimationFrame(ventState.animFrameId);
+
+            function tick() {
+                const ctx = ventState.windCtx;
+                const canvas = ventState.windCanvas;
+                const map = ventState.map;
+
+                if (ctx && canvas && map && ventState.gridHourly && getEl("ventuskyEngineWrap")?.style.display !== "none") {
+                    const w = canvas.width;
+                    const h = canvas.height;
+
+                    // Απαλό ξεθώριασμα προηγούμενων ιχνών (Ventusky trail effect)
+                    ctx.globalCompositeOperation = "destination-in";
+                    ctx.fillStyle = "rgba(0, 0, 0, 0.89)";
+                    ctx.fillRect(0, 0, w, h);
+                    ctx.globalCompositeOperation = "source-over";
+
+                    ctx.lineWidth = 1.65;
+                    ctx.lineCap = "round";
+
+                    for (let i = 0; i < ventState.particles.length; i++) {
+                        const p = ventState.particles[i];
+                        p.age++;
+                        if (p.age > p.maxAge || p.x < 0 || p.x > w || p.y < 0 || p.y > h) {
+                            p.x = Math.random() * w;
+                            p.y = Math.random() * h;
+                            p.age = 0;
+                            continue;
+                        }
+
+                        const ll = map.containerPointToLatLng([p.x, p.y]);
+                        const s = sampleGridAtLatLon(ll.lat, ll.lng, ventState.hourIdx);
+                        if (!s) continue;
+
+                        const speedScale = 0.085;
+                        const dx = s.u * speedScale;
+                        const dy = -s.v * speedScale; // +v (Βόρειος) -> προς τα πάνω στην οθόνη (-y)
+
+                        const nx = p.x + dx;
+                        const ny = p.y + dy;
+
+                        // Χρώμα ίχνους ανάλογα με την ένταση του ανέμου
+                        if (s.speed >= 45) ctx.strokeStyle = "rgba(251, 191, 36, 0.92)";
+                        else if (s.speed >= 25) ctx.strokeStyle = "rgba(125, 211, 252, 0.90)";
+                        else ctx.strokeStyle = "rgba(241, 245, 249, 0.78)";
+
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(nx, ny);
+                        ctx.stroke();
+
+                        p.x = nx;
+                        p.y = ny;
+                    }
+                }
+                ventState.animFrameId = requestAnimationFrame(tick);
+            }
+            ventState.animFrameId = requestAnimationFrame(tick);
+        }
+
+        async function loadPindusWindGrid(liveStation, signal) {
+            try {
+                const lats = [];
+                const lons = [];
+                for (let r = 0; r < PINDUS_GRID.ROWS; r++) {
+                    for (let c = 0; c < PINDUS_GRID.COLS; c++) {
+                        lats.push(PINDUS_GRID.LATS[r]);
+                        lons.push(PINDUS_GRID.LONS[c]);
+                    }
+                }
+
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats.join(",")}&longitude=${lons.join(",")}&hourly=temperature_2m,snowfall,wind_speed_10m,wind_direction_10m&models=best_match&timezone=Europe%2FAthens&forecast_days=3`;
+                const res = await fetchWithTimeout(url, { signal });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!Array.isArray(data) || data.length < 25) return;
+
+                const now = new Date();
+                const pad = n => String(n).padStart(2, "0");
+                const nowPrefix = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}`;
+                const baseTimes = data[0]?.hourly?.time || [];
+                let startIdx = baseTimes.findIndex(t => typeof t === "string" && t.startsWith(nowPrefix));
+                if (startIdx < 0) startIdx = 0;
+
+                const hourlyGrid = [];
+                const labels = [];
+
+                for (let h = 0; h < 48; h++) {
+                    const tIdx = startIdx + h;
+                    const rawTime = baseTimes[tIdx];
+                    if (h === 0) {
+                        labels.push("Τώρα (Live)");
+                    } else if (rawTime) {
+                        const dObj = new Date(rawTime);
+                        labels.push(`${formatShortDayDate(dObj)} ${dObj.toLocaleTimeString("el-GR", { hour: "2-digit", minute: "2-digit" })}`);
+                    } else {
+                        labels.push(`+${h}h`);
+                    }
+
+                    const matrix = [];
+                    for (let r = 0; r < PINDUS_GRID.ROWS; r++) {
+                        const rowArr = [];
+                        for (let c = 0; c < PINDUS_GRID.COLS; c++) {
+                            const pt = data[r * PINDUS_GRID.COLS + c];
+                            let spd = Math.max(2, toFiniteNumber(pt?.hourly?.wind_speed_10m?.[tIdx], 8));
+                            let dirDeg = toFiniteNumber(pt?.hourly?.wind_direction_10m?.[tIdx], 270);
+                            let temp = toFiniteNumber(pt?.hourly?.temperature_2m?.[tIdx], 5);
+                            const snow = Math.max(0, toFiniteNumber(pt?.hourly?.snowfall?.[tIdx], 0));
+
+                            // Συγχώνευση πραγματικού σταθμού ISAMAR38 (κέντρο [2][2]) στο Τώρα (h=0)
+                            if (h === 0 && liveStation && Number.isFinite(liveStation.temp)) {
+                                const dist = Math.hypot(r - 2, c - 2);
+                                const w = Math.max(0, 1 - dist / 2.2);
+                                if (w > 0) {
+                                    temp = temp * (1 - w) + liveStation.temp * w;
+                                    if (liveStation.wind > 0) {
+                                        spd = spd * (1 - w) + liveStation.wind * w;
+                                        dirDeg = liveStation.dir;
+                                    }
+                                }
+                            }
+
+                            // Μετεωρολογική διεύθυνση (από πού φυσάει) -> διανύσματα ροής (u, v)
+                            const rad = (dirDeg * Math.PI) / 180;
+                            const u = -spd * Math.sin(rad);
+                            const v = -spd * Math.cos(rad);
+                            rowArr.push({ u, v, speed: spd, temp, snow });
+                        }
+                        matrix.push(rowArr);
+                    }
+                    hourlyGrid.push(matrix);
+                }
+
+                ventState.gridHourly = hourlyGrid;
+                ventState.timeLabels = labels;
+                if (liveStation) ventState.lastLiveStation = liveStation;
+
+                updateVentuskyHeaderReadout();
+                drawVentuskyHeatmap();
+            } catch (err) {
+                if (err.name !== "AbortError") {
+                    console.warn("[Ventusky Pindus Grid]:", err.message);
+                }
+            }
+        }
+
+        function updateVentuskyHeaderReadout() {
+            const center = ventState.gridHourly?.[ventState.hourIdx]?.[2]?.[2];
+            if (!center) return;
+            const deg = Math.round((Math.atan2(-center.u, -center.v) * 180 / Math.PI + 360) % 360);
+            setText("ventSamWind", `${Math.round(center.speed)} km/h`);
+            setText("ventSamDir", degToCompass(deg));
+            setText("ventSamTemp", `${center.temp.toFixed(1)}°C`);
+            if (ventState.timeLabels[ventState.hourIdx]) {
+                setText("ventTimeLabel", ventState.timeLabels[ventState.hourIdx]);
+            }
+        }
+
+        window.switchMapEngine = function (engine) {
+            const vWrap = getEl("ventuskyEngineWrap");
+            const wWrap = getEl("windyEngineWrap");
+            const btnV = getEl("btnMapVentusky");
+            const btnW = getEl("btnMapWindy");
+
+            if (engine === "windy") {
+                if (vWrap) vWrap.style.display = "none";
+                if (wWrap) wWrap.style.display = "block";
+                if (btnV) btnV.classList.remove("active");
+                if (btnW) btnW.classList.add("active");
+            } else {
+                if (wWrap) wWrap.style.display = "none";
+                if (vWrap) vWrap.style.display = "block";
+                if (btnW) btnW.classList.remove("active");
+                if (btnV) btnV.classList.add("active");
+                if (ventState.map) {
+                    setTimeout(() => {
+                        ventState.map.invalidateSize();
+                        resizeVentuskyCanvases();
+                        drawVentuskyHeatmap();
+                    }, 80);
+                }
+            }
+        };
+
+        window.setVentuskyField = function (mode, btnEl) {
+            ventState.fieldMode = mode;
+            document.querySelectorAll(".vent-layer-btn").forEach(b => b.classList.remove("active"));
+            if (btnEl) btnEl.classList.add("active");
+
+            const bar = getEl("ventLegBar");
+            if (mode === "snow") {
+                setText("ventLegMin", "0 cm");
+                setText("ventLegMax", "5+ cm/h");
+                if (bar) bar.style.background = "linear-gradient(90deg, #0f172a, #38bdf8, #818cf8, #e879f9)";
+            } else if (mode === "wind") {
+                setText("ventLegMin", "0");
+                setText("ventLegMax", "65+ km/h");
+                if (bar) bar.style.background = "linear-gradient(90deg, #0ea5e9, #10b981, #facc15, #ef4444)";
+            } else {
+                setText("ventLegMin", "-10°");
+                setText("ventLegMax", "+25°C");
+                if (bar) bar.style.background = "linear-gradient(90deg, #6366f1, #38bdf8, #10b981, #facc15, #ef4444)";
+            }
+            drawVentuskyHeatmap();
+        };
+
+        window.onVentuskySliderInput = function (val) {
+            ventState.hourIdx = clamp(parseInt(val, 10) || 0, 0, 47);
+            updateVentuskyHeaderReadout();
+            drawVentuskyHeatmap();
+        };
+
+        window.toggleVentuskyPlay = function () {
+            const btn = getEl("ventPlayBtn");
+            const slider = getEl("ventHourSlider");
+            if (ventState.isPlaying) {
+                ventState.isPlaying = false;
+                if (ventState.playTimerId) clearInterval(ventState.playTimerId);
+                if (btn) btn.innerText = "▶";
+            } else {
+                ventState.isPlaying = true;
+                if (btn) btn.innerText = "⏸";
+                ventState.playTimerId = setInterval(() => {
+                    ventState.hourIdx = (ventState.hourIdx + 1) % 48;
+                    if (slider) slider.value = String(ventState.hourIdx);
+                    updateVentuskyHeaderReadout();
+                    drawVentuskyHeatmap();
+                }, 650);
+            }
+        };
+
+        // =========================================================================
+        // 5. ΛΟΙΠΟΙ UI HANDLERS
         // =========================================================================
         window.setWindyOverlay = function (overlay, btnEl) {
             const allowedOverlays = ["rain", "snowAccu", "wind", "temp"];
@@ -929,18 +1602,12 @@
             const pillS = getEl("pillStation24");
 
             if (current24CardsSource === "station") {
-                if (title) {
-                    title.innerText = "📡 24ωρη Πρόγνωση Αυτόνομου Σταθμού";
-                    title.style.color = "#34d399";
-                }
+                if (title) { title.innerText = "📡 24ωρη Πρόγνωση Αυτόνομου Σταθμού"; title.style.color = "#34d399"; }
                 if (pillH) pillH.className = "source-pill";
                 if (pillS) pillS.className = "source-pill active-pill-st";
                 if (grid && cached24CardsHtml.station) grid.innerHTML = cached24CardsHtml.station;
             } else {
-                if (title) {
-                    title.innerText = "❄️ 24ωρη Υβριδική Πρόγνωση (Ανά 3ωρο)";
-                    title.style.color = "#38bdf8";
-                }
+                if (title) { title.innerText = "❄️ 24ωρη Υβριδική Πρόγνωση (Ανά 3ωρο)"; title.style.color = "#38bdf8"; }
                 if (pillH) pillH.className = "source-pill active-pill";
                 if (pillS) pillS.className = "source-pill";
                 if (grid && cached24CardsHtml.hybrid) grid.innerHTML = cached24CardsHtml.hybrid;
@@ -1009,6 +1676,13 @@
                 liveSec.style.display = "flex";
                 if (btnArch) btnArch.classList.remove("active-tab");
                 if (btnLive) btnLive.classList.add("active-tab");
+                if (ventState.map) {
+                    setTimeout(() => {
+                        ventState.map.invalidateSize();
+                        resizeVentuskyCanvases();
+                        drawVentuskyHeatmap();
+                    }, 80);
+                }
             }
         };
 
@@ -1027,7 +1701,7 @@
         });
 
         // =========================================================================
-        // 5. ΕΙΔΟΠΟΙΗΣΕΙΣ (ΠΑΓΕΤΟΣ & ΔΗΜΟΣΙΟ BANNER)
+        // 6. ΕΙΔΟΠΟΙΗΣΕΙΣ & ΜΕΤΕΩΡΟΛΟΓΙΚΟΙ ΑΛΓΟΡΙΘΜΟΙ
         // =========================================================================
         function updateFrostWarning(tempC) {
             const banner = getEl("frost-banner");
@@ -1098,9 +1772,6 @@
             }
         }
 
-        // =========================================================================
-        // 6. ΜΕΤΕΩΡΟΛΟΓΙΚΟΙ & ΜΙΚΡΟΚΛΙΜΑΤΙΚΟΙ ΥΠΟΛΟΓΙΣΜΟΙ
-        // =========================================================================
         function formatShortDayDate(dateObj) {
             return dateObj.toLocaleDateString("el-GR", {
                 weekday: "short",
@@ -1109,7 +1780,6 @@
             }).replace(",", "");
         }
 
-        // Δυναμική Διόρθωση Απογευματινής Σκίασης Γειτονικού Κτιρίου (14:00 - 16:30)
         function applyBuildingShadowCorrection(rawTemp, omData) {
             const now = new Date();
             const decHour = now.getHours() + (now.getMinutes() / 60);
@@ -1120,9 +1790,7 @@
                 const pad = n => String(n).padStart(2, "0");
                 const nowPrefix = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}`;
                 const idx = omData.hourly.time.findIndex(t => typeof t === "string" && t.startsWith(nowPrefix));
-                if (idx !== -1) {
-                    cloudCover = clamp(toFiniteNumber(omData.hourly.cloud_cover[idx], 0), 0, 100);
-                }
+                if (idx !== -1) cloudCover = clamp(toFiniteNumber(omData.hourly.cloud_cover[idx], 0), 0, 100);
             }
             if (cloudCover >= 55) return { temp: rawTemp, offset: 0 };
 
@@ -1189,7 +1857,6 @@
                     }
                 }
             }
-
             return { deltaT, larTemp };
         }
 
@@ -1672,10 +2339,7 @@
                     maintainAspectRatio: false,
                     interaction: { mode: "index", intersect: false },
                     plugins: {
-                        legend: {
-                            position: "top",
-                            labels: { color: "#cbd5e1", usePointStyle: true, boxWidth: 10, font: { size: 11 } }
-                        },
+                        legend: { position: "top", labels: { color: "#cbd5e1", usePointStyle: true, boxWidth: 10, font: { size: 11 } } },
                         tooltip: {
                             backgroundColor: "rgba(15, 23, 42, 0.95)",
                             titleColor: "#f8fafc",
@@ -1727,12 +2391,8 @@
             for (let i = 0; i < line.length; i++) {
                 const ch = line[i];
                 if (ch === '"') inQuotes = !inQuotes;
-                else if (ch === "," && !inQuotes) {
-                    result.push(current.trim());
-                    current = "";
-                } else {
-                    current += ch;
-                }
+                else if (ch === "," && !inQuotes) { result.push(current.trim()); current = ""; }
+                else current += ch;
             }
             result.push(current.trim());
             return result;
@@ -1792,7 +2452,7 @@
         }
 
         // =========================================================================
-        // 9. ΚΥΡΙΑ ΕΝΗΜΕΡΩΣΗ DASHBOARD (ΜΕ FALLBACK CACHE & ABORT PROTECTION)
+        // 9. ΚΥΡΙΑ ΕΝΗΜΕΡΩΣΗ DASHBOARD
         // =========================================================================
         async function updateDashboard() {
             if (dashboardAbortCtrl) dashboardAbortCtrl.abort();
@@ -1833,6 +2493,7 @@
                 renderSamarina24hRealtimeChart(dayData);
 
                 if (!obs || !obs.metric || !Number.isFinite(toFiniteNumber(obs.metric.temp, NaN))) {
+                    loadPindusWindGrid(null, signal);
                     throw new Error("Προσωρινή αναμονή έγκυρης μέτρησης από ISAMAR38");
                 }
 
@@ -1859,6 +2520,9 @@
                 const chill = toFiniteNumber(obs.metric.windChill, temp);
                 const spread = temp - dew;
                 const wetBulb = calcWetBulb(temp, hum);
+
+                // Ενημέρωση Ventusky Wind Grid με συγχώνευση live σταθμού
+                loadPindusWindGrid(isStationOffline ? null : { temp, wind, dir }, signal);
 
                 const invInfo = updateInversionAndAstro(temp, omData, larData);
 
@@ -1894,7 +2558,6 @@
 
                 updateFrostWarning(temp);
 
-                // Τάση 3ώρου βαρομέτρου με εξομάλυνση
                 let rawTrend = 0;
                 if (Array.isArray(dayData?.observations) && dayData.observations.length > 0) {
                     const currentEpoch = obs.epoch || Math.floor(Date.now() / 1000);
@@ -1907,10 +2570,7 @@
                         const oPress = toFiniteNumber(o.metric?.pressureMax, toFiniteNumber(o.metric?.pressureMin, toFiniteNumber(o.metric?.pressure, null)));
                         if (oEpoch && oPress !== null) {
                             const diff = Math.abs(oEpoch - targetEpoch);
-                            if (diff <= 5400 && diff < minDiff) {
-                                minDiff = diff;
-                                closestObs = oPress;
-                            }
+                            if (diff <= 5400 && diff < minDiff) { minDiff = diff; closestObs = oPress; }
                         }
                     });
                     if (closestObs !== null && Number.isFinite(press)) {
@@ -1932,7 +2592,6 @@
                 setText("stTrend", `Τάση 3ωρου: ${trend >= 0 ? "+" : ""}${trend.toFixed(1)} hPa`);
                 setText("lastUpdate", `Ενημ.: ${new Date().toLocaleTimeString("el-GR", { hour: "2-digit", minute: "2-digit" })}`);
 
-                // Ασφαλής υπολογισμός ημερήσιων ακραίων
                 let minDayT = temp;
                 let maxDayT = temp;
                 let maxDayGust = gust;
@@ -1951,14 +2610,8 @@
                         const gVal = toFiniteNumber(o.metric.windgustHigh, toFiniteNumber(o.metric.windspeedHigh, 0));
                         const timeLabel = typeof o.obsTimeLocal === "string" ? o.obsTimeLocal.slice(11, 16) : "";
 
-                        if (tVal !== null && tVal < foundMin) {
-                            foundMin = tVal;
-                            minDayTime = timeLabel ? ` (${timeLabel})` : "";
-                        }
-                        if (tHigh !== null && tHigh > foundMax) {
-                            foundMax = tHigh;
-                            maxDayTime = timeLabel ? ` (${timeLabel})` : "";
-                        }
+                        if (tVal !== null && tVal < foundMin) { foundMin = tVal; minDayTime = timeLabel ? ` (${timeLabel})` : ""; }
+                        if (tHigh !== null && tHigh > foundMax) { foundMax = tHigh; maxDayTime = timeLabel ? ` (${timeLabel})` : ""; }
                         if (gVal > foundGust) foundGust = gVal;
                     });
                     if (Number.isFinite(foundMin)) minDayT = foundMin;
@@ -1995,13 +2648,8 @@
                         ? { temp: Number(temp.toFixed(1)), dew: Number(dew.toFixed(1)), wetBulb, wind: Math.round(wind), dir, station: { temp: Number(temp.toFixed(1)), dew: Number(dew.toFixed(1)), wetBulb, wind: Math.round(wind), dir, precip: Number(rate.toFixed(1)), snowCm: 0, prob: 100 }, precip: Number(rate.toFixed(1)), snowCm: 0, prob: 100 }
                         : predictHybrid(hrs, temp, dew, hum, press, trend, wind, dir, rate, omData);
 
-                    if (hrs <= 12) {
-                        steps12h.push({ hrs, timeLabel: tLabel, decHour: futureDate.getHours(), station: pred.station, hybrid: pred });
-                    }
-                    if (hrs > 0) {
-                        totalPrecip24 += pred.precip;
-                        estSnowCm24 += pred.snowCm;
-                    }
+                    if (hrs <= 12) steps12h.push({ hrs, timeLabel: tLabel, decHour: futureDate.getHours(), station: pred.station, hybrid: pred });
+                    if (hrs > 0) { totalPrecip24 += pred.precip; estSnowCm24 += pred.snowCm; }
                     if (pred.temp < minTemp24) minTemp24 = pred.temp;
 
                     chartLabels.push(tLabel);
@@ -2012,16 +2660,7 @@
                     chartSnow.push(pred.snowCm);
                 }
 
-                updatePublicMeteoBanner({
-                    temp,
-                    wetBulb,
-                    rate,
-                    estSnowCm24,
-                    trend,
-                    maxCape,
-                    deltaT: invInfo.deltaT,
-                    larTemp: invInfo.larTemp
-                });
+                updatePublicMeteoBanner({ temp, wetBulb, rate, estSnowCm24, trend, maxCape, deltaT: invInfo.deltaT, larTemp: invInfo.larTemp });
 
                 latest12hForecastPacket = { generatedAt: Date.now(), hasHybridModel: Boolean(omData), steps: steps12h };
                 safeStorageSet(CONFIG.STORAGE_FORECAST_KEY, latest12hForecastPacket);
@@ -2288,9 +2927,7 @@
 
             const dirCounts = {};
             filtered.forEach(r => {
-                if (r.DomDirText && r.DomDirText !== "--") {
-                    dirCounts[r.DomDirText] = (dirCounts[r.DomDirText] || 0) + 1;
-                }
+                if (r.DomDirText && r.DomDirText !== "--") dirCounts[r.DomDirText] = (dirCounts[r.DomDirText] || 0) + 1;
             });
             const topDirs = Object.entries(dirCounts).sort((a, b) => b[1] - a[1]).slice(0, 4);
             const windBarsHtml = topDirs.map(([dir, cnt]) => {
@@ -2328,7 +2965,7 @@
         }
 
         // =========================================================================
-        // 11. TIMERS, DEEP LINKS & ΚΕΝΤΡΙΚΗ ΠΑΓΙΔΑ ΣΦΑΛΜΑΤΩΝ
+        // 11. TIMERS, DEEP LINKS & CLEANUP
         // =========================================================================
         function updateClock() {
             const now = new Date();
@@ -2359,6 +2996,8 @@
 
         window.addEventListener("beforeunload", () => {
             activeTimers.forEach(id => clearInterval(id));
+            if (ventState.animFrameId) cancelAnimationFrame(ventState.animFrameId);
+            if (ventState.playTimerId) clearInterval(ventState.playTimerId);
             if (dashboardAbortCtrl) dashboardAbortCtrl.abort();
             if (statsAbortCtrl) statsAbortCtrl.abort();
             if (archiveAbortCtrl) archiveAbortCtrl.abort();
@@ -2367,6 +3006,7 @@
         // Εκκίνηση
         updateClock();
         applyUrlModeIfPresent();
+        initVentuskyMap();
         updateDashboard();
         loadVerificationStats();
 
@@ -2392,7 +3032,7 @@
                 </div>
                 <div class="footer-card">
                     <h4>🏔️ Μικροκλίμα &amp; Ορεινή Ασφάλεια</h4>
-                    <p>Ενσωματώνει τοπικό υπολογισμό σκίασης από τον ορεινό όγκο του Σμόλικα, δείκτη θερμοκρασιακής αναστροφής με τον κάμπο της Λάρισας και εκτίμηση παγετού οδοστρώματος.</p>
+                    <p>Ενσωματώνει τοπικό υπολογισμό σκίασης από τον ορεινό όγκο του Σμόλικα, δείκτη θερμοκρασιακής αναστροφής με τον κάμπο της Λάρισας, εκτίμηση παγετού οδοστρώματος και χάρτη ροής ανέμων Πίνδου.</p>
                 </div>
             </div>
             <div class="footer-disclaimer">Για επίσημες προγνώσεις και έκτακτα δελτία να συμβουλεύεστε πάντοτε την <strong>Εθνική Μετεωρολογική Υπηρεσία (ΕΜΥ)</strong> και την <strong>Πολιτική Προστασία</strong>.</div>
