@@ -31,6 +31,23 @@
             z-index: 9999;
             border-radius: 8px;
         }
+        #public-meteo-banner {
+            display: none;
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border-left: 5px solid #38bdf8;
+            color: #f8fafc;
+            padding: 11px 18px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+            font-size: 0.92rem;
+            line-height: 1.4;
+        }
+        .pmb-inner {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        #pmb-icon { font-size: 1.45rem; }
         .top-bar {
             display: flex;
             flex-wrap: wrap;
@@ -284,8 +301,8 @@
         }
         .f-card-solo { border-color: rgba(16, 185, 129, 0.35); }
         .f-card-48 { border-color: rgba(168, 85, 247, 0.35); padding: 10px 8px; }
-        .f-time { font-size: 0.78rem; color: #94a3b8; font-weight: 600; }
-        .f-icon { font-size: 1.35rem; margin: 3px 0; }
+        .f-time { font-size: 0.78rem; color: #94a3b8; font-weight: 600; line-height: 1.25; }
+        .f-icon { font-size: 1.35rem; margin: 4px 0; }
         .f-temp { font-size: 1.02rem; font-weight: bold; color: #38bdf8; }
         .f-card-solo .f-temp { color: #34d399; }
         .f-card-48 .f-temp { color: #e9d5ff; font-size: 0.98rem; }
@@ -315,7 +332,7 @@
         }
         .meteogram-strip {
             display: grid;
-            grid-template-columns: repeat(16, minmax(52px, 1fr));
+            grid-template-columns: repeat(16, minmax(56px, 1fr));
             gap: 4px;
             overflow-x: auto;
             padding-bottom: 6px;
@@ -329,7 +346,7 @@
             text-align: center;
             font-size: 0.7rem;
         }
-        .mg-day { color: #38bdf8; font-weight: 700; font-size: 0.65rem; }
+        .mg-day { color: #38bdf8; font-weight: 700; font-size: 0.64rem; }
         .mg-hr { color: #94a3b8; font-weight: 600; }
         .mg-ico { font-size: 1.05rem; margin: 2px 0; }
         .mg-w { color: #cbd5e1; font-size: 0.64rem; }
@@ -425,13 +442,24 @@
             .windy-frame-wrap { height: 300px; }
             .mobile-swipe-hint { display: block; }
             .meteogram-strip { scroll-snap-type: x mandatory; }
-            .mg-cell { scroll-snap-align: start; min-width: 58px; }
+            .mg-cell { scroll-snap-align: start; min-width: 62px; }
         }
     </style>
 </head>
 <body>
     <div id="frost-banner">
         <span id="frost-icon">⚠️</span> <span id="frost-msg">ΠΡΟΕΙΔΟΠΟΙΗΣΗ ΠΑΓΕΤΟΥ: Κίνδυνος παγώματος δικτύων ύδρευσης!</span>
+    </div>
+
+    <!-- ΔΥΝΑΜΙΚΟ ΔΗΜΟΣΙΟ BANNER ΕΙΔΟΠΟΙΗΣΕΩΝ (Νέο Χιόνι, Ψυχρή Λίμνη / CAPE, Αναστροφή) -->
+    <div id="public-meteo-banner">
+        <div class="pmb-inner">
+            <span id="pmb-icon">ℹ️</span>
+            <div>
+                <strong id="pmb-title">ΕΙΔΟΠΟΙΗΣΗ ΚΑΙΡΟΥ:</strong>
+                <span id="pmb-msg">Ανίχνευση συνθηκών...</span>
+            </div>
+        </div>
     </div>
 
     <div class="top-bar">
@@ -568,7 +596,7 @@
                 <div class="tf-column tf-col-hybrid48">
                     <div class="tf-col-header">
                         <span>📅 Πρόγνωση 48 Ωρών (Ανά 12ωρο)</span>
-                        <span style="font-size:0.72rem; color:#94a3b8;">Ελάχ. / Μέγ. &amp; Φαινόμενα</span>
+                        <span style="font-size:0.72rem; color:#94a3b8;">Ημερομηνία • Ελάχ. / Μέγ.</span>
                     </div>
                     <div class="forecast-cards-48" id="forecast48Grid"></div>
                 </div>
@@ -790,10 +818,56 @@
             }
         }
 
+        function updatePublicMeteoBanner({ temp, wetBulb, rate, estSnowCm24, trend, maxCape, deltaT, larTemp }) {
+            const banner = document.getElementById('public-meteo-banner');
+            const icon = document.getElementById('pmb-icon');
+            const title = document.getElementById('pmb-title');
+            const msg = document.getElementById('pmb-msg');
+
+            if (rate > 0 && wetBulb <= 0.5) {
+                icon.textContent = '❄️';
+                title.textContent = 'ΧΙΟΝΟΠΤΩΣΗ ΣΕ ΕΞΕΛΙΞΗ:';
+                msg.textContent = `Χιονίζει αυτή τη στιγμή στη Σαμαρίνα (${temp.toFixed(1)}°C). Εκτιμώμενη νέα χιονόστρωση 24ώρου: ~${estSnowCm24.toFixed(1)} cm. Απαραίτητες οι αντιολισθητικές αλυσίδες.`;
+                banner.style.borderLeftColor = '#38bdf8';
+                banner.style.background = 'linear-gradient(135deg, #0c4a6e, #0f172a)';
+                banner.style.display = 'block';
+            } else if (estSnowCm24 >= 0.5) {
+                icon.textContent = '🏔️';
+                title.textContent = 'ΕΙΔΟΠΟΙΗΣΗ ΝΕΟΥ ΧΙΟΝΙΟΥ (24h):';
+                msg.textContent = `Αναμένεται φρέσκο χιόνι (~${estSnowCm24.toFixed(1)} cm) στη Σαμαρίνα το επόμενο 24ωρο. Προσοχή στο οδικό δίκτυο.`;
+                banner.style.borderLeftColor = '#7dd3fc';
+                banner.style.background = 'linear-gradient(135deg, #1e293b, #0f172a)';
+                banner.style.display = 'block';
+            } else if (maxCape >= 1000) {
+                icon.textContent = maxCape >= 2500 ? '⛈️' : '⚡';
+                title.textContent = maxCape >= 2500 ? 'ΣΥΝΑΓΕΡΜΟΣ ΕΚΡΗΚΤΙΚΗΣ ΑΣΤΑΘΕΙΑΣ:' : 'ΠΡΟΕΙΔΟΠΟΙΗΣΗ ΚΑΤΑΙΓΙΔΩΝ (CAPE):';
+                msg.textContent = `Εντοπισμός ατμοσφαιρικής αστάθειας (CAPE έως ${Math.round(maxCape)} J/kg). Αυξημένη πιθανότητα μπουρινιών, χαλαζόπτωσης και κεραυνικής δραστηριότητας στην Πίνδο.`;
+                banner.style.borderLeftColor = maxCape >= 2500 ? '#ef4444' : '#f59e0b';
+                banner.style.background = 'linear-gradient(135deg, #1e293b, #0f172a)';
+                banner.style.display = 'block';
+            } else if (trend <= -3.0) {
+                icon.textContent = '⛈️';
+                title.textContent = 'ΠΡΟΕΙΔΟΠΟΙΗΣΗ ΑΣΤΑΘΕΙΑΣ:';
+                msg.textContent = `Ραγδαία πτώση πίεσης (${trend.toFixed(1)} hPa/3ωρο) και ενδείξεις προσέγγισης ψυχρής λίμνης στα ανώτερα στρώματα. Αυξημένη πιθανότητα απότομων φαινομένων στις επόμενες 6-12 ώρες.`;
+                banner.style.borderLeftColor = '#f59e0b';
+                banner.style.background = 'linear-gradient(135deg, #1e293b, #0f172a)';
+                banner.style.display = 'block';
+            } else if (deltaT !== null && deltaT > 0) {
+                icon.textContent = '🌡️';
+                title.textContent = 'ΘΕΡΜΟΚΡΑΣΙΑΚΗ ΑΝΑΣΤΡΟΦΗ:';
+                msg.textContent = `Η Σαμαρίνα στα 1.450μ. (${temp.toFixed(1)}°C) είναι θερμότερη από τον κάμπο της Λάρισας (${larTemp.toFixed(1)}°C, ΔΤ: +${deltaT.toFixed(1)}°C), καθώς ο ψυχρός αέρας λιμνάζει χαμηλά.`;
+                banner.style.borderLeftColor = '#fbbf24';
+                banner.style.background = 'linear-gradient(135deg, #1e293b, #0f172a)';
+                banner.style.display = 'block';
+            } else {
+                banner.style.display = 'none';
+            }
+        }
+
         const WU_STATION_ID = "ISAMAR38";
         const WU_API_KEY = "5c94ee0c13f240ec94ee0c13f2b0ecd9";
         const STATS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ_y9OVAjf5gRIJN7ZKm_OuR_fP5UFcu2YWX3XNU7PRxSouu3L2-kPh6Rk1u3VP-pdBjOTIo22t3mN/pub?gid=409751746&single=true&output=csv";
-        const OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast?latitude=40.105&longitude=21.018&elevation=1450&hourly=temperature_2m,precipitation,precipitation_probability,snowfall,freezing_level_height,weather_code,wind_speed_10m,wind_direction_10m,dew_point_2m,cloud_cover&daily=sunrise,sunset,daylight_duration&models=best_match&timezone=Europe%2FAthens&forecast_days=2";
+        const OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast?latitude=40.105&longitude=21.018&elevation=1450&hourly=temperature_2m,precipitation,precipitation_probability,snowfall,freezing_level_height,weather_code,wind_speed_10m,wind_direction_10m,dew_point_2m,cloud_cover,cape&daily=sunrise,sunset,daylight_duration&models=best_match&timezone=Europe%2FAthens&forecast_days=3";
         const LARISSA_METEO_URL = "https://api.open-meteo.com/v1/forecast?latitude=39.639&longitude=22.419&current=temperature_2m&timezone=Europe%2FAthens";
         const ARCHIVE_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ_y9OVAjf5gRIJN7ZKm_OuR_fP5UFcu2YWX3XNU7PRxSouu3L2-kPh6Rk1u3VP-pdBjOTIo22t3mN/pub?gid=1184894056&single=true&output=csv";
 
@@ -802,6 +876,14 @@
         let monthlyArchiveChartInstance = null;
         let currentMonthlyParam = "temp";
         let archiveRecords = [];
+
+        function formatShortDayDate(dateObj) {
+            return dateObj.toLocaleDateString('el-GR', {
+                weekday: 'short',
+                day: '2-digit',
+                month: '2-digit'
+            }).replace(',', '');
+        }
 
         // Δυναμική Διόρθωση Απογευματινής Σκίασης Γειτονικού Κτιρίου (14:00 - 16:30)
         function applyBuildingShadowCorrection(rawTemp, omData) {
@@ -837,9 +919,11 @@
             if (samEl && typeof samTemp === "number" && !isNaN(samTemp)) samEl.innerText = `${samTemp.toFixed(1)}°C`;
 
             const larTemp = larData && larData.current && typeof larData.current.temperature_2m === "number" ? larData.current.temperature_2m : null;
+            let deltaT = null;
+
             if (larTemp !== null && typeof samTemp === "number" && !isNaN(samTemp)) {
                 larEl.innerText = `${larTemp.toFixed(1)}°C`;
-                const deltaT = Number((samTemp - larTemp).toFixed(1));
+                deltaT = Number((samTemp - larTemp).toFixed(1));
                 diffEl.innerText = `${deltaT > 0 ? "+" : ""}${deltaT.toFixed(1)}°C`;
                 const lapsePer100m = ((larTemp - samTemp) / 13.8).toFixed(2);
                 lapseNoteEl.innerText = `Πτώση ${lapsePer100m}°C / 100μ.`;
@@ -875,6 +959,8 @@
                     document.getElementById("astroShadeBadge").innerText = `🏔️ Σκίαση Σμόλικα: ~${pad(shadeDate.getHours())}:${pad(shadeDate.getMinutes())}`;
                 }
             }
+
+            return { deltaT, larTemp };
         }
 
         function calcWetBulb(temp, hum) {
@@ -907,7 +993,7 @@
                 hazards.push({ id: "extreme_chill", level: severe ? "danger" : "warn", badge: severe ? `🥶 ΑΚΡΑΙΟ ΨΥΧΟΣ (${chill.toFixed(0)}°C)` : `🥶 ΙΣΧΥΡΟ WIND CHILL (${chill.toFixed(0)}°C)`, detail: `Αίσθηση ψύχους ${chill.toFixed(1)}°C με άνεμο ${wind} km/h.` });
             }
             if (gust >= 60) {
-                hazards.push({ id: "gale_gusts", level: "danger", badge: `💨 ΘΥΕΛΛΩΔΕΙΣ ΡΙΠΕΣ (${gust} km/h)`, detail: `Πολύ ισχυρές ριπές ανέμου τη Σαμαρίνα.` });
+                hazards.push({ id: "gale_gusts", level: "danger", badge: `💨 ΘΥΕΛΛΩΔΕΙΣ ΡΙΠΕΣ (${gust} km/h)`, detail: `Πολύ ισχυρές ριπές ανέμου στη Σαμαρίνα.` });
             }
             return hazards;
         }
@@ -1112,7 +1198,7 @@
 
             for (let hrs = 0; hrs < 48; hrs++) {
                 const futureDate = new Date(baseDate.getTime() + hrs * 3600 * 1000);
-                const dayStr = futureDate.toLocaleDateString('el-GR', { weekday: 'short' });
+                const dayDateStr = formatShortDayDate(futureDate);
                 const timeStr = futureDate.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
 
                 const pred = hrs === 0
@@ -1128,9 +1214,9 @@
                 if (hrs % 3 === 0) {
                     steps3h.push({
                         hrs,
-                        dayName: dayStr,
+                        dayName: dayDateStr,
                         timeStr,
-                        label: (futureDate.getHours() === 0 || hrs === 0) ? `${dayStr} ${timeStr}` : timeStr,
+                        label: (futureDate.getHours() === 0 || hrs === 0) ? `${dayDateStr} ${timeStr}` : timeStr,
                         temp: pred.temp,
                         precip: pred.precip,
                         snowCm: pred.snowCm,
@@ -1149,15 +1235,24 @@
                 { title: "+36h έως +48h", start: 37, end: 47 }
             ];
 
+            const fmtShortTime = d => d.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
+
             const summaryBlocks = windows.map(w => {
-                const sliceT = hourly48.temps.slice(w.start, w.end + 1);
+                const startDate = new Date(baseDate.getTime() + w.start * 3600 * 1000);
+                const endDate = new Date(baseDate.getTime() + w.end * 3600 * 1000);
+                const dStart = formatShortDayDate(startDate);
+                const dEnd = formatShortDayDate(endDate);
+                const dateRangeLabel = dStart === dEnd ? dStart : `${dStart} – ${dEnd}`;
+                const timeRangeLabel = `${fmtShortTime(startDate)} - ${fmtShortTime(endDate)}`;
+
+                const sliceT = hourly48.temps.slice(w.start, w.end + 1).filter(v => typeof v === 'number' && !isNaN(v));
                 const sliceP = hourly48.precip.slice(w.start, w.end + 1);
                 const sliceS = hourly48.snow.slice(w.start, w.end + 1);
                 const sliceW = hourly48.windSpeed.slice(w.start, w.end + 1);
                 const sliceD = hourly48.windDir.slice(w.start, w.end + 1);
 
-                const tMin = Math.min(...sliceT).toFixed(1);
-                const tMax = Math.max(...sliceT).toFixed(1);
+                const tMin = sliceT.length ? Math.min(...sliceT).toFixed(1) : "--";
+                const tMax = sliceT.length ? Math.max(...sliceT).toFixed(1) : "--";
                 const sumPrecip = sliceP.reduce((a, b) => a + b, 0).toFixed(1);
                 const sumSnow = sliceS.reduce((a, b) => a + b, 0).toFixed(1);
                 const maxWind = Math.max(...sliceW);
@@ -1169,7 +1264,13 @@
                 else if (Number(sumPrecip) > 0) icon = "⛅";
                 else if (Number(tMin) <= 0) icon = "🥶";
 
-                return { title: w.title, tMin, tMax, sumPrecip, sumSnow, maxWind, bf: kmhToBeaufort(maxWind), compass: degToCompass(midDir), icon };
+                return {
+                    title: `<span style="color:#c084fc; display:block; font-size:0.78rem;">📅 ${dateRangeLabel}</span><span style="font-size:0.7rem; color:#94a3b8;">${timeRangeLabel} (${w.title})</span>`,
+                    tMin, tMax, sumPrecip, sumSnow, maxWind,
+                    bf: kmhToBeaufort(maxWind),
+                    compass: degToCompass(midDir),
+                    icon
+                };
             });
 
             return { steps3h, summaryBlocks };
@@ -1267,6 +1368,10 @@
                 const larData = larRes && larRes.ok ? await larRes.json() : null;
                 const obs = wuData.observations[0];
 
+                if (!obs || !obs.metric || typeof obs.metric.temp !== 'number' || isNaN(obs.metric.temp)) {
+                    throw new Error("Προσωρινή αναμονή έγκυρης μέτρησης από ISAMAR38");
+                }
+
                 const obsEpochMs = obs.epoch ? (obs.epoch * 1000) : (obs.obsTimeUtc ? new Date(obs.obsTimeUtc).getTime() : Date.now());
                 const obsAgeMinutes = (Date.now() - obsEpochMs) / 60000;
                 const isStationOffline = obsAgeMinutes > 20;
@@ -1291,7 +1396,7 @@
                 const spread = temp - dew;
                 const wetBulb = calcWetBulb(temp, hum);
 
-                updateInversionAndAstro(temp, omData, larData);
+                const invInfo = updateInversionAndAstro(temp, omData, larData);
 
                 const shadowNote = shadowFix.offset > 0 ? ` | 🏢 +${shadowFix.offset.toFixed(1)}°C` : '';
                 document.getElementById('stTemp').innerText = `${temp.toFixed(1)}°C`;
@@ -1366,6 +1471,10 @@
                 const fl = omData?.hourly?.freezing_level_height?.[0] ? Math.round(omData.hourly.freezing_level_height[0]) : Math.round(1450 + (temp / 6.5) * 1000);
                 document.getElementById('stFl').innerText = `Παγοποίηση: ${fl} μ.`;
 
+                const maxCape = (omData?.hourly?.cape && Array.isArray(omData.hourly.cape))
+                    ? Math.max(...omData.hourly.cape.slice(0, 24).filter(v => typeof v === 'number' && !isNaN(v)), 0)
+                    : 0;
+
                 const chartLabels = [], chartTemps = [], chartStationTemps = [], chartZeroLine = [], chartPrecip = [], chartSnow = [], steps12h = [];
                 let totalPrecip24 = 0, estSnowCm24 = 0, minTemp24 = temp;
                 const baseDate = new Date();
@@ -1392,6 +1501,17 @@
                     chartSnow.push(pred.snowCm);
                 }
 
+                updatePublicMeteoBanner({
+                    temp,
+                    wetBulb,
+                    rate,
+                    estSnowCm24,
+                    trend,
+                    maxCape,
+                    deltaT: invInfo.deltaT,
+                    larTemp: invInfo.larTemp
+                });
+
                 latest12hForecastPacket = { generatedAt: Date.now(), hasHybridModel: Boolean(omData), steps: steps12h };
                 try {
                     localStorage.setItem('samarina_12h_forecast_v1', JSON.stringify(latest12hForecastPacket));
@@ -1408,7 +1528,11 @@
                 let hybridHtml = '', stationHtml = '';
                 for (let hrs = 3; hrs <= 24; hrs += 3) {
                     const futureDate = new Date(baseDate.getTime() + hrs * 3600 * 1000);
+                    const dayDateStr = formatShortDayDate(futureDate);
                     const tStr = futureDate.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
+                    const fullHeaderHybrid = `<span style="color:#38bdf8; display:block; font-size:0.72rem;">${dayDateStr}</span>${tStr}`;
+                    const fullHeaderStation = `<span style="color:#34d399; display:block; font-size:0.72rem;">${dayDateStr}</span>${tStr}`;
+
                     const pred = predictHybrid(hrs, temp, dew, hum, press, trend, wind, dir, rate, omData);
                     const st = pred.station;
                     const activeNow = (rate > 0 && hrs <= 3);
@@ -1417,7 +1541,7 @@
                     const hIcon = getForecastIcon(pred.precip, pred.snowCm, pred.wetBulb, pred.temp, activeNow);
                     hybridHtml += `
                         <div class="f-card">
-                            <div class="f-time">${tStr}</div>
+                            <div class="f-time">${fullHeaderHybrid}</div>
                             <div class="f-icon">${hIcon}</div>
                             <div class="f-temp">${pred.temp.toFixed(1)}°C</div>
                             <div class="f-snow">${pred.snowCm > 0 ? '❄️' + pred.snowCm + 'cm' : (pred.precip > 0 ? '💧' + pred.precip + 'mm' : 'Ξηρό')}</div>
@@ -1429,7 +1553,7 @@
                     const sIcon = getForecastIcon(st.precip, st.snowCm, st.wetBulb, st.temp, activeNow);
                     stationHtml += `
                         <div class="f-card-solo">
-                            <div class="f-time">${tStr}</div>
+                            <div class="f-time">${fullHeaderStation}</div>
                             <div class="f-icon">${sIcon}</div>
                             <div class="f-temp">${st.temp.toFixed(1)}°C</div>
                             <div class="f-snow">${st.snowCm > 0 ? '❄️' + st.snowCm + 'cm' : (st.precip > 0 ? '💧' + st.precip + 'mm' : 'Ξηρό')}</div>
@@ -1576,7 +1700,6 @@
             const filter = document.getElementById("archiveMonthFilter").value;
             const targetMonth = filter === "ALL" ? String(archiveRecords[0].Date).slice(0, 7) : filter;
             
-            // Εφαρμογή του ίδιου φίλτρου (Samples >= 20) και στο μηνιαίο γράφημα
             const validRecords = archiveRecords.filter(r => Number(r.Samples || 0) >= 20);
             const monthRecords = validRecords.filter(r => String(r.Date).startsWith(targetMonth)).slice().reverse();
             
@@ -1610,10 +1733,7 @@
 
         function renderArchiveCards() {
             const filter = document.getElementById("archiveMonthFilter").value;
-            
-            // 🛑 Εφαρμογή φίλτρου: Εξαίρεση ημερών με λιγότερες από 20 ώρες δειγματοληψίας (π.χ. ημιτελείς μέρες)
             const validRecords = archiveRecords.filter(r => Number(r.Samples || 0) >= 20);
-            
             const filtered = filter === "ALL" ? validRecords : validRecords.filter(r => String(r.Date).startsWith(filter));
             document.getElementById("archiveCountBadge").innerText = `${filtered.length} πλήρεις καταγεγραμμένες ημέρες`;
             if (!filtered.length) {
@@ -1671,7 +1791,7 @@
             <div class="footer-grid">
                 <div class="footer-card">
                     <h4>📡 Ζωντανή Τηλεμετρία (ISAMAR38)</h4>
-                    <p>Μετρήσεις από τον ιδιωτικό μετεωρολογικό σταθμό Bresser 5-in-1 τη Σαμαρίνα με αυτόματη διόρθωση απογευματινής σκίασης κτιρίου (14:00–16:30) και υπολογισμό θερμοκρασίας υγρού βολβού (Stull Wet-Bulb).</p>
+                    <p>Μετρήσεις από τον ιδιωτικό μετεωρολογικό σταθμό Bresser 5-in-1 στη Σαμαρίνα με αυτόματη διόρθωση απογευματινής σκίασης κτιρίου (14:00–16:30) και υπολογισμό θερμοκρασίας υγρού βολβού (Stull Wet-Bulb).</p>
                 </div>
                 <div class="footer-card">
                     <h4>❄️ Υβριδικό Μοντέλο Πρόγνωσης</h4>
