@@ -1273,7 +1273,7 @@
             CAM_REFRESH_MS: 15000,
             STORAGE_TREND_KEY: "isamar38_trend_history",
             STORAGE_FORECAST_KEY: "samarina_12h_forecast_v1",
-            STORAGE_LAST_OBS_KEY: "isamar38_last_valid_obs_v1",
+            STORAGE_LAST_OBS_KEY: "isamarina_last_valid_obs_v1",
             URLS: Object.freeze({
                 STATS_CSV: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ_y9OVAjf5gRIJN7ZKm_OuR_fP5UFcu2YWX3XNU7PRxSouu3L2-kPh6Rk1u3VP-pdBjOTIo22t3mN/pub?gid=409751746&single=true&output=csv",
                 ARCHIVE_CSV: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ_y9OVAjf5gRIJN7ZKm_OuR_fP5UFcu2YWX3XNU7PRxSouu3L2-kPh6Rk1u3VP-pdBjOTIo22t3mN/pub?gid=1184894056&single=true&output=csv",
@@ -2656,6 +2656,9 @@
                                         const gustTxt = (gust !== null && gust > val) ? ` | Ριπή: ${gust.toFixed(1)} km/h` : "";
                                         return ` 💨 Άνεμος: ${val.toFixed(1)} km/h (${kmhToBeaufort(val)} Bf)${dirTxt}${gustTxt}`;
                                     }
+                                    if (ctx.dataset.yAxisID === "yPress") {
+                                        return ` 🧭 Βαρ. Πίεση: ${Number(val).toFixed(1)} hPa`;
+                                    }
                                     return ` ${ctx.dataset.label}: ${val}`;
                                 }
                             }
@@ -2684,16 +2687,20 @@
                             type: "linear",
                             position: "right",
                             title: { display: true, text: "hPa", color: "#10b981", font: { size: 11 } },
-                            ticks: { color: "#34d399", font: { size: 11 } },
+                            ticks: {
+                                color: "#34d399",
+                                font: { size: 11 },
+                                callback: v => String(Math.round(v))
+                            },
                             grid: { drawOnChartArea: false }
                         },
                         yWind: {
                             type: "linear",
                             position: "right",
                             min: 0,
-                            suggestedMax: 45,
+                            suggestedMax: 20,
                             title: { display: true, text: "km/h", color: "#fbbf24", font: { size: 11 } },
-                            ticks: { color: "#fbbf24", font: { size: 11 } },
+                            ticks: { color: "#fbbf24", font: { size: 11 }, stepSize: 5 },
                             grid: { drawOnChartArea: false }
                         },
                         yHum: { type: "linear", display: false, min: 0, max: 100 },
@@ -3220,6 +3227,7 @@
                     { type: "line", label: "Μέση Πίεση (hPa)", data: monthRecords.map(r => toFiniteNumber(r.PressAvg, null)), borderColor: "#38bdf8", borderDash: [4, 4], borderWidth: 1.8, tension: 0.25, pointRadius: 2 },
                     { type: "line", label: "Ελάχ. Πίεση (hPa)", data: monthRecords.map(r => toFiniteNumber(r.PressMin, null)), borderColor: "#fbbf24", borderWidth: 2.2, tension: 0.25, pointRadius: 3 }
                 ];
+                customScales.y.ticks.callback = v => String(Math.round(v));
             } else if (currentMonthlyParam === "wind") {
                 const hasWindSpeed = monthRecords.some(r => toFiniteNumber(r.WindAvg, null) !== null || toFiniteNumber(r.WindMax, null) !== null);
                 if (hasWindSpeed) {
