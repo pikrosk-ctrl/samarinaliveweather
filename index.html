@@ -1072,6 +1072,7 @@
         }
 
         function predictFromStation(hrs, temp, dew, hum, press, trend, wind, dir, activeRate) {
+            const safeTrend = (typeof trend === 'number' && !isNaN(trend)) ? trend : 0;
             const now = new Date();
             const currentHour = now.getHours() + (now.getMinutes() / 60);
             const targetHour = (currentHour + hrs) % 24;
@@ -1087,7 +1088,7 @@
             if (isNortherly && wind > 5) advectionDelta = -0.12 * Math.min(wind, 35) * (hrs / 12);
             else if (isSoutherly && wind > 5) advectionDelta = 0.08 * Math.min(wind, 35) * (hrs / 12);
 
-            const pressTempDelta = trend * 0.25 * (hrs / 12);
+            const pressTempDelta = safeTrend * 0.25 * (hrs / 12);
             const predT = Number((temp + diurnalDelta + advectionDelta + pressTempDelta).toFixed(1));
             const predTw = estimateFutureWetBulb(predT, dew);
 
@@ -1097,10 +1098,10 @@
             else if (press <= 1015) precipScore += 10;
             else if (press >= 1022) precipScore -= 30;
 
-            if (trend <= -2.5) precipScore += 35;
-            else if (trend <= -1.2) precipScore += 20;
-            else if (trend <= -0.5) precipScore += 8;
-            else if (trend >= 1.2) precipScore -= 25;
+            if (safeTrend <= -2.5) precipScore += 35;
+            else if (safeTrend <= -1.2) precipScore += 20;
+            else if (safeTrend <= -0.5) precipScore += 8;
+            else if (safeTrend >= 1.2) precipScore -= 25;
 
             if (spread <= 1.5) precipScore += 25;
             else if (spread <= 3.0) precipScore += 12;
@@ -1126,8 +1127,8 @@
 
             let prob = Math.max(54, Math.min(98, Math.round(96 - (hrs * 1.2) + (activeRate > 0 ? 8 : 0))));
             const predDew = Number(Math.min(predT, predPr > 0 ? predT - 0.4 : dew + diurnalDelta * 0.35).toFixed(1));
-            const predWind = Math.max(0, Math.min(90, Math.round(wind + (trend < -1 ? Math.abs(trend) * 3.5 * (hrs / 12) : 0))));
-            const predDir = Math.round((dir + (trend < -1.5 ? -15 * (hrs / 12) : 0) + 360) % 360);
+            const predWind = Math.max(0, Math.min(90, Math.round(wind + (safeTrend < -1 ? Math.abs(safeTrend) * 3.5 * (hrs / 12) : 0))));
+            const predDir = Math.round((dir + (safeTrend < -1.5 ? -15 * (hrs / 12) : 0) + 360) % 360);
 
             return { temp: predT, dew: predDew, wetBulb: predTw, wind: predWind, dir: predDir, precip: predPr, snowCm, prob };
         }
@@ -1433,23 +1434,27 @@
                     dayData.observations.forEach(o => {
                         const oEpoch = o.epoch || (o.obsTimeUtc ? Math.floor(new Date(o.obsTimeUtc).getTime() / 1000) : null);
                         const oPress = o.metric ? (o.metric.pressureMax ?? o.metric.pressureMin ?? o.metric.pressure) : null;
-                        if (oEpoch && oPress !== null) {
+                        if (oEpoch && typeof oPress === 'number' && !isNaN(oPress)) {
                             const diff = Math.abs(oEpoch - targetEpoch);
                             if (diff <= 5400 && diff < minDiff) { minDiff = diff; closestObs = oPress; }
                         }
                     });
-                    if (closestObs !== null) rawTrend = Number((press - closestObs).toFixed(1));
+                    if (closestObs !== null && typeof press === 'number' && !isNaN(press)) {
+                        rawTrend = Number((press - closestObs).toFixed(1));
+                    }
                 }
 
                 const nowMs = Date.now();
                 let pHist = [];
                 try { pHist = JSON.parse(localStorage.getItem('isamar38_trend_history') || '[]'); } catch (e) {}
-                pHist.push({ t: nowMs, v: rawTrend });
-                pHist = pHist.filter(item => (nowMs - item.t) <= 30 * 60 * 1000);
+                pHist = pHist.filter(item => item && typeof item.v === 'number' && !isNaN(item.v) && (nowMs - item.t) <= 30 * 60 * 1000);
+                if (typeof rawTrend === 'number' && !isNaN(rawTrend)) {
+                    pHist.push({ t: nowMs, v: rawTrend });
+                }
                 try { localStorage.setItem('isamar38_trend_history', JSON.stringify(pHist)); } catch (e) {}
                 const trend = pHist.length > 0
                     ? Number((pHist.reduce((acc, item) => acc + item.v, 0) / pHist.length).toFixed(1))
-                    : rawTrend;
+                    : (isNaN(rawTrend) ? 0 : rawTrend);
 
                 document.getElementById('stTrend').innerText = `Τάση 3ωρου: ${trend >= 0 ? '+' : ''}${trend.toFixed(1)} hPa`;
                 document.getElementById('lastUpdate').innerText = `Ενημ.: ${new Date().toLocaleTimeString('el-GR', {hour:'2-digit', minute:'2-digit'})}`;
