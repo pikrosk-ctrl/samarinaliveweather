@@ -90,6 +90,26 @@
             gap: 6px;
             box-shadow: 0 0 12px rgba(14, 165, 233, 0.35);
         }
+        /* Στυλ για το νέο κουμπί */
+        .btn-lessons-launch {
+            background: linear-gradient(135deg, #a855f7, #6366f1);
+            color: #ffffff;
+            border: 1px solid #c084fc;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.88rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            box-shadow: 0 0 12px rgba(168, 85, 247, 0.35);
+            transition: opacity 0.2s;
+        }
+        .btn-lessons-launch:hover {
+            opacity: 0.95;
+        }
         .visitor-badge {
             display: inline-flex;
             align-items: center;
@@ -435,7 +455,7 @@
             body { padding: 8px; gap: 10px; }
             .title h1 { font-size: 1.05rem; }
             .top-bar { padding: 10px 12px; }
-            .btn-3d-launch, .alert-box { font-size: 0.8rem; padding: 6px 10px; }
+            .btn-3d-launch, .btn-lessons-launch, .alert-box { font-size: 0.8rem; padding: 6px 10px; }
             .s-val { font-size: 1.1rem; }
             .s-sub { font-size: 0.68rem; }
             .chart-container { height: 230px; padding: 8px 10px; }
@@ -468,6 +488,9 @@
             <span>Σταθμός: Bresser 5-in-1 (ISAMAR38) | Κάμερα: Σαμαρίνα Χωριό | Υβριδική &amp; Αυτόνομη Πρόγνωση</span>
         </div>
         <div class="top-badges">
+            <!-- ΝΕΟ ΚΟΥΜΠΙ ΜΑΘΗΜΑΤΩΝ ΚΑΙΡΟΥ -->
+            <a href="meteo-lessons.html" class="btn-lessons-launch">📚 Μικρά Μαθήματα Καιρού</a>
+            
             <button onclick="openSmolikas3D()" class="btn-3d-launch">🏔️ 3D Ροή Αέρα &amp; 12h Πρόγνωση</button>
             <div id="roadStatus" class="alert-box">🛣️ Έλεγχος δρόμου...</div>
             <div id="topAlert" class="alert-box">Έλεγχος συνθηκών...</div>
