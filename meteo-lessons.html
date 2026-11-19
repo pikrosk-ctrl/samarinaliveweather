@@ -109,6 +109,10 @@
             color: #ffffff;
             border-color: #38bdf8;
         }
+        .filter-btn.filter-safety-btn.active {
+            background: #b91c1c;
+            border-color: #f87171;
+        }
 
         /* Lesson Cards */
         .lessons-list {
@@ -125,6 +129,9 @@
         }
         .lesson-card:hover {
             border-color: #3b527a;
+        }
+        .lesson-card.safety-highlight {
+            border-left: 3px solid #ef4444;
         }
         .lesson-header {
             padding: 16px 20px;
@@ -164,7 +171,7 @@
         }
         .tag-snow { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
         .tag-inv { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
-        .tag-safety { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+        .tag-safety { background: rgba(248, 113, 113, 0.18); color: #f87171; }
         .tag-storm { background: rgba(167, 139, 250, 0.15); color: #a78bfa; }
 
         .lesson-title {
@@ -228,6 +235,15 @@
             font-size: 13.5px;
             color: #fde68a;
         }
+        .danger-box {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-top: 10px;
+            font-size: 13.5px;
+            color: #fecaca;
+        }
 
         /* Glossary Section */
         .glossary-section {
@@ -287,19 +303,20 @@
     <div class="top-bar">
         <div>
             <div class="brand-title">📚 Μικρά Μαθήματα Ορεινής Μετεωρολογίας</div>
-            <div class="brand-sub">Κατανοώντας τον καιρό της Σαμαρίνας (1.450μ.) & του Σμόλικα με απλά λόγια</div>
+            <div class="brand-sub">Κατανοώντας τον καιρό & την ασφάλεια της Σαμαρίνας (1.450μ.) & του Σμόλικα με απλά λόγια</div>
         </div>
         <a href="index.html" class="back-btn">← Επιστροφή στον Ζωντανό Καιρό</a>
     </div>
 
     <div class="intro-box">
         <h1>Γιατί ο καιρός στα 1.450 μέτρα έχει τους δικούς του κανόνες;</h1>
-        <p>Ο μετεωρολογικός σταθμός <strong>ISAMAR38</strong> στη Σαμαρίνα καταγράφει καθημερινά φαινόμενα που συχνά ξαφνιάζουν όσους ανεβαίνουν από τον κάμπο: χιόνι ενώ το θερμόμετρο δείχνει πάνω από το μηδέν, παγωμένους δρόμους χωρίς να έχει βρέξει, ή λιακάδα με 12°C στο χωριό την ώρα που η Λάρισα έχει παγωνιά και ομίχλη. Παρακάτω θα βρεις σύντομους, πρακτικούς οδηγούς για να διαβάζεις τα δεδομένα του σταθμού σαν έμπειρος παρατηρητής βουνού.</p>
+        <p>Ο μετεωρολογικός σταθμός <strong>ISAMAR38</strong> στη Σαμαρίνα καταγράφει καθημερινά φαινόμενα που συχνά ξαφνιάζουν όσους ανεβαίνουν από τον κάμπο: χιόνι ενώ το θερμόμετρο δείχνει πάνω από το μηδέν, παγωμένους δρόμους χωρίς να έχει βρέξει, χιονοθύελλες με λιακάδα ή σπασμένους σωλήνες ύδρευσης μετά από μια ξάστερη νύχτα. Παρακάτω θα βρεις <strong>9 πρακτικούς οδηγούς</strong> για να διαβάζεις τα δεδομένα του σταθμού και να προστατεύεσαι στο βουνό.</p>
     </div>
 
     <div class="filters">
-        <button class="filter-btn active" onclick="filterLessons('all', this)">Όλα τα Μαθήματα (6)</button>
-        <button class="filter-btn" onclick="filterLessons('snow', this)">❄️ Χιόνι & Πάγος</button>
+        <button class="filter-btn active" onclick="filterLessons('all', this)">Όλα τα Μαθήματα (9)</button>
+        <button class="filter-btn filter-safety-btn" onclick="filterLessons('safety', this)">⚠️ Επικινδυνότητα & Ασφάλεια (4)</button>
+        <button class="filter-btn" onclick="filterLessons('snow', this)">❄️ Χιόνι & Υγρός Βολβός</button>
         <button class="filter-btn" onclick="filterLessons('inv', this)">🌡️ Αναστροφή & Βαρόμετρο</button>
         <button class="filter-btn" onclick="filterLessons('mountain', this)">🏔️ Μικροκλίμα Σμόλικα</button>
     </div>
@@ -307,7 +324,7 @@
     <div class="lessons-list">
 
         <!-- Μάθημα 1 -->
-        <div class="lesson-card open" data-cat="inv">
+        <div class="lesson-card open" data-cats="inv">
             <div class="lesson-header" onclick="toggleCard(this)">
                 <div class="lesson-header-left">
                     <div class="lesson-icon">🌡️</div>
@@ -334,7 +351,7 @@
         </div>
 
         <!-- Μάθημα 2 -->
-        <div class="lesson-card" data-cat="snow">
+        <div class="lesson-card" data-cats="snow">
             <div class="lesson-header" onclick="toggleCard(this)">
                 <div class="lesson-header-left">
                     <div class="lesson-icon">❄️</div>
@@ -361,13 +378,13 @@
             </div>
         </div>
 
-        <!-- Μάθημα 3 -->
-        <div class="lesson-card" data-cat="snow">
+        <!-- Μάθημα 3 (Ασφάλεια) -->
+        <div class="lesson-card safety-highlight" data-cats="safety snow">
             <div class="lesson-header" onclick="toggleCard(this)">
                 <div class="lesson-header-left">
                     <div class="lesson-icon">🛣️</div>
                     <div>
-                        <span class="lesson-tag tag-safety">Οδική Ασφάλεια</span>
+                        <span class="lesson-tag tag-safety">⚠️ Επικινδυνότητα • Οδική Ασφάλεια</span>
                         <div class="lesson-title">3. «Μαύρος Πάγος» χωρίς Χιονόπτωση: Η ύπουλη παγίδα των ορεινών δρόμων</div>
                         <div class="lesson-subtitle">Πώς παγώνει η άσφαλτος τις νύχτες με ξαστεριά χωρίς να πέσει σταγόνα βροχής</div>
                     </div>
@@ -388,7 +405,7 @@
         </div>
 
         <!-- Μάθημα 4 -->
-        <div class="lesson-card" data-cat="inv">
+        <div class="lesson-card" data-cats="inv">
             <div class="lesson-header" onclick="toggleCard(this)">
                 <div class="lesson-header-left">
                     <div class="lesson-icon">🧭</div>
@@ -415,7 +432,7 @@
         </div>
 
         <!-- Μάθημα 5 -->
-        <div class="lesson-card" data-cat="mountain">
+        <div class="lesson-card" data-cats="mountain">
             <div class="lesson-header" onclick="toggleCard(this)">
                 <div class="lesson-header-left">
                     <div class="lesson-icon">⚡</div>
@@ -443,7 +460,7 @@
         </div>
 
         <!-- Μάθημα 6 -->
-        <div class="lesson-card" data-cat="mountain">
+        <div class="lesson-card" data-cats="mountain">
             <div class="lesson-header" onclick="toggleCard(this)">
                 <div class="lesson-header-left">
                     <div class="lesson-icon">🏔️</div>
@@ -464,6 +481,93 @@
                 </ul>
                 <div class="samarina-example">
                     <strong>🔎 Τι να κοιτάς στη σελίδα:</strong> Στην κάρτα <em>«ΑΣΤΡΟΝΟΜΙΚΑ & ΣΚΙΑΣΗ ΣΜΟΛΙΚΑ»</em> βλέπεις την ακριβή ώρα που ο ήλιος κρύβεται πίσω από το βουνό, ενώ στο κουμπί <em>«3D Ροή Αέρα & 12h Πρόγνωση»</em> βλέπεις πώς κινούνται τα ρεύματα αέρα πάνω από το ανάγλυφο του Σμόλικα.
+                </div>
+            </div>
+        </div>
+
+        <!-- Μάθημα 7 (ΝΕΟ - Επικινδυνότητα & Ασφάλεια) -->
+        <div class="lesson-card safety-highlight" data-cats="safety snow">
+            <div class="lesson-header" onclick="toggleCard(this)">
+                <div class="lesson-header-left">
+                    <div class="lesson-icon">🌬️</div>
+                    <div>
+                        <span class="lesson-tag tag-safety">⚠️ Επικινδυνότητα • Ανεμοσούρια</span>
+                        <div class="lesson-title">7. Χιονοθύελλα & Ανεμοσούρια (Whiteout): Όταν ο δρόμος κλείνει με λιακάδα!</div>
+                        <div class="lesson-subtitle">Πώς οι ριπές ανέμου σηκώνουν το στρωμένο χιόνι και μηδενίζουν την ορατότητα</div>
+                    </div>
+                </div>
+                <div class="toggle-icon">▼</div>
+            </div>
+            <div class="lesson-body">
+                <p>Πολλοί επισκέπτες ξεκινούν για τη Σαμαρίνα βλέποντας καθαρό ουρανό, χωρίς να γνωρίζουν ότι στο βουνό ο άνεμος μπορεί να δημιουργήσει <strong>χιονοθύελλα εδάφους (ανεμοσούρια)</strong> ακόμα και ώρες ή μέρες μετά το τέλος της χιονόπτωσης.</p>
+                <p>Όταν το χιόνι είναι φρέσκο και «αφράτο» (θερμοκρασίες κάτω από <strong>0°C</strong>) και ο άνεμος ξεπεράσει τα <strong>35–45 km/h (6 Bf)</strong>:</p>
+                <ul>
+                    <li>Οι ριπές σηκώνουν τόνους χιονιού από τις γυμνές πλαγιές και το αποθέτουν στα εκτεθειμένα σημεία του δρόμου (όπως στον αυχένα), δημιουργώντας <strong>ανεμοσούρια ύψους 1–2 μέτρων</strong> μέσα σε λίγα λεπτά.</li>
+                    <li>Η ορατότητα πέφτει στο μηδέν (φαινόμενο <strong>Whiteout</strong>): ο οδηγός ή ο ορειβάτης χάνει εντελώς την αίσθηση του ορίζοντα και των άκρων του δρόμου, καθώς το λευκό του εδάφους ενώνεται με το λευκό του αέρα.</li>
+                </ul>
+                <div class="danger-box">
+                    <strong>🚨 Κανόνας Ασφάλειας:</strong> Αν στον σταθμό βλέπεις θερμοκρασία <strong>≤ 0°C</strong>, πρόσφατο χιόνι και <strong>Μέγιστη Ριπή ≥ 45 km/h</strong>, απέφυγε τις άσκοπες μετακινήσεις στα εκτεθειμένα περάσματα εκτός χωριού — ακόμα κι αν λάμπει ο ήλιος!
+                </div>
+                <div class="samarina-example">
+                    <strong>🔎 Τι να κοιτάς στη σελίδα:</strong> Τη <em>«Μέγ. Ριπή»</em> στη μπάρα κάτω από τα δεδομένα του σταθμού ISAMAR38. Όταν συνδυάζεται παγετός με ριπές ≥ 45 km/h, εμφανίζεται αυτόματα κόκκινη ειδοποίηση <em>«🌨️ ΧΙΟΝΟΘΥΕΛΛΑ / ΑΝΕΜΟΣΟΥΡΙΑ»</em>.
+                </div>
+            </div>
+        </div>
+
+        <!-- Μάθημα 8 (ΝΕΟ - Επικινδυνότητα & Ασφάλεια) -->
+        <div class="lesson-card safety-highlight" data-cats="safety snow">
+            <div class="lesson-header" onclick="toggleCard(this)">
+                <div class="lesson-header-left">
+                    <div class="lesson-icon">🌲</div>
+                    <div>
+                        <span class="lesson-tag tag-safety">⚠️ Επικινδυνότητα • Βαρύ Χιόνι</span>
+                        <div class="lesson-title">8. «Βαρύ» Υγρό Χιόνι: Γιατί σπάει πεύκα και ρίχνει καλώδια στους 0°C;</div>
+                        <div class="lesson-subtitle">Η τεράστια διαφορά βάρους ανάμεσα στο παγωμένο και το υγρό χιόνι</div>
+                    </div>
+                </div>
+                <div class="toggle-icon">▼</div>
+            </div>
+            <div class="lesson-body">
+                <p>Δεν έχουν όλα τα χιόνια το ίδιο βάρος! Όταν χιονίζει με θερμοκρασία <strong>-5°C</strong>, το χιόνι είναι «ξηρό» (πούδρα) — περιέχει πολύ αέρα, γλιστράει εύκολα από τα κλαδιά και τις στέγες και ζυγίζει περίπου <strong>50–80 κιλά ανά κυβικό μέτρο</strong>.</p>
+                <p>Αντίθετα, όταν χιονίζει με θερμοκρασία οριακά γύρω στο μηδέν (<strong>-0,8°C έως +0,8°C</strong>) και υψηλή υγρασία (<strong>>90%</strong>), πέφτει <strong>υγρό χιόνι</strong>:</p>
+                <ul>
+                    <li>Οι νιφάδες είναι μισο-λιωμένες, κολλάνε σαν τσιμέντο πάνω στα κλαδιά των πεύκων (ρόμπολα), στα καλώδια της ΔΕΗ και στις σκεπές.</li>
+                    <li>Το βάρος του φτάνει τα <strong>300 έως 450 κιλά ανά κυβικό μέτρο</strong> (έως και 5 φορές βαρύτερο από το ξηρό χιόνι!).</li>
+                    <li>Αυτό είναι το φαινόμενο που προκαλεί πτώσεις κλαδιών/δέντρων στον δρόμο προς Σαμαρίνα και πολύωρες διακοπές ρεύματος.</li>
+                </ul>
+                <div class="samarina-example">
+                    <strong>🔎 Τι να κοιτάς στη σελίδα:</strong> Όταν ο σταθμός ISAMAR38 καταγράφει έντονο υετό (<code>≥ 1.5 mm/h</code>) με θερμοκρασία από <code>-0.8°C</code> έως <code>+0.8°C</code>, ενεργοποιείται η προειδοποίηση <em>«🌲 ΒΑΡΥ ΥΓΡΟ ΧΙΟΝΙ»</em> — ιδανική στιγμή να φορτίσεις κινητά/φακούς και να μην παρκάρεις κάτω από μεγάλα κλαδιά.
+                </div>
+            </div>
+        </div>
+
+        <!-- Μάθημα 9 (ΝΕΟ - Επικινδυνότητα & Ασφάλεια) -->
+        <div class="lesson-card safety-highlight" data-cats="safety">
+            <div class="lesson-header" onclick="toggleCard(this)">
+                <div class="lesson-header-left">
+                    <div class="lesson-icon">🚰</div>
+                    <div>
+                        <span class="lesson-tag tag-safety">⚠️ Επικινδυνότητα • Προστασία Σπιτιών</span>
+                        <div class="lesson-title">9. Παγετός Δικτύων Ύδρευσης: Πότε κινδυνεύουν να σπάσουν οι σωλήνες;</div>
+                        <div class="lesson-subtitle">Οδηγός προστασίας για τα κλειστά σπίτια της Σαμαρίνας τον χειμώνα</div>
+                    </div>
+                </div>
+                <div class="toggle-icon">▼</div>
+            </div>
+            <div class="lesson-body">
+                <p>Ένα από τα πιο συχνά προβλήματα στα ορεινά χωριά είναι το σπάσιμο των σωλήνων ύδρευσης και των ηλιακών/θερμοσιφώνων. Αυτό συμβαίνει επειδή το νερό, καθώς παγώνει, <strong>διαστέλλεται κατά περίπου 9%</strong>, ασκώντας τεράστια πίεση στα τοιχώματα του σωλήνα.</p>
+                <p>Δύο κρίσιμα πράγματα που πρέπει να γνωρίζουν οι ιδιοκτήτες σπιτιών στη Σαμαρίνα:</p>
+                <ul>
+                    <li><strong>Η παγίδα της ξαστεριάς:</strong> Τις νύχτες χωρίς σύννεφα, οι εξωτερικοί τοίχοι και τα φρεάτια παγώνουν <strong>1,5°C έως 2,5°C χαμηλότερα</strong> από τη θερμοκρασία αέρα που δείχνει το θερμόμετρο.</li>
+                    <li><strong>Η ζημιά φαίνεται όταν «μαλακώνει» ο καιρός:</strong> Ο σωλήνας σπάει τη νύχτα του παγετού, αλλά η πλημμύρα ξεκινάει 1–2 μέρες μετά, μόλις ανέβει η θερμοκρασία πάνω από το 0°C και λιώσει ο πάγος μέσα στον σπασμένο σωλήνα!</li>
+                </ul>
+                <div class="danger-box">
+                    <strong>🛡️ Τα 2 Επίπεδα Συναγερμού Παγετού στη σελίδα μας:</strong><br>
+                    • <strong>Κόκκινη Προειδοποίηση (≤ -3°C):</strong> Κίνδυνος παγώματος σε εκτεθειμένους εξωτερικούς σωλήνες και βρύσες αυλής.<br>
+                    • <strong>Συναγερμός Ακραίου Παγετού (≤ -6°C):</strong> Υψηλός κίνδυνος ακόμα και για εσωτερικά δίκτυα σε ακατοίκητα/αθέρμαντα σπίτια — απαραίτητο το κλείσιμο κεντρικής βάνας και το άδειασμα των σωλήνων.
+                </div>
+                <div class="samarina-example">
+                    <strong>🔎 Τι να κοιτάς στη σελίδα:</strong> Την <em>«Ελάχ. Ημέρας»</em>, την <em>«Αίσθηση Ψύχους»</em> και το κόκκινο banner συναγερμού στην κορυφή της σελίδας που ενεργοποιείται αυτόματα μόλις ο σταθμός πέσει στους <code>-3°C</code>.
                 </div>
             </div>
         </div>
@@ -494,7 +598,7 @@
     </div>
 
     <footer>
-        Εκπαιδευτικός Οδηγός Ορεινής Μετεωρολογίας • Σταθμός Σαμαρίνας Γρεβενών (ISAMAR38 — 1.450μ.)
+        Εκπαιδευτικός Οδηγός Ορεινής Μετεωρολογίας & Ασφάλειας • Σταθμός Σαμαρίνας Γρεβενών (ISAMAR38 — 1.450μ.)
     </footer>
 
     <script>
@@ -508,7 +612,8 @@
             btnEl.classList.add('active');
 
             document.querySelectorAll('.lesson-card').forEach(card => {
-                if (category === 'all' || card.getAttribute('data-cat') === category) {
+                const cats = (card.getAttribute('data-cats') || '').split(' ');
+                if (category === 'all' || cats.includes(category)) {
                     card.style.display = 'block';
                 } else {
                     card.style.display = 'none';
