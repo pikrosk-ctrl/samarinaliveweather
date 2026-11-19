@@ -113,6 +113,10 @@
             background: #b91c1c;
             border-color: #f87171;
         }
+        .filter-btn.filter-station-btn.active {
+            background: #059669;
+            border-color: #34d399;
+        }
 
         /* Lesson Cards */
         .lessons-list {
@@ -132,6 +136,9 @@
         }
         .lesson-card.safety-highlight {
             border-left: 3px solid #ef4444;
+        }
+        .lesson-card.station-highlight {
+            border-left: 3px solid #10b981;
         }
         .lesson-header {
             padding: 16px 20px;
@@ -169,6 +176,7 @@
             border-radius: 4px;
             margin-bottom: 4px;
         }
+        .tag-station { background: rgba(16, 185, 129, 0.18); color: #34d399; }
         .tag-snow { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
         .tag-inv { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
         .tag-safety { background: rgba(248, 113, 113, 0.18); color: #f87171; }
@@ -214,6 +222,51 @@
         .lesson-body li {
             margin-bottom: 6px;
         }
+
+        /* Station Tiles Grid Inside Lesson 0 */
+        .station-demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+            gap: 12px;
+            margin: 14px 0;
+        }
+        .demo-tile {
+            background: #0f172a;
+            border: 1px solid #2a3b59;
+            border-radius: 10px;
+            padding: 14px;
+        }
+        .demo-tile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+        }
+        .demo-tile-name {
+            font-weight: 700;
+            color: #38bdf8;
+            font-size: 14px;
+        }
+        .demo-tile-val {
+            font-family: monospace;
+            font-size: 12.5px;
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 2px 8px;
+            border-radius: 5px;
+            border: 1px solid #334155;
+        }
+        .demo-tile p {
+            font-size: 13px;
+            color: #cbd5e1;
+            margin-bottom: 6px;
+        }
+        .demo-tile p:last-child {
+            margin-bottom: 0;
+        }
+
         .samarina-example {
             background: #0f172a;
             border: 1px solid #2a3b59;
@@ -245,44 +298,6 @@
             color: #fecaca;
         }
 
-        /* Glossary Section */
-        .glossary-section {
-            margin-top: 26px;
-            background: #131c31;
-            border: 1px solid #26344d;
-            border-radius: 12px;
-            padding: 18px 20px;
-        }
-        .glossary-section h2 {
-            font-size: 16px;
-            color: #38bdf8;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .glossary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-            gap: 12px;
-        }
-        .glossary-item {
-            background: #0f172a;
-            border: 1px solid #1e293b;
-            border-radius: 8px;
-            padding: 12px;
-        }
-        .glossary-term {
-            font-weight: 700;
-            color: #f8fafc;
-            font-size: 13.5px;
-            margin-bottom: 4px;
-        }
-        .glossary-desc {
-            font-size: 12.5px;
-            color: #94a3b8;
-        }
-
         footer {
             text-align: center;
             font-size: 12px;
@@ -295,6 +310,7 @@
             .lesson-header { padding: 14px; }
             .lesson-body { padding: 0 14px 16px 14px; }
             .lesson-title { font-size: 15px; }
+            .station-demo-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -310,11 +326,12 @@
 
     <div class="intro-box">
         <h1>Γιατί ο καιρός στα 1.450 μέτρα έχει τους δικούς του κανόνες;</h1>
-        <p>Ο μετεωρολογικός σταθμός <strong>ISAMAR38</strong> στη Σαμαρίνα καταγράφει καθημερινά φαινόμενα που συχνά ξαφνιάζουν όσους ανεβαίνουν από τον κάμπο: χιόνι ενώ το θερμόμετρο δείχνει πάνω από το μηδέν, παγωμένους δρόμους χωρίς να έχει βρέξει, χιονοθύελλες με λιακάδα ή σπασμένους σωλήνες ύδρευσης μετά από μια ξάστερη νύχτα. Παρακάτω θα βρεις <strong>9 πρακτικούς οδηγούς</strong> για να διαβάζεις τα δεδομένα του σταθμού και να προστατεύεσαι στο βουνό.</p>
+        <p>Ο μετεωρολογικός σταθμός <strong>ISAMAR38</strong> στη Σαμαρίνα καταγράφει καθημερινά ενδείξεις και φαινόμενα που συχνά ξαφνιάζουν όσους ανεβαίνουν από τον κάμπο: τι σημαίνει το <em>Σημείο Δρόσου</em>, ο <em>Υγρός Βολβός</em>, η <em>Απόσταση</em> ή το <em>Υψόμετρο Παγοποίησης</em>; Παρακάτω θα βρεις <strong>10 πρακτικούς οδηγούς</strong> με πραγματικά παραδείγματα από τις μετρήσεις του σταθμού μας.</p>
     </div>
 
     <div class="filters">
-        <button class="filter-btn active" onclick="filterLessons('all', this)">Όλα τα Μαθήματα (9)</button>
+        <button class="filter-btn active" onclick="filterLessons('all', this)">Όλα τα Μαθήματα (10)</button>
+        <button class="filter-btn filter-station-btn" onclick="filterLessons('station', this)">📡 Οδηγός Ενδείξεων Σταθμού</button>
         <button class="filter-btn filter-safety-btn" onclick="filterLessons('safety', this)">⚠️ Επικινδυνότητα & Ασφάλεια (4)</button>
         <button class="filter-btn" onclick="filterLessons('snow', this)">❄️ Χιόνι & Υγρός Βολβός</button>
         <button class="filter-btn" onclick="filterLessons('inv', this)">🌡️ Αναστροφή & Βαρόμετρο</button>
@@ -323,8 +340,93 @@
 
     <div class="lessons-list">
 
+        <!-- Μάθημα 0: Επεξήγηση των 6 Live Πλακιδίων του Σταθμού ISAMAR38 -->
+        <div class="lesson-card open station-highlight" data-cats="station">
+            <div class="lesson-header" onclick="toggleCard(this)">
+                <div class="lesson-header-left">
+                    <div class="lesson-icon">📡</div>
+                    <div>
+                        <span class="lesson-tag tag-station">📡 Οδηγός Σταθμού ISAMAR38 • Πραγματικά Δεδομένα</span>
+                        <div class="lesson-title">Οδηγός Ανάγνωσης: Τι σημαίνει κάθε αριθμός στα 6 Live Πλακίδια του Σταθμού;</div>
+                        <div class="lesson-subtitle">Απλή εξήγηση για Σ.Δ., Υγρό Βολβό, Απόσταση, Τάση 3ώρου, Beaufort & Παγοποίηση</div>
+                    </div>
+                </div>
+                <div class="toggle-icon">▼</div>
+            </div>
+            <div class="lesson-body">
+                <p>Όταν ανοίγεις την κεντρική σελίδα, ο σταθμός <strong>ISAMAR38</strong> (στα 1.450μ.) σου δείχνει 6 βασικά πλακίδια με πραγματικές μετρήσεις. Δες τι σημαίνει η κάθε ένδειξη με ένα πραγματικό παράδειγμα πρωινού στη Σαμαρίνα (<strong>Θερμοκρασία 11.2°C, Υγρασία 80%, Πίεση 1005.1 hPa</strong>):</p>
+
+                <div class="station-demo-grid">
+                    <!-- Πλακίδιο 1 -->
+                    <div class="demo-tile">
+                        <div class="demo-tile-header">
+                            <span class="demo-tile-name">1. Θερμοκρασία & Υποδείκτες</span>
+                            <span class="demo-tile-val">11.2°C | Σ.Δ. 7.8° | Υγρό 9.1°</span>
+                        </div>
+                        <p>• <strong>Σ.Δ. (Σημείο Δρόσου — 7.8°C):</strong> Είναι η θερμοκρασία στην οποία ο αέρας «χορταίνει» από υγρασία και σχηματίζει δροσιά, ομίχλη ή πάχνη (αν είναι κάτω από 0°C).</p>
+                        <p>• <strong>Υγρό (Υγρός Βολβός — 9.1°C):</strong> Η θερμοκρασία που παίρνει μια νιφάδα καθώς εξατμίζεται. Αν πέσει κάτω από <strong>0.5°C</strong> και έχουμε φαινόμενα, στη Σαμαρίνα πέφτει <strong>χιόνι</strong>.</p>
+                    </div>
+
+                    <!-- Πλακίδιο 2 -->
+                    <div class="demo-tile">
+                        <div class="demo-tile-header">
+                            <span class="demo-tile-name">2. Πίεση & Τάση 3ώρου</span>
+                            <span class="demo-tile-val">1005.1 hPa | Τάση: +3.0</span>
+                        </div>
+                        <p>• <strong>Πίεση (1005.1 hPa):</strong> Το «βάρος» της ατμόσφαιρας (μέσος όρος 1013 hPa). Κάτω από 1010 hPa δείχνει βαρομετρικό χαμηλό.</p>
+                        <p>• <strong>Τάση 3ώρου (+3.0 hPa):</strong> Πόσο άλλαξε η πίεση τις τελευταίες 3 ώρες. Το <strong>+3.0 hPa</strong> σημαίνει γρήγορη άνοδο (περνάει η κακοκαιρία και καθαρίζει), ενώ κάτω από <strong>-3.0 hPa</strong> προμηνύει απότομο χαλασμό.</p>
+                    </div>
+
+                    <!-- Πλακίδιο 3 -->
+                    <div class="demo-tile">
+                        <div class="demo-tile-header">
+                            <span class="demo-tile-name">3. Υγρασία & «Απόσταση»</span>
+                            <span class="demo-tile-val">80% | Απόσταση: 3.4°C</span>
+                        </div>
+                        <p>• <strong>Απόσταση (3.4°C):</strong> Είναι η διαφορά ανάμεσα στη Θερμοκρασία αέρα και το Σημείο Δρόσου (<code>11.2°C - 7.8°C = 3.4°C</code>).</p>
+                        <p>• <strong>Πώς διαβάζεται:</strong> Όταν η «Απόσταση» μικρύνει κάτω από <strong>1.0°C</strong>, ο αέρας είναι κορεσμένος και εμφανίζεται <strong>ομίχλη</strong> ή σύννεφα μέσα στο χωριό.</p>
+                    </div>
+
+                    <!-- Πλακίδιο 4 -->
+                    <div class="demo-tile">
+                        <div class="demo-tile-header">
+                            <span class="demo-tile-name">4. Άνεμος, Διεύθυνση & Ριπή</span>
+                            <span class="demo-tile-val">0 km/h (0 Bf) | ΒΒΑ (18°)</span>
+                        </div>
+                        <p>• <strong>Άνεμος & Μποφόρ (0 Bf):</strong> Η μέση ταχύτητα του ανέμου τα τελευταία λεπτά. Το 0 Bf σημαίνει άπνοια.</p>
+                        <p>• <strong>Διεύθυνση ΒΒΑ (18°):</strong> Από πού <em>έρχεται</em> ο άνεμος (0°/360° = Βορράς, 90° = Ανατολή, 180° = Νότος, 270° = Δύση).</p>
+                        <p>• <strong>Μέγ. Ριπή (π.χ. 30.1 km/h):</strong> Το πιο δυνατό στιγμιαίο «χτύπημα» του αέρα μέσα στην ημέρα.</p>
+                    </div>
+
+                    <!-- Πλακίδιο 5 -->
+                    <div class="demo-tile">
+                        <div class="demo-tile-header">
+                            <span class="demo-tile-name">5. Υετός Ημέρας & Ρυθμός</span>
+                            <span class="demo-tile-val">0 mm | Ρυθμός: 0 mm/h</span>
+                        </div>
+                        <p>• <strong>Υετός Ημέρας (mm):</strong> Πόση βροχή (ή λιωμένο χιόνι) έχει πέσει από τα μεσάνυχτα. <strong>1 mm</strong> ισοδυναμεί με <strong>1 λίτρο νερού</strong> σε κάθε τετραγωνικό μέτρο γης.</p>
+                        <p>• <strong>Ρυθμός (mm/h):</strong> Πόσο δυνατά βρέχει <em>αυτή τη στιγμή</em> (1–3 mm/h = ποτιστική, 10+ mm/h = δυνατή μπόρα).</p>
+                    </div>
+
+                    <!-- Πλακίδιο 6 -->
+                    <div class="demo-tile">
+                        <div class="demo-tile-header">
+                            <span class="demo-tile-name">6. Αίσθηση Ψύχους & Παγοποίηση</span>
+                            <span class="demo-tile-val">11.2°C | Παγοποίηση: 4480 μ.</span>
+                        </div>
+                        <p>• <strong>Αίσθηση Ψύχους (Wind Chill):</strong> Πόσο κρύο νιώθει το ανθρώπινο σώμα όταν συνδυάζονται κρύο και άνεμος.</p>
+                        <p>• <strong>Παγοποίηση (4480 μ.):</strong> Το υψόμετρο όπου η θερμοκρασία πέφτει στο 0°C. Όταν κατέβει κάτω από τα <strong>1.450 μ.</strong>, όλη η Σαμαρίνα βρίσκεται κάτω από το μηδέν.</p>
+                    </div>
+                </div>
+
+                <div class="samarina-example">
+                    <strong>💡 Πρακτικό παράδειγμα ανάγνωσης:</strong> Αν δεις <em>Θερμοκρασία +1.5°C</em>, <em>Υγρασία 55%</em>, <em>Υγρό -0.4°C</em> και <em>Παγοποίηση 1.550 μ.</em>, ξέρεις αμέσως ότι παρόλο που το θερμόμετρο δείχνει θετικό πρόσημο, αν ξεκινήσει υετός θα πέσει ως <strong>χιόνι</strong> μέσα στο χωριό!
+                </div>
+            </div>
+        </div>
+
         <!-- Μάθημα 1 -->
-        <div class="lesson-card open" data-cats="inv">
+        <div class="lesson-card" data-cats="inv">
             <div class="lesson-header" onclick="toggleCard(this)">
                 <div class="lesson-header-left">
                     <div class="lesson-icon">🌡️</div>
@@ -373,7 +475,7 @@
                     • <strong>Υγρός Βολβός > 1,5°C:</strong> Βροχή (ακόμα κι αν η θερμοκρασία αέρα φαίνεται χαμηλή).
                 </div>
                 <div class="samarina-example">
-                    <strong>🔎 Τι να κοιτάς στη σελίδα:</strong> Κάτω από τη μεγάλη ένδειξη θερμοκρασίας του σταθμού ISAMAR38 γράφει πάντα <em>«Σ.Δ. (Σημείο Δρόσου) | Υγρό (Υγρός Βολβός)»</em>. Αν πλησιάζει κακοκαιρία και το «Υγρό» είναι κάτω από 0,5°C, ετοιμάσου για χιόνι!
+                    <strong>🔎 Τι να κοιτάς στη σελίδα:</strong> Κάτω από τη μεγάλη ένδειξη θερμοκρασίας του σταθμού ISAMAR38 γράφει πάντα <em>«Σ.Δ. | Υγρό»</em>. Αν πλησιάζει κακοκαιρία και το «Υγρό» είναι κάτω από 0,5°C, ετοιμάσου για χιόνι!
                 </div>
             </div>
         </div>
@@ -426,7 +528,7 @@
                     <li><strong>Γρήγορη άνοδος (≥ +2,5 hPa / 3ωρο):</strong> Καθάρισμα του καιρού (συχνά συνοδεύεται από βοριάδες και πτώση θερμοκρασίας τη νύχτα).</li>
                 </ul>
                 <div class="samarina-example">
-                    <strong>🔎 Τι να κοιτάς στη σελίδα:</strong> Στην κάρτα <em>«Πίεση»</em> του σταθμού ISAMAR38, ακριβώς κάτω από τα hPa αναγράφεται ζωντανά η <strong>Τάση 3ωρου</strong> (π.χ. <code>+1.5 hPa</code> ή <code>-2.8 hPa</code>). Αν πέσει κάτω από <code>-3.0 hPa</code>, ενεργοποιείται αυτόματα κόκκινο banner προειδοποίησης!
+                    <strong>🔎 Τι να κοιτάς στη σελίδα:</strong> Στην κάρτα <em>«Πίεση»</em> του σταθμού ISAMAR38, ακριβώς κάτω από τα hPa αναγράφεται ζωντανά η <strong>Τάση 3ωρου</strong> (π.χ. <code>+3.0 hPa</code> ή <code>-2.8 hPa</code>). Αν πέσει κάτω από <code>-3.0 hPa</code>, ενεργοποιείται αυτόματα banner προειδοποίησης!
                 </div>
             </div>
         </div>
@@ -485,7 +587,7 @@
             </div>
         </div>
 
-        <!-- Μάθημα 7 (ΝΕΟ - Επικινδυνότητα & Ασφάλεια) -->
+        <!-- Μάθημα 7 (Επικινδυνότητα & Ασφάλεια) -->
         <div class="lesson-card safety-highlight" data-cats="safety snow">
             <div class="lesson-header" onclick="toggleCard(this)">
                 <div class="lesson-header-left">
@@ -514,7 +616,7 @@
             </div>
         </div>
 
-        <!-- Μάθημα 8 (ΝΕΟ - Επικινδυνότητα & Ασφάλεια) -->
+        <!-- Μάθημα 8 (Επικινδυνότητα & Ασφάλεια) -->
         <div class="lesson-card safety-highlight" data-cats="safety snow">
             <div class="lesson-header" onclick="toggleCard(this)">
                 <div class="lesson-header-left">
@@ -541,7 +643,7 @@
             </div>
         </div>
 
-        <!-- Μάθημα 9 (ΝΕΟ - Επικινδυνότητα & Ασφάλεια) -->
+        <!-- Μάθημα 9 (Επικινδυνότητα & Ασφάλεια) -->
         <div class="lesson-card safety-highlight" data-cats="safety">
             <div class="lesson-header" onclick="toggleCard(this)">
                 <div class="lesson-header-left">
@@ -572,29 +674,6 @@
             </div>
         </div>
 
-    </div>
-
-    <!-- Γλωσσάρι Όρων -->
-    <div class="glossary-section">
-        <h2>📖 Γρήγορο Λεξικό των Ενδείξεων του Σταθμού</h2>
-        <div class="glossary-grid">
-            <div class="glossary-item">
-                <div class="glossary-term">Σ.Δ. (Σημείο Δρόσου)</div>
-                <div class="glossary-desc">Η θερμοκρασία στην οποία ο αέρας κορεσμένος από υγρασία σχηματίζει δροσιά, ομίχλη ή πάχνη. Όσο πιο κοντά είναι στη θερμοκρασία αέρα, τόσο μεγαλύτερη η υγρασία.</div>
-            </div>
-            <div class="glossary-item">
-                <div class="glossary-term">Υγρό (Υγρός Βολβός)</div>
-                <div class="glossary-desc">Η χαμηλότερη θερμοκρασία που μπορεί να φτάσει ο αέρας μέσω εξάτμισης. Καθορίζει αν ο υετός θα πέσει ως χιόνι (≤ 0,5°C) ή βροχή.</div>
-            </div>
-            <div class="glossary-item">
-                <div class="glossary-term">Υψόμετρο Παγοποίησης</div>
-                <div class="glossary-desc">Το υψόμετρο (σε μέτρα) πάνω από το οποίο η θερμοκρασία της ελεύθερης ατμόσφαιρας πέφτει κάτω από το 0°C.</div>
-            </div>
-            <div class="glossary-item">
-                <div class="glossary-term">Υβριδική Πρόγνωση</div>
-                <div class="glossary-desc">Ο συνδυασμός των πραγματικών μετρήσεων του σταθμού της Σαμαρίνας (ISAMAR38) με τα αριθμητικά μοντέλα ICON & ECMWF για μέγιστη τοπική ακρίβεια.</div>
-            </div>
-        </div>
     </div>
 
     <footer>
