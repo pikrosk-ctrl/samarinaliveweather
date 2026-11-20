@@ -79,15 +79,14 @@
         .pmb-inner { display: flex; align-items: center; gap: 12px; }
         #pmb-icon { font-size: 1.45rem; }
 
-        /* TOP BAR - GLASS + THERMAL ACCENT */
+        /* TOP BAR - GLASS + THERMAL ACCENT (ΚΕΝΤΡΑΡΙΣΜΕΝΗ ΔΙΑΤΑΞΗ) */
         .top-bar {
             position: relative;
             overflow: hidden;
             display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             background: var(--glass-bg-strong);
             backdrop-filter: blur(18px);
             -webkit-backdrop-filter: blur(18px);
@@ -95,6 +94,7 @@
             border-radius: 14px;
             border: 1px solid var(--glass-border);
             box-shadow: 0 10px 32px rgba(0, 0, 0, 0.45), var(--glass-highlight);
+            text-align: center;
         }
         .top-bar::before {
             content: "";
@@ -116,7 +116,25 @@
         }
         .title span { font-size: 0.84rem; color: var(--text-muted); display: block; margin-top: 2px; }
 
-        .top-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+        .status-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .nav-center-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding-top: 2px;
+        }
+
         .alert-box {
             padding: 8px 14px;
             border-radius: 10px;
@@ -150,10 +168,10 @@
             backdrop-filter: blur(10px);
             color: #ffffff;
             border: 1px solid rgba(125, 211, 252, 0.55);
-            padding: 8px 14px;
+            padding: 9px 16px;
             border-radius: 10px;
             font-weight: 700;
-            font-size: 0.86rem;
+            font-size: 0.88rem;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
@@ -168,10 +186,10 @@
             backdrop-filter: blur(10px);
             color: #ffffff;
             border: 1px solid rgba(192, 132, 252, 0.55);
-            padding: 8px 14px;
+            padding: 9px 16px;
             border-radius: 10px;
             font-weight: 700;
-            font-size: 0.86rem;
+            font-size: 0.88rem;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
@@ -194,23 +212,22 @@
         }
         .visitor-badge img { height: 22px; display: block; border-radius: 4px; }
 
-        /* VIEW SWITCH BAR */
-        .view-switch-bar { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        /* TAB SWITCH BUTTONS */
         .tab-switch-btn {
             background: var(--glass-bg);
             backdrop-filter: blur(14px);
             -webkit-backdrop-filter: blur(14px);
             color: #cbd5e1;
             border: 1px solid var(--glass-border);
-            padding: 9px 20px;
-            border-radius: 11px;
+            padding: 9px 18px;
+            border-radius: 10px;
             font-weight: 700;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             cursor: pointer;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), var(--glass-highlight);
             transition: all 0.2s ease;
         }
-        .tab-switch-btn:hover { border-color: var(--glass-border-hover); color: #ffffff; }
+        .tab-switch-btn:hover { border-color: var(--glass-border-hover); color: #ffffff; transform: translateY(-1px); }
         .tab-switch-btn.active-tab {
             background: linear-gradient(135deg, rgba(2, 132, 199, 0.78), rgba(16, 185, 129, 0.55));
             color: #ffffff;
@@ -922,7 +939,7 @@
             body { padding: 8px; gap: 10px; }
             .title h1 { font-size: 1.05rem; }
             .top-bar { padding: 11px 13px; }
-            .btn-3d-launch, .btn-lessons-launch, .alert-box { font-size: 0.8rem; padding: 6px 10px; }
+            .btn-3d-launch, .btn-lessons-launch, .tab-switch-btn, .alert-box { font-size: 0.8rem; padding: 6px 10px; }
             .s-val { font-size: 1.1rem; }
             .s-sub { font-size: 0.68rem; }
             .chart-container { height: 230px; padding: 8px 10px; }
@@ -956,20 +973,23 @@
             <h1>🏔️ ΣΑΜΑΡΙΝΑ ΓΡΕΒΕΝΩΝ (1.450μ.) — LIVE WEATHER</h1>
             <span>Σταθμός: Bresser 5-in-1 (ISAMAR38) | Κάμερα: Σαμαρίνα Χωριό | Υβριδική &amp; Αυτόνομη Πρόγνωση</span>
         </div>
-        <div class="top-badges">
-            <a href="meteo-lessons.html" class="btn-lessons-launch">📚 Μικρά Μαθήματα Καιρού</a>
-            <button type="button" onclick="openSmolikas3D()" class="btn-3d-launch">🏔️ 3D Ροή Αέρα &amp; 12h Πρόγνωση</button>
+
+        <!-- 1. ΔΡΟΜΟΣ & ΑΥΤΟΜΑΤΗ ΕΙΔΟΠΟΙΗΣΗ ΚΑΙΡΟΥ ΚΑΤΩ ΑΠΟ ΤΗΝ ΕΠΙΚΕΦΑΛΙΔΑ -->
+        <div class="status-row">
             <div id="roadStatus" class="alert-box">🛣️ Έλεγχος δρόμου...</div>
             <div id="topAlert" class="alert-box">Έλεγχος συνθηκών...</div>
             <div class="visitor-badge" title="Συνολικές επισκέψεις σελίδας">
                 <img src="https://visitor-badge.laobi.icu/badge?page_id=samarinaliveweather&left_color=%230f172a&right_color=%230284c7&left_text=Episkepseis" alt="Επισκέψεις" loading="lazy">
             </div>
         </div>
-    </div>
 
-    <div class="view-switch-bar">
-        <button type="button" id="btnLiveView" onclick="switchDashboardView('live')" class="tab-switch-btn active-tab">📡 Ζωντανός Καιρός &amp; Πρόγνωση</button>
-        <button type="button" id="btnArchiveView" onclick="switchDashboardView('archive')" class="tab-switch-btn">📜 Ιστορικό Αρχείο &amp; Κάρτες</button>
+        <!-- 2. ΚΕΝΤΡΑΡΙΣΜΕΝΗ ΓΡΑΜΜΗ ΚΟΥΜΠΙΩΝ -->
+        <div class="nav-center-row">
+            <a href="meteo-lessons.html" class="btn-lessons-launch">📚 Μικρά Μαθήματα Καιρού</a>
+            <button type="button" onclick="openSmolikas3D()" class="btn-3d-launch">🏔️ 3D Ροή Αέρα &amp; 12h Πρόγνωση</button>
+            <button type="button" id="btnLiveView" onclick="switchDashboardView('live')" class="tab-switch-btn active-tab">📡 Ζωντανός Καιρός &amp; Πρόγνωση</button>
+            <button type="button" id="btnArchiveView" onclick="switchDashboardView('archive')" class="tab-switch-btn">📜 Ιστορικό Αρχείο &amp; Κάρτες</button>
+        </div>
     </div>
 
     <!-- ΕΝΟΤΗΤΑ 1: ΖΩΝΤΑΝΟ DASHBOARD -->
@@ -1597,7 +1617,6 @@
             return [239, 68, 68, 165];
         }
 
-        // Βελτιστοποιημένο heatmap μέσω γραμμικής παρεμβολής ορίων χάρτη
         function drawVentuskyHeatmap() {
             const ctx = ventState.heatCtx;
             const canvas = ventState.heatCanvas;
@@ -2925,7 +2944,6 @@
                 setText("stRate", `Ρυθμός: ${rate} mm/h`);
                 setText("stChill", `${chill.toFixed(1)}°C`);
 
-                // Υπολογισμός ημερήσιων ακραίων από dayData (λειτουργεί και σε προσωρινό offline)
                 let minDayT = temp;
                 let maxDayT = temp;
                 let maxDayGust = gust;
@@ -3211,7 +3229,7 @@
         }
 
         // =========================================================================
-        // 10. ΙΣΤΟΡΙΚΟ ΑΡΧΕΙΟ & ΚΑΡΤΕΣ (ΠΛΗΡΗΣ ΑΞΙΟΠΟΙΗΣΗ ΠΕΔΙΩΝ)
+        // 10. ΙΣΤΟΡΙΚΟ ΑΡΧΕΙΟ & ΚΑΡΤΕΣ
         // =========================================================================
         async function loadArchiveData() {
             const grid = getEl("dailyCardsGrid");
@@ -3363,7 +3381,6 @@
                 return;
             }
 
-            // Θερμοκρασιακοί δείκτες
             const tMins = filtered.map(r => toFiniteNumber(r.Tmin, NaN)).filter(Number.isFinite);
             const tMaxs = filtered.map(r => toFiniteNumber(r.Tmax, NaN)).filter(Number.isFinite);
             const tAvgs = filtered.map(r => toFiniteNumber(r.Tavg, NaN)).filter(Number.isFinite);
@@ -3373,7 +3390,6 @@
             const frostDays = filtered.filter(r => toFiniteNumber(r.Tmin, 99) <= 0).length;
             const iceDays = filtered.filter(r => toFiniteNumber(r.Tmax, 99) <= 0).length;
 
-            // Υετός & Βαρόμετρο
             const precipVals = filtered.map(r => toFiniteNumber(r.PrecipSum, 0));
             const totalPrecip = precipVals.reduce((a, b) => a + b, 0).toFixed(1);
             const rainDays = precipVals.filter(p => p >= 0.2).length;
@@ -3385,7 +3401,6 @@
                 ? `<div class="climate-stat-row"><span>Βαρόμετρο (Min–Max):</span><strong style="color:#34d399;">${Math.min(...pMins).toFixed(0)} – ${Math.max(...pMaxs).toFixed(0)} hPa</strong></div>`
                 : "";
 
-            // Ανεμολόγιο & Ταχύτητα Ανέμου
             const dirCounts = {};
             filtered.forEach(r => {
                 if (r.DomDirText && r.DomDirText !== "--" && r.DomDirText !== "—") {
@@ -3404,7 +3419,6 @@
                 ? `<div class="climate-stat-row" style="margin-top:8px; padding-top:6px; border-top:1px solid rgba(148,163,184,0.14);"><span>Μέση / Μέγ. Ριπή:</span><strong style="color:#fbbf24;">${wAvgs.length ? (wAvgs.reduce((a, b) => a + b, 0) / wAvgs.length).toFixed(1) : "--"} / ${wMaxs.length ? Math.max(...wMaxs).toFixed(1) : "--"} km/h</strong></div>`
                 : "";
 
-            // Ακρίβεια Προγνώσεων Περιόδου (MAE)
             const maeHybArr = filtered.map(r => toFiniteNumber(r.MAE_Hybrid, NaN)).filter(Number.isFinite);
             const maeStArr = filtered.map(r => toFiniteNumber(r.MAE_Station, NaN)).filter(Number.isFinite);
             const maeSummaryHtml = (maeHybArr.length || maeStArr.length)
