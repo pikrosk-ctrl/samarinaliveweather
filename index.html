@@ -298,7 +298,6 @@
         .cam-wrapper {
             position: relative;
             width: 100%;
-            aspect-ratio: 16 / 9;
             overflow: hidden;
             border-radius: 10px;
             background: rgba(7, 13, 25, 0.8);
@@ -308,7 +307,7 @@
             justify-content: center;
             box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
         }
-        .cam-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .cam-img { width: 100%; height: auto; display: block; }
 
         /* STATION TELEMETRY TILES - THERMAL GLASS */
         .station-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
@@ -424,14 +423,11 @@
         .inv-active { background: rgba(239, 68, 68, 0.25); border: 1px solid rgba(239, 68, 68, 0.55); color: #fecaca; }
         .astro-shade-badge { background: rgba(245, 158, 11, 0.18); border: 1px solid rgba(245, 158, 11, 0.45); color: #fde68a; }
 
-        /* 2-Column Καθαρή Πρόγνωση */
+        /* Καθαρή Πρόγνωση σε 2 Οριζόντιες Σειρές (24ωρο Πάνω & 48ωρο Κάτω) */
         .dual-forecast-grid {
-            display: grid;
-            grid-template-columns: 1.35fr 1fr;
+            display: flex;
+            flex-direction: column;
             gap: 12px;
-        }
-        @media (max-width: 960px) {
-            .dual-forecast-grid { grid-template-columns: 1fr; }
         }
         .tf-column {
             background: rgba(11, 18, 34, 0.48);
@@ -489,13 +485,29 @@
             box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
         }
 
-        .forecast-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-        .forecast-cards-48 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .forecast-cards {
+            display: grid;
+            grid-template-columns: repeat(8, minmax(115px, 1fr));
+            gap: 9px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            -webkit-overflow-scrolling: touch;
+            scroll-snap-type: x proximity;
+        }
+        .forecast-cards-48 {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(215px, 1fr));
+            gap: 9px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            -webkit-overflow-scrolling: touch;
+            scroll-snap-type: x proximity;
+        }
         @media (max-width: 500px) {
             .station-grid { grid-template-columns: repeat(2, 1fr); }
-            .forecast-cards { grid-template-columns: repeat(2, 1fr); }
         }
         .f-card, .f-card-solo, .f-card-48 {
+            scroll-snap-align: start;
             background: rgba(20, 32, 58, 0.52);
             backdrop-filter: blur(10px);
             padding: 9px 6px;
@@ -1029,7 +1041,7 @@
                         </div>
                     </div>
                     <div class="cam-wrapper">
-                        <a href="https://www.forecastweather.gr/kameres/makedonias/samarina-grevenon-chorio.html" target="_blank" rel="noopener noreferrer" style="display:flex; width:100%; height:100%; align-items:center; justify-content:center;">
+                        <a href="https://www.forecastweather.gr/kameres/makedonias/samarina-grevenon-chorio.html" target="_blank" rel="noopener noreferrer" style="display:flex; width:100%; align-items:center; justify-content:center;">
                             <img id="liveCamImg" class="cam-img" src="https://www.forecastweather.gr/images/photo_camera/photo_41.jpg" alt="Κάμερα Σαμαρίνα Χωριό">
                         </a>
                     </div>
@@ -1127,7 +1139,7 @@
             </div>
         </div>
 
-        <!-- 3. ΚΑΘΑΡΗ 2-ΣΤΗΛΗ ΠΡΟΓΝΩΣΗ -->
+        <!-- 3. ΚΑΘΑΡΗ ΠΡΟΓΝΩΣΗ ΣΕ ΟΡΙΖΟΝΤΙΑ ΚΥΛΙΣΗ (24ΩΡΟ ΠΑΝΩ & 48ΩΡΟ ΚΑΤΩ) -->
         <div class="panel">
             <div class="panel-header">
                 <span>🔮 ΠΡΟΓΝΩΣΗ ΚΑΙΡΟΥ ΣΑΜΑΡΙΝΑΣ (24ΩΡΟ &amp; 48ΩΡΟ)</span>
@@ -3573,7 +3585,14 @@
             if (!img) return;
             const nextUrl = `${CONFIG.URLS.CAM_BASE}?v=${Date.now()}`;
             const preloader = new Image();
-            preloader.onload = () => { img.src = nextUrl; };
+            preloader.onload = () => {
+                if (preloader.naturalWidth > 0 && preloader.naturalHeight > 0) {
+                    img.src = nextUrl;
+                }
+            };
+            preloader.onerror = () => {
+                setTimeout(refreshCamera, 3000);
+            };
             preloader.src = nextUrl;
         }
 
