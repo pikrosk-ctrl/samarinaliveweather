@@ -3642,9 +3642,29 @@
                 const hasWindSpeed = monthRecords.some(r => toFiniteNumber(r.WindAvg, null) !== null || toFiniteNumber(r.WindMax, null) !== null);
                 if (hasWindSpeed) {
                     datasets = [
-                        { type: "bar", label: "Μέγιστη Ριπή (km/h)", data: monthRecords.map(r => toFiniteNumber(r.WindMax, null)), backgroundColor: "rgba(251, 191, 36, 0.55)", borderRadius: 4 },
-                        { type: "line", label: "Μέση Ταχύτητα (km/h)", data: monthRecords.map(r => toFiniteNumber(r.WindAvg, null)), borderColor: "#f59e0b", borderWidth: 2.4, tension: 0.3, pointRadius: 3.5 }
+                        {
+                            type: "bar",
+                            label: "Μέση Ταχύτητα (km/h)",
+                            data: monthRecords.map(r => toFiniteNumber(r.WindAvg, null)),
+                            backgroundColor: "rgba(56, 189, 248, 0.80)",
+                            borderColor: "#38bdf8",
+                            borderWidth: 1,
+                            borderRadius: 5,
+                            maxBarThickness: 36
+                        },
+                        {
+                            type: "bar",
+                            label: "Μέγιστη Ριπή (km/h)",
+                            data: monthRecords.map(r => toFiniteNumber(r.WindMax, null)),
+                            backgroundColor: "rgba(251, 191, 36, 0.80)",
+                            borderColor: "#fbbf24",
+                            borderWidth: 1,
+                            borderRadius: 5,
+                            maxBarThickness: 36
+                        }
                     ];
+                    customScales.y.beginAtZero = true;
+                    customScales.y.suggestedMax = 15;
                 } else {
                     datasets = [{ type: "line", label: "Επικρατούσα Διεύθυνση (°)", data: monthRecords.map(r => toFiniteNumber(r.DomDirDeg, null)), borderColor: "#38bdf8", borderWidth: 2.2, pointRadius: 4 }];
                 }
@@ -3807,9 +3827,9 @@
                 return `
                     <div class="climate-card">
                         <div class="climate-card-header"><span>📅 ${d}/${m}/${y}</span>${statusBadge}</div>
-                        <div class="climate-stat-row"><span>Ελάχ. / Μέγ.:</span><span><strong style="color:#38bdf8;">${escapeHtml(r.Tmin)}°C</strong> / <strong style="color:#fb923c;">${escapeHtml(r.Tmax)}°C</strong>${avgStr}</span></div>
+                        <div class="climate-stat-row"><span>Ελάχ. / Μέγ.:</span><span style="white-space:nowrap;"><strong style="color:#38bdf8;">${escapeHtml(r.Tmin)}°C</strong> / <strong style="color:#fb923c;">${escapeHtml(r.Tmax)}°C</strong>${avgStr}</span></div>
                         ${rangeRow}
-                        <div class="climate-stat-row"><span>Υετός / Άνεμος:</span><strong>${escapeHtml(r.PrecipSum)} mm • ${windTxt}</strong></div>
+                        <div class="climate-stat-row"><span>Υετός / Άνεμος:</span><strong style="font-size:0.8rem; white-space:nowrap;">${escapeHtml(r.PrecipSum)} mm • ${windTxt}</strong></div>
                         ${pressRow}
                         ${maeBadge}
                     </div>`;
