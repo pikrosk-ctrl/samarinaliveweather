@@ -1097,7 +1097,7 @@
                     <div class="ai-panel">
                         <div class="ai-header">🌡️ ΑΝΑΣΤΡΟΦΗ (ΣΑΜΑΡΙΝΑ vs ΛΑΡΙΣΑ)</div>
                         <div>
-                            <div class="ai-row"><span>🏔️ Σαμαρίνα (1.450μ.):</span><strong id="invSamTemp" style="color:#38bdf8;">--°C</strong></div>
+                            <div class="ai-row"><span>🏔️ Σαμαρίνα (1.450μ.):</span><strong id="invSamTemp" style="color:#f87171;">--°C</strong></div>
                             <div class="ai-row"><span>🏙️ Λάρισα (70μ.):</span><strong id="invLarTemp">--°C</strong></div>
                             <div class="ai-row"><span>Διαφορά ΔT:</span><strong id="invDiffTemp">--°C</strong></div>
                             <div class="ai-sub-note" id="invLapseNote">Υψομετρική διαφορά: 1.380 μ.</div>
@@ -2113,8 +2113,8 @@
                             type: "line",
                             label: "Θερμοκρασία 48h (°C)",
                             data: steps3h.map(s => s.temp),
-                            borderColor: "#38bdf8",
-                            backgroundColor: "rgba(56, 189, 248, 0.14)",
+                            borderColor: "#ef4444",
+                            backgroundColor: "rgba(239, 68, 68, 0.14)",
                             fill: true,
                             borderWidth: 2.5,
                             tension: 0.35,
@@ -2147,7 +2147,7 @@
                     plugins: { legend: { labels: { color: "#cbd5e1", font: { size: 11 }, usePointStyle: true } } },
                     scales: {
                         x: { ticks: { color: "#94a3b8", maxRotation: 0 }, grid: { color: "rgba(148, 163, 184, 0.12)" } },
-                        yTemp: { type: "linear", position: "left", title: { display: true, text: "Θερμ. (°C)", color: "#38bdf8" }, ticks: { color: "#38bdf8", callback: v => v + "°" }, grid: { color: "rgba(148, 163, 184, 0.12)" } },
+                        yTemp: { type: "linear", position: "left", title: { display: true, text: "Θερμ. (°C)", color: "#f87171" }, ticks: { color: "#f87171", callback: v => v + "°" }, grid: { color: "rgba(148, 163, 184, 0.12)" } },
                         yPrecip: { type: "linear", position: "right", min: 0, suggestedMax: 5, title: { display: true, text: "Υετός / Χιόνι", color: "#bae6fd" }, ticks: { color: "#bae6fd" }, grid: { drawOnChartArea: false } }
                     }
                 }
@@ -2291,8 +2291,8 @@
                         {
                             label: "Θερμοκρασία (°C)",
                             data: tempSeries,
-                            borderColor: "#38bdf8",
-                            backgroundColor: "rgba(56, 189, 248, 0.14)",
+                            borderColor: "#ef4444",
+                            backgroundColor: "rgba(239, 68, 68, 0.14)",
                             fill: true,
                             borderWidth: 2.5,
                             pointRadius: 0,
@@ -2415,8 +2415,8 @@
                         yTemp: {
                             type: "linear",
                             position: "left",
-                            title: { display: true, text: "Θερμ. / Σ.Δ. (°C)", color: "#38bdf8" },
-                            ticks: { color: "#38bdf8", callback: v => v + "°" },
+                            title: { display: true, text: "Θερμ. / Σ.Δ. (°C)", color: "#f87171" },
+                            ticks: { color: "#f87171", callback: v => v + "°" },
                             grid: { color: "rgba(148, 163, 184, 0.12)" }
                         },
                         yHum: {
@@ -2874,9 +2874,9 @@
                         data: {
                             labels: chartLabels,
                             datasets: [
-                                { type: "line", label: "Υβριδική Θερμ. (ISAMAR38 + ICON/ECMWF)", data: chartTemps, borderColor: "#38bdf8", backgroundColor: "rgba(56, 189, 248, 0.16)", fill: true, borderWidth: 2.5, tension: 0.35, pointRadius: 2.5, yAxisID: "yTemp" },
+                                { type: "line", label: "Υβριδική Θερμ. (ISAMAR38 + ICON/ECMWF)", data: chartTemps, borderColor: "#ef4444", backgroundColor: "rgba(239, 68, 68, 0.16)", fill: true, borderWidth: 2.5, tension: 0.35, pointRadius: 2.5, yAxisID: "yTemp" },
                                 { type: "line", label: "Αυτόνομος Σταθμός (Μόνο ISAMAR38)", data: chartStationTemps, borderColor: "#34d399", borderWidth: 1.9, borderDash: [4, 4], tension: 0.35, pointRadius: 0, fill: false, yAxisID: "yTemp" },
-                                { type: "line", label: "Όριο Παγετού (0°C)", data: chartZeroLine, borderColor: "rgba(248, 113, 113, 0.7)", borderWidth: 1.2, borderDash: [5, 5], pointRadius: 0, fill: false, yAxisID: "yTemp" },
+                                { type: "line", label: "Όριο Παγετού (0°C)", data: chartZeroLine, borderColor: "rgba(56, 189, 248, 0.75)", borderWidth: 1.2, borderDash: [5, 5], pointRadius: 0, fill: false, yAxisID: "yTemp" },
                                 { type: "bar", label: "Βροχή / Υετός (mm)", data: chartPrecip, backgroundColor: "rgba(96, 165, 250, 0.72)", borderRadius: 4, yAxisID: "yPrecip" },
                                 { type: "bar", label: "Νέο Χιόνι (cm)", data: chartSnow, backgroundColor: "rgba(224, 242, 254, 0.92)", borderRadius: 4, yAxisID: "yPrecip" }
                             ]
@@ -2889,7 +2889,7 @@
                             plugins: { legend: { labels: { color: "#cbd5e1", font: { size: 11 }, usePointStyle: true } } },
                             scales: {
                                 x: { ticks: { color: "#94a3b8", maxRotation: 0, autoSkip: true, maxTicksLimit: 13 }, grid: { color: "rgba(148, 163, 184, 0.12)" } },
-                                yTemp: { type: "linear", position: "left", title: { display: true, text: "Θερμοκρασία (°C)", color: "#38bdf8" }, ticks: { color: "#38bdf8", callback: v => v + "°" }, grid: { color: "rgba(148, 163, 184, 0.12)" } },
+                                yTemp: { type: "linear", position: "left", title: { display: true, text: "Θερμοκρασία (°C)", color: "#f87171" }, ticks: { color: "#f87171", callback: v => v + "°" }, grid: { color: "rgba(148, 163, 184, 0.12)" } },
                                 yPrecip: { type: "linear", position: "right", min: 0, suggestedMax: 5, title: { display: true, text: "Υετός / Χιόνι", color: "#bae6fd" }, ticks: { color: "#bae6fd" }, grid: { drawOnChartArea: false } }
                             }
                         }
@@ -2983,8 +2983,8 @@
 
             if (currentMonthlyParam === "temp") {
                 datasets = [
-                    { type: "line", label: "Μέγιστη (Tmax)", data: monthRecords.map(r => toFiniteNumber(r.Tmax, null)), borderColor: "#ef4444", backgroundColor: "rgba(239, 68, 68, 0.12)", borderWidth: 2.4, tension: 0.3, pointRadius: 3 },
-                    { type: "line", label: "Μέση Ημέρας (Tavg)", data: monthRecords.map(r => toFiniteNumber(r.Tavg, null)), borderColor: "#10b981", borderDash: [4, 4], borderWidth: 2, tension: 0.3, pointRadius: 2 },
+                    { type: "line", label: "Μέγιστη (Tmax)", data: monthRecords.map(r => toFiniteNumber(r.Tmax, null)), borderColor: "#ef4444", backgroundColor: "rgba(239, 68, 68, 0.14)", borderWidth: 2.5, tension: 0.3, pointRadius: 3 },
+                    { type: "line", label: "Μέση Ημέρας (Tavg)", data: monthRecords.map(r => toFiniteNumber(r.Tavg, null)), borderColor: "#f59e0b", borderDash: [4, 4], borderWidth: 2, tension: 0.3, pointRadius: 2 },
                     { type: "line", label: "Ελάχιστη (Tmin)", data: monthRecords.map(r => toFiniteNumber(r.Tmin, null)), borderColor: "#38bdf8", backgroundColor: "rgba(56, 189, 248, 0.14)", fill: true, borderWidth: 2.4, tension: 0.3, pointRadius: 3 }
                 ];
             } else if (currentMonthlyParam === "precip") {
