@@ -1881,19 +1881,22 @@
             const now = new Date();
             const currentHour = now.getHours() + (now.getMinutes() / 60);
             const targetHour = (currentHour + hrs) % 24;
-            const spread = temp - dew;
+            const spread = Math.max(0, temp - dew);
 
+            // Πιο ρεαλιστική ημερήσια πορεία: μειώνεται όταν φυσάει (άνεμος ανακατεύει τον αέρα) ή όταν ο αέρας είναι κορεσμένος
             const diurnalFactor = h => -Math.cos(((h - 4) / 24) * 2 * Math.PI);
-            const baseSwing = (spread > 4 && wind < 12) ? 3.8 : 2.2;
+            const windDamping = wind > 15 ? 0.35 : (wind > 8 ? 0.65 : 1.0);
+            const moistureDamping = spread < 2.0 ? 0.55 : 1.0;
+            const baseSwing = ((spread > 4 && wind < 10) ? 3.2 : 1.8) * windDamping * moistureDamping;
             const diurnalDelta = (diurnalFactor(targetHour) - diurnalFactor(currentHour)) * baseSwing;
 
             const isNortherly = (dir >= 315 || dir <= 65);
             const isSoutherly = (dir >= 135 && dir <= 250);
             let advectionDelta = 0;
-            if (isNortherly && wind > 5) advectionDelta = -0.12 * Math.min(wind, 35) * (hrs / 12);
-            else if (isSoutherly && wind > 5) advectionDelta = 0.08 * Math.min(wind, 35) * (hrs / 12);
+            if (isNortherly && wind > 5) advectionDelta = -0.10 * Math.min(wind, 35) * Math.min(hrs, 12) / 12;
+            else if (isSoutherly && wind > 5) advectionDelta = 0.06 * Math.min(wind, 35) * Math.min(hrs, 12) / 12;
 
-            const pressTempDelta = safeTrend * 0.25 * (hrs / 12);
+            const pressTempDelta = safeTrend * 0.20 * (Math.min(hrs, 12) / 12);
             const predT = Number((temp + diurnalDelta + advectionDelta + pressTempDelta).toFixed(1));
             const predTw = estimateFutureWetBulb(predT, dew);
 
@@ -1960,13 +1963,15 @@
 
             const modelTempNow = idxNow !== -1 ? toFiniteNumber(omData.hourly.temperature_2m[idxNow], temp) : temp;
             const initialBias = temp - modelTempNow;
-            const decayedBias = initialBias * Math.max(0, 1 - (hrs / 24));
+            // Το bias του σταθμού σβήνει πιο γρήγορα (σε ~12 ώρες) για να μην παρασύρει μεσοπρόθεσμα
+            const decayedBias = initialBias * Math.max(0, 1 - (hrs / 12));
             const correctedModelTemp = modelTargetTemp + decayedBias;
 
-            const wTempStation = hrs <= 3 ? 0.85 : (hrs <= 6 ? 0.65 : (hrs <= 12 ? 0.40 : (hrs <= 24 ? 0.25 : 0.12)));
+            // Νέα στάθμιση: ισχυρό nowcasting στις πρώτες 3 ώρες, πιο δυνατός ο ρόλος του μοντέλου στο +6h..+24h
+            const wTempStation = hrs <= 3 ? 0.80 : (hrs <= 6 ? 0.45 : (hrs <= 12 ? 0.22 : (hrs <= 24 ? 0.15 : 0.08)));
             const wTempModel = 1 - wTempStation;
 
-            const wPrecipStation = (activeRate > 0 && hrs <= 3) ? 0.80 : (hrs <= 3 ? 0.35 : (hrs <= 6 ? 0.25 : (hrs <= 24 ? 0.15 : 0.05)));
+            const wPrecipStation = (activeRate > 0 && hrs <= 3) ? 0.75 : (hrs <= 3 ? 0.30 : (hrs <= 6 ? 0.18 : (hrs <= 24 ? 0.10 : 0.05)));
             const wPrecipModel = 1 - wPrecipStation;
 
             const hybridTemp = Number(((localPred.temp * wTempStation) + (correctedModelTemp * wTempModel)).toFixed(1));
