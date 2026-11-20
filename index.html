@@ -3634,4 +3634,289 @@
                 datasets = [
                     { type: "line", label: "Μέγ. Πίεση (hPa)", data: monthRecords.map(r => toFiniteNumber(r.PressMax, null)), borderColor: "#10b981", borderWidth: 2.2, tension: 0.25, pointRadius: 3 },
                     { type: "line", label: "Μέση Πίεση (hPa)", data: monthRecords.map(r => toFiniteNumber(r.PressAvg, null)), borderColor: "#38bdf8", borderDash: [4, 4], borderWidth: 1.8, tension: 0.25, pointRadius: 2 },
-                    { type
+                    { type: "line", label: "Ελάχ. Πίεση (hPa)", data: monthRecords.map(r => toFiniteNumber(r.PressMin, null)), borderColor: "#fbbf24", borderWidth: 2.2, tension: 0.25, pointRadius: 3 }
+                ];
+                customScales.y.grace = "10%";
+                customScales.y.ticks.callback = v => Number(v).toFixed(1);
+            } else if (currentMonthlyParam === "wind") {
+                const hasWindSpeed = monthRecords.some(r => toFiniteNumber(r.WindAvg, null) !== null || toFiniteNumber(r.WindMax, null) !== null);
+                if (hasWindSpeed) {
+                    datasets = [
+                        { type: "bar", label: "Μέγιστη Ριπή (km/h)", data: monthRecords.map(r => toFiniteNumber(r.WindMax, null)), backgroundColor: "rgba(251, 191, 36, 0.55)", borderRadius: 4 },
+                        { type: "line", label: "Μέση Ταχύτητα (km/h)", data: monthRecords.map(r => toFiniteNumber(r.WindAvg, null)), borderColor: "#f59e0b", borderWidth: 2.4, tension: 0.3, pointRadius: 3.5 }
+                    ];
+                } else {
+                    datasets = [{ type: "line", label: "Επικρατούσα Διεύθυνση (°)", data: monthRecords.map(r => toFiniteNumber(r.DomDirDeg, null)), borderColor: "#38bdf8", borderWidth: 2.2, pointRadius: 4 }];
+                }
+                customTooltip = {
+                    callbacks: {
+                        afterBody: function (items) {
+                            const idx = items[0]?.dataIndex;
+                            const rec = idx !== undefined ? monthRecords[idx] : null;
+                            if (!rec) return "";
+                            const dirTxt = rec.DomDirText && rec.DomDirText !== "—" ? `${rec.DomDirText} (${rec.DomDirDeg}°)` : "—";
+                            return `🧭 Επικρατών Άνεμος: ${dirTxt}`;
+                        }
+                    }
+                };
+            } else {
+                datasets = [
+                    { type: "line", label: "Σφάλμα Υβριδικού (±°C)", data: monthRecords.map(r => toFiniteNumber(r.MAE_Hybrid, null)), borderColor: "#38bdf8", backgroundColor: "rgba(56, 189, 248, 0.16)", fill: true, borderWidth: 2.5, tension: 0.25, pointRadius: 3 },
+                    { type: "line", label: "Σφάλμα Σταθμού (±°C)", data: monthRecords.map(r => toFiniteNumber(r.MAE_Station, null)), borderColor: "#10b981", borderWidth: 2.2, tension: 0.25, pointRadius: 3 }
+                ];
+            }
+
+            monthlyArchiveChartInstance = new Chart(ctx, {
+                type: "line",
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: "index", intersect: false },
+                    plugins: {
+                        legend: { labels: { color: "#cbd5e1", usePointStyle: true, font: { size: 11 } } },
+                        tooltip: customTooltip
+                    },
+                    scales: customScales
+                }
+            });
+        }
+
+        function renderArchiveCards() {
+            const filterEl = getEl("archiveMonthFilter");
+            if (!filterEl) return;
+
+            const filter = filterEl.value;
+            const validRecords = archiveRecords.filter(r => toFiniteNumber(r.Samples, 0) >= THRESHOLDS.ARCHIVE_MIN_SAMPLES);
+            const filtered = filter === "ALL" ? validRecords : validRecords.filter(r => String(r.Date).startsWith(filter));
+            setText("archiveCountBadge", `${filtered.length} πλήρεις καταγεγραμμένες ημέρες`);
+
+            if (!filtered.length) {
+                setHtml("monthlySummaryBox", `<p style="color:#94a3b8;">Δεν υπάρχουν πλήρεις ημέρες με επαρκείς δειγματοληψίες.</p>`);
+                setHtml("dailyCardsGrid", "");
+                return;
+            }
+
+            const tMins = filtered.map(r => toFiniteNumber(r.Tmin, NaN)).filter(Number.isFinite);
+            const tMaxs = filtered.map(r => toFiniteNumber(r.Tmax, NaN)).filter(Number.isFinite);
+            const tAvgs = filtered.map(r => toFiniteNumber(r.Tavg, NaN)).filter(Number.isFinite);
+            const absMin = tMins.length ? Math.min(...tMins).toFixed(1) : "--";
+            const absMax = tMaxs.length ? Math.max(...tMaxs).toFixed(1) : "--";
+            const periodAvgT = tAvgs.length ? (tAvgs.reduce((a, b) => a + b, 0) / tAvgs.length).toFixed(1) : "--";
+            const frostDays = filtered.filter(r => toFiniteNumber(r.Tmin, 99) <= 0).length;
+            const iceDays = filtered.filter(r => toFiniteNumber(r.Tmax, 99) <= 0).length;
+
+            const precipVals = filtered.map(r => toFiniteNumber(r.PrecipSum, 0));
+            const totalPrecip = precipVals.reduce((a, b) => a + b, 0).toFixed(1);
+            const rainDays = precipVals.filter(p => p >= 0.2).length;
+            const maxDayPrecip = precipVals.length ? Math.max(...precipVals).toFixed(1) : "0.0";
+
+            const pMins = filtered.map(r => toFiniteNumber(r.PressMin, NaN)).filter(Number.isFinite);
+            const pMaxs = filtered.map(r => toFiniteNumber(r.PressMax, NaN)).filter(Number.isFinite);
+            const pressRangeHtml = (pMins.length && pMaxs.length)
+                ? `<div class="climate-stat-row"><span>Βαρόμετρο (Min–Max):</span><strong style="color:#34d399;">${Math.min(...pMins).toFixed(0)} – ${Math.max(...pMaxs).toFixed(0)} hPa</strong></div>`
+                : "";
+
+            const dirCounts = {};
+            filtered.forEach(r => {
+                if (r.DomDirText && r.DomDirText !== "--" && r.DomDirText !== "—") {
+                    dirCounts[r.DomDirText] = (dirCounts[r.DomDirText] || 0) + 1;
+                }
+            });
+            const topDirs = Object.entries(dirCounts).sort((a, b) => b[1] - a[1]).slice(0, 4);
+            const windBarsHtml = topDirs.map(([dir, cnt]) => {
+                const pct = Math.round((cnt / filtered.length) * 100);
+                return `<div class="wind-bar-row"><span style="width:42px; font-weight:700;">${escapeHtml(dir)}</span><div class="wind-bar-track"><div class="wind-bar-fill" style="width:${pct}%;"></div></div><span style="width:36px; text-align:right; color:#94a3b8;">${pct}%</span></div>`;
+            }).join("");
+
+            const wAvgs = filtered.map(r => toFiniteNumber(r.WindAvg, NaN)).filter(Number.isFinite);
+            const wMaxs = filtered.map(r => toFiniteNumber(r.WindMax, NaN)).filter(Number.isFinite);
+            const windSpeedSummaryHtml = (wAvgs.length || wMaxs.length)
+                ? `<div class="climate-stat-row" style="margin-top:8px; padding-top:6px; border-top:1px solid rgba(148,163,184,0.14);"><span>Μέση / Μέγ. Ριπή:</span><strong style="color:#fbbf24;">${wAvgs.length ? (wAvgs.reduce((a, b) => a + b, 0) / wAvgs.length).toFixed(1) : "--"} / ${wMaxs.length ? Math.max(...wMaxs).toFixed(1) : "--"} km/h</strong></div>`
+                : "";
+
+            const maeHybArr = filtered.map(r => toFiniteNumber(r.MAE_Hybrid, NaN)).filter(Number.isFinite);
+            const maeStArr = filtered.map(r => toFiniteNumber(r.MAE_Station, NaN)).filter(Number.isFinite);
+            const maeSummaryHtml = (maeHybArr.length || maeStArr.length)
+                ? `<div class="climate-stat-row"><span>Μέσο Σφάλμα (MAE):</span><strong style="color:#38bdf8;">${maeHybArr.length ? "±" + (maeHybArr.reduce((a, b) => a + b, 0) / maeHybArr.length).toFixed(2) + "°C Υβρ." : ""} ${maeStArr.length ? "(±" + (maeStArr.reduce((a, b) => a + b, 0) / maeStArr.length).toFixed(2) + "° Σταθ.)" : ""}</strong></div>`
+                : "";
+
+            setHtml("monthlySummaryBox", `
+                <div class="climate-card-highlight">
+                    <div class="climate-card-header"><span>🌡️ Θερμοκρασιακά Ακραία</span><span>${filtered.length} ημ.</span></div>
+                    <div class="climate-stat-row"><span>Απόλυτη Ελάχιστη:</span><strong style="color:#38bdf8;">${absMin}°C</strong></div>
+                    <div class="climate-stat-row"><span>Μέση Περιόδου (Tavg):</span><strong style="color:#34d399;">${periodAvgT}°C</strong></div>
+                    <div class="climate-stat-row"><span>Απόλυτη Μέγιστη:</span><strong style="color:#fb923c;">${absMax}°C</strong></div>
+                    <div class="climate-stat-row"><span>Ημ. Παγετού / Ολικού:</span><strong style="color:#bae6fd;">${frostDays} / ${iceDays} ημ.</strong></div>
+                </div>
+                <div class="climate-card-highlight">
+                    <div class="climate-card-header"><span>❄️ Υετός &amp; Βαρόμετρο</span><span>1.450 μ.</span></div>
+                    <div class="climate-stat-row"><span>Συνολικός Υετός:</span><strong style="color:#60a5fa;">${totalPrecip} mm</strong></div>
+                    <div class="climate-stat-row"><span>Ημέρες Υετού (≥0.2mm):</span><strong style="color:#bae6fd;">${rainDays} ημέρες</strong></div>
+                    <div class="climate-stat-row"><span>Μέγιστη 24ώρου:</span><strong style="color:#38bdf8;">${maxDayPrecip} mm</strong></div>
+                    ${pressRangeHtml}
+                    ${maeSummaryHtml}
+                </div>
+                <div class="climate-card-highlight">
+                    <div class="climate-card-header"><span>🧭 Επικρατούντες Άνεμοι</span><span>Ανεμολόγιο</span></div>
+                    ${windBarsHtml || '<div style="color:#94a3b8; font-size:0.82rem;">Δεν υπάρχουν επαρκή δεδομένα.</div>'}
+                    ${windSpeedSummaryHtml}
+                </div>
+            `);
+
+            renderMonthlyArchiveChart();
+
+            setHtml("dailyCardsGrid", filtered.map(r => {
+                const [y, m, d] = String(r.Date).split("-").map(escapeHtml);
+                const tMin = toFiniteNumber(r.Tmin, NaN);
+                const tMax = toFiniteNumber(r.Tmax, NaN);
+                const tAvg = toFiniteNumber(r.Tavg, NaN);
+                const pMin = toFiniteNumber(r.PressMin, NaN);
+                const pMax = toFiniteNumber(r.PressMax, NaN);
+                const wAvg = toFiniteNumber(r.WindAvg, NaN);
+                const wMax = toFiniteNumber(r.WindMax, NaN);
+                const maeHyb = toFiniteNumber(r.MAE_Hybrid, NaN);
+                const maeSt = toFiniteNumber(r.MAE_Station, NaN);
+
+                const isIceDay = Number.isFinite(tMax) && tMax <= 0;
+                const isFrost = Number.isFinite(tMin) && tMin <= 0;
+                const deltaT = (Number.isFinite(tMax) && Number.isFinite(tMin)) ? (tMax - tMin).toFixed(1) : null;
+
+                let statusBadge = `<span style="font-size:0.75rem; color:#94a3b8;">${escapeHtml(r.Samples)} δείγμ.</span>`;
+                if (isIceDay) statusBadge = '<span class="badge-ice-day">🧊 Ολικός Παγετός</span>';
+                else if (isFrost) statusBadge = '<span class="badge-frost">❄️ Παγετός</span>';
+
+                const avgStr = Number.isFinite(tAvg) ? ` <span style="color:#34d399; font-size:0.78rem;">(Μέση ${tAvg.toFixed(1)}°)</span>` : "";
+                const rangeRow = deltaT !== null
+                    ? `<div class="climate-stat-row"><span>Θερμ. Εύρος (ΔT):</span><span style="color:#cbd5e1;">${deltaT}°C</span></div>`
+                    : "";
+
+                const safeDirTxt = escapeHtml(r.DomDirText || "--");
+                const windTxt = (Number.isFinite(wAvg) || Number.isFinite(wMax))
+                    ? `${safeDirTxt} (${Number.isFinite(wAvg) ? wAvg.toFixed(0) : "--"}/${Number.isFinite(wMax) ? wMax.toFixed(0) : "--"} km/h)`
+                    : safeDirTxt;
+
+                const pressRow = (Number.isFinite(pMin) && Number.isFinite(pMax))
+                    ? `<div class="climate-stat-row"><span>Βαρόμετρο:</span><span>${pMin.toFixed(0)} – ${pMax.toFixed(0)} hPa</span></div>`
+                    : "";
+
+                const maeBadge = (Number.isFinite(maeHyb) || Number.isFinite(maeSt))
+                    ? `<div class="badge-mae">🎯 Σφάλμα +12h: ${Number.isFinite(maeHyb) ? `Υβρ. ±${maeHyb.toFixed(2)}°C` : ""}${Number.isFinite(maeHyb) && Number.isFinite(maeSt) ? " | " : ""}${Number.isFinite(maeSt) ? `Σταθ. ±${maeSt.toFixed(2)}°C` : ""}</div>`
+                    : "";
+
+                return `
+                    <div class="climate-card">
+                        <div class="climate-card-header"><span>📅 ${d}/${m}/${y}</span>${statusBadge}</div>
+                        <div class="climate-stat-row"><span>Ελάχ. / Μέγ.:</span><span><strong style="color:#38bdf8;">${escapeHtml(r.Tmin)}°C</strong> / <strong style="color:#fb923c;">${escapeHtml(r.Tmax)}°C</strong>${avgStr}</span></div>
+                        ${rangeRow}
+                        <div class="climate-stat-row"><span>Υετός / Άνεμος:</span><strong>${escapeHtml(r.PrecipSum)} mm • ${windTxt}</strong></div>
+                        ${pressRow}
+                        ${maeBadge}
+                    </div>`;
+            }).join(""));
+        }
+
+        function downloadArchiveCSV() {
+            if (!archiveRecords.length) return;
+            const headers = ["Date", "Samples", "Tmin", "Tmax", "Tavg", "PrecipSum", "DomDirDeg", "DomDirText", "PressMin", "PressMax", "PressAvg", "WindAvg", "WindMax", "MAE_Station", "MAE_Hybrid"];
+            const csvRows = [headers.join(",")].concat(archiveRecords.slice().reverse().map(r => headers.map(h => r[h] ?? "").join(",")));
+            const blob = new Blob(["\uFEFF" + csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
+            const blobUrl = URL.createObjectURL(blob);
+
+            const link = document.createElement("a");
+            link.href = blobUrl;
+            link.download = `Samarina_ISAMAR38_Archive_${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+        }
+
+        // =========================================================================
+        // 11. TIMERS, DEEP LINKS & CLEANUP
+        // =========================================================================
+        function updateClock() {
+            const now = new Date();
+            setText("clock", `${now.toLocaleDateString("el-GR")} ${now.toLocaleTimeString("el-GR")}`);
+        }
+
+        function refreshCamera() {
+            const img = getEl("liveCamImg");
+            if (!img) return;
+            const nextUrl = `${CONFIG.URLS.CAM_BASE}?v=${Date.now()}`;
+            const preloader = new Image();
+            preloader.onload = () => {
+                if (preloader.naturalWidth > 0 && preloader.naturalHeight > 0) {
+                    img.src = nextUrl;
+                }
+            };
+            preloader.onerror = () => {
+                setTimeout(refreshCamera, 3000);
+            };
+            preloader.src = nextUrl;
+        }
+
+        function applyUrlModeIfPresent() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                if (params.get("mode") === "lab24" || window.location.hash === "#chart24h-section") {
+                    window.switchUnifiedChartMode("lab24");
+                }
+            } catch (_) {}
+        }
+
+        window.addEventListener("error", event => {
+            console.error("[ISAMAR38 Runtime Error]:", event.error || event.message);
+        });
+
+        window.addEventListener("unhandledrejection", event => {
+            console.error("[ISAMAR38 Unhandled Promise]:", event.reason);
+        });
+
+        window.addEventListener("beforeunload", () => {
+            activeTimers.forEach(id => clearInterval(id));
+            if (ventState.animFrameId) cancelAnimationFrame(ventState.animFrameId);
+            if (ventState.playTimerId) clearInterval(ventState.playTimerId);
+            if (dashboardAbortCtrl) dashboardAbortCtrl.abort();
+            if (statsAbortCtrl) statsAbortCtrl.abort();
+            if (archiveAbortCtrl) archiveAbortCtrl.abort();
+        });
+
+        // Εκκίνηση
+        updateClock();
+        applyUrlModeIfPresent();
+        initVentuskyMap();
+        updateDashboard();
+        loadVerificationStats();
+
+        activeTimers.push(setInterval(updateClock, 1000));
+        activeTimers.push(setInterval(refreshCamera, CONFIG.CAM_REFRESH_MS));
+        activeTimers.push(setInterval(updateDashboard, CONFIG.DASHBOARD_REFRESH_MS));
+        activeTimers.push(setInterval(loadVerificationStats, CONFIG.STATS_REFRESH_MS));
+    })();
+    </script>
+
+    <footer class="site-methodology-footer">
+        <div class="footer-inner">
+            <h3>ℹ️ Σημείωση Μεθοδολογίας &amp; Σκοπού Δημιουργίας</h3>
+            <p class="footer-lead">Η πλατφόρμα δημιουργήθηκε για τη Σαμαρίνα και τον Σμόλικα στα <strong>1.450 μέτρα</strong>, λειτουργώντας ως <strong>εργαλείο τοπικής παρατήρησης (nowcasting) και μικροκλιματικής ανάλυσης</strong>.</p>
+            <div class="footer-grid">
+                <div class="footer-card">
+                    <h4>📡 Ζωντανή Τηλεμετρία (ISAMAR38)</h4>
+                    <p>Μετρήσεις από τον ιδιωτικό μετεωρολογικό σταθμό Bresser 5-in-1 στη Σαμαρίνα με αυτόματη διόρθωση απογευματινής σκίασης κτιρίου (14:00–16:30) και υπολογισμό θερμοκρασίας υγρού βολβού (Stull Wet-Bulb).</p>
+                </div>
+                <div class="footer-card">
+                    <h4>❄️ Υβριδικό Μοντέλο Πρόγνωσης</h4>
+                    <p>Συνδυάζει την πραγματική τάση του τοπικού σταθμού (βαρόμετρο, σημείο δρόσου, άνεμος) με αριθμητικά μοντέλα υψηλής ανάλυσης (ICON / ECMWF) με δυναμική διόρθωση σφάλματος (bias correction).</p>
+                </div>
+                <div class="footer-card">
+                    <h4>🏔️ Μικροκλίμα &amp; Ορεινή Ασφάλεια</h4>
+                    <p>Ενσωματώνει τοπικό υπολογισμό σκίασης από τον ορεινό όγκο του Σμόλικα, δείκτη θερμοκρασιακής αναστροφής με τον κάμπο της Λάρισας, εκτίμηση παγετού οδοστρώματος και χάρτη ροής ανέμων Πίνδου.</p>
+                </div>
+            </div>
+            <div class="footer-disclaimer">Για επίσημες προγνώσεις και έκτακτα δελτία να συμβουλεύεστε πάντοτε την <strong>Εθνική Μετεωρολογική Υπηρεσία (ΕΜΥ)</strong> και την <strong>Πολιτική Προστασία</strong>.</div>
+        </div>
+    </footer>
+    <script data-goatcounter="https://samarinaweather.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</body>
+</html>
