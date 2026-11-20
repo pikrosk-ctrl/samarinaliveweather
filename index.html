@@ -941,7 +941,7 @@
         .windy-frame-wrap { position: relative; width: 100%; height: 430px; border-radius: 10px; overflow: hidden; border: 1px solid var(--glass-border); background: #070d19; }
         .windy-frame { width: 100%; height: 100%; border: 0; display: block; }
 
-        /* Ιστορικό Αρχείο (ΔΙΟΡΘΩΜΕΝΗ ΜΟΡΦΟΠΟΙΗΣΗ ΚΑΡΤΩΝ) */
+        /* Ιστορικό Αρχείο */
         .archive-wrap { display: none; flex-direction: column; gap: 14px; width: 100%; }
         .archive-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(285px, 1fr)); gap: 12px; }
         .climate-card {
@@ -1118,10 +1118,10 @@
         </div>
 
         <div class="nav-center-row">
-            <a href="meteo-lessons.html" class="btn-lessons-launch">📚 Μικρά Μαθήματα Καιρού</a>
-            <button type="button" onclick="openSmolikas3D()" class="btn-3d-launch">🏔️ 3D Ροή Αέρα &amp; 12h Πρόγνωση</button>
             <button type="button" id="btnLiveView" onclick="switchDashboardView('live')" class="tab-switch-btn active-tab">📡 Ζωντανός Καιρός &amp; Πρόγνωση</button>
-            <button type="button" id="btnArchiveView" onclick="switchDashboardView('archive')" class="tab-switch-btn">📜 Ιστορικό Αρχείο &amp; Κάρτες</button>
+            <button type="button" id="btnArchiveView" onclick="switchDashboardView('archive')" class="tab-switch-btn">📜 Ιστορικό, Αρχείο &amp; Ημερήσιες Κάρτες</button>
+            <button type="button" onclick="openSmolikas3D()" class="btn-3d-launch">🏔️ 3D Ροή Αέρα &amp; 12h Πρόγνωση</button>
+            <a href="meteo-lessons.html" class="btn-lessons-launch">📚 Μικρά Μαθήματα Καιρού</a>
         </div>
     </div>
 
@@ -1314,7 +1314,7 @@
         <div class="panel">
             <div class="panel-header">
                 <span style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                    <span>📈 ΠΡΑΓΜΑΤΙΚΟ ΓΡΑΦΗΜΑ ΣΤΑΘΜΟΥ 24ΩΡΟΥ (ΘΕΡΜΟΚΡΑΣΙΑ • ΣΗΜΕΙΟ ΔΡΟΣΟΥ • ΠΙΕΣΗ • ΑΝΕΜΟΣ)</span>
+                    <span>📈 ΠΡΑΓΜΑΤΙΚΟ ΓΡΑΦΗΜΑ ΣΤΑΘΜΟΥ 24ΩΡΟΥ (ΘΕΡΜΟΚΡΑΣΙΑ • ΥΓΡΑΣΙΑ • Σ. ΔΡΟΣΟΥ • ΠΙΕΣΗ • ΑΝΕΜΟΣ)</span>
                     <span id="live24hBadge" style="font-size:0.74rem; background:rgba(15,23,42,0.65); border:1px solid rgba(56,189,248,0.35); color:#38bdf8; padding:2px 9px; border-radius:999px;">ISAMAR38 • Φόρτωση...</span>
                 </span>
                 <span id="live24hRange" style="font-size:0.78rem; color:#94a3b8;">Ανανέωση ανά 5 λεπτά</span>
@@ -1322,7 +1322,7 @@
             <div class="mobile-swipe-hint">← Σύρετε οριζόντια για όλο το 24ωρο →</div>
             <div class="chart-scroll-wrap" id="samarina24hScrollWrap">
                 <div class="chart-scroll-inner chart-scroll-inner-24h">
-                    <div class="chart-container" style="height:290px;">
+                    <div class="chart-container" style="height:295px;">
                         <canvas id="samarina24hRealtimeChart"></canvas>
                     </div>
                 </div>
@@ -2867,6 +2867,7 @@
 
             const labels = [];
             const tempSeries = new Array(288).fill(null);
+            const humSeries = new Array(288).fill(null);
             const dewSeries = new Array(288).fill(null);
             const pressSeries = new Array(288).fill(null);
             const rainSeries = new Array(288).fill(null);
@@ -2910,11 +2911,13 @@
                 const wVal = toFiniteNumber(m.windSpeed, toFiniteNumber(m.windspeedAvg, toFiniteNumber(m.windspeedHigh, null)));
                 const gVal = toFiniteNumber(m.windGust, toFiniteNumber(m.windgustHigh, wVal));
                 const dirVal = toFiniteNumber(obs.winddir, toFiniteNumber(obs.winddirAvg, 0));
-                const hVal = clamp(toFiniteNumber(obs.humidity, toFiniteNumber(obs.humidityAvg, 75)), 1, 100);
+                const rawHum = toFiniteNumber(obs.humidity, toFiniteNumber(obs.humidityAvg, null));
+                const hVal = rawHum !== null ? clamp(rawHum, 1, 100) : 75;
                 const chillVal = toFiniteNumber(m.windChill, tVal);
                 const rateVal = Math.max(0, toFiniteNumber(m.precipRate, 0));
 
                 if (tVal !== null) tempSeries[slotIndex] = tVal;
+                if (rawHum !== null) humSeries[slotIndex] = clamp(rawHum, 0, 100);
                 if (dVal !== null) dewSeries[slotIndex] = dVal;
                 if (pVal !== null) pressSeries[slotIndex] = pVal;
                 if (rVal !== null) rainSeries[slotIndex] = rVal;
@@ -2999,6 +3002,19 @@
                             order: 1
                         },
                         {
+                            label: "Υγρασία (%)",
+                            data: humSeries,
+                            borderColor: "#22d3ee",
+                            backgroundColor: "#22d3ee",
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            spanGaps: true,
+                            yAxisID: "yHum",
+                            tension: 0.25,
+                            order: 2
+                        },
+                        {
                             label: "Σημείο Δρόσου (°C)",
                             data: dewSeries,
                             borderColor: "#818cf8",
@@ -3010,7 +3026,7 @@
                             spanGaps: true,
                             yAxisID: "yTemp",
                             tension: 0.25,
-                            order: 2
+                            order: 3
                         },
                         {
                             label: "Βαρ. Πίεση (hPa)",
@@ -3023,7 +3039,7 @@
                             spanGaps: true,
                             yAxisID: "yPress",
                             tension: 0.25,
-                            order: 3
+                            order: 4
                         },
                         {
                             label: "Άνεμος & Διεύθ. (km/h)",
@@ -3037,7 +3053,7 @@
                             spanGaps: true,
                             yAxisID: "yWind",
                             tension: 0.25,
-                            order: 4
+                            order: 5
                         },
                         {
                             type: "bar",
@@ -3049,7 +3065,7 @@
                             barPercentage: 1.0,
                             categoryPercentage: 1.0,
                             yAxisID: "yRain",
-                            order: 5
+                            order: 6
                         }
                     ]
                 },
@@ -3069,6 +3085,9 @@
                                         const deg = windDirSeries[idx];
                                         const dirTxt = deg !== null ? ` • Διεύθ.: ${Math.round(deg)}° (${degToCompass(deg)})` : "";
                                         return ` Άνεμος: ${val.toFixed(1)} km/h (${kmhToBeaufort(val)} Bf)${dirTxt}`;
+                                    }
+                                    if (ctx.dataset.yAxisID === "yHum") {
+                                        return ` Υγρασία: ${Math.round(val)}%`;
                                     }
                                     if (ctx.dataset.yAxisID === "yPress") {
                                         return ` Βαρ. Πίεση: ${Number(val).toFixed(1)} hPa`;
@@ -3097,6 +3116,15 @@
                             title: { display: true, text: "Θερμ. / Σ.Δ. (°C)", color: "#38bdf8" },
                             ticks: { color: "#38bdf8", callback: v => v + "°" },
                             grid: { color: "rgba(148, 163, 184, 0.12)" }
+                        },
+                        yHum: {
+                            type: "linear",
+                            position: "left",
+                            min: 0,
+                            max: 100,
+                            title: { display: true, text: "Υγρασία (%)", color: "#22d3ee" },
+                            ticks: { color: "#22d3ee", stepSize: 20, callback: v => v + "%" },
+                            grid: { drawOnChartArea: false }
                         },
                         yPress: {
                             type: "linear",
@@ -3576,7 +3604,7 @@
         }
 
         // =========================================================================
-        // 10. ΙΣΤΟΡΙΚΟ ΑΡΧΕΙΟ & ΚΑΡΤΕΣ (ΔΙΟΡΘΩΜΕΝΑ)
+        // 10. ΙΣΤΟΡΙΚΟ ΑΡΧΕΙΟ & ΚΑΡΤΕΣ
         // =========================================================================
         async function loadArchiveData() {
             const grid = getEl("dailyCardsGrid");
