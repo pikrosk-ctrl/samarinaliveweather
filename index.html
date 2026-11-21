@@ -135,32 +135,36 @@
       display: block;
     }
 
+    /* Κοινό στυλ μπάρας οριζόντιας κύλισης */
+    .h-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: #475569 #0f172a;
+    }
+    .h-scroll::-webkit-scrollbar {
+      height: 7px;
+    }
+    .h-scroll::-webkit-scrollbar-track {
+      background: #0f172a;
+      border-radius: 6px;
+    }
+    .h-scroll::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 6px;
+    }
+    .h-scroll::-webkit-scrollbar-thumb:hover {
+      background: #38bdf8;
+    }
+
     /* Οριζόντια κύλιση στα δεδομένα σταθμού */
     .station-grid {
       display: grid;
       grid-auto-flow: column;
       grid-auto-columns: minmax(145px, 1fr);
       gap: 8px;
-      overflow-x: auto;
       padding-bottom: 6px;
       scroll-snap-type: x proximity;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: thin;
-      scrollbar-color: #475569 #0f172a;
-    }
-    .station-grid::-webkit-scrollbar {
-      height: 7px;
-    }
-    .station-grid::-webkit-scrollbar-track {
-      background: #0f172a;
-      border-radius: 6px;
-    }
-    .station-grid::-webkit-scrollbar-thumb {
-      background: #475569;
-      border-radius: 6px;
-    }
-    .station-grid::-webkit-scrollbar-thumb:hover {
-      background: #38bdf8;
     }
 
     .s-tile {
@@ -218,25 +222,7 @@
       gap: 8px;
       margin-top: 4px;
       padding-bottom: 6px;
-      overflow-x: auto;
       scroll-snap-type: x proximity;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: thin;
-      scrollbar-color: #475569 #0f172a;
-    }
-    .forecast-cards::-webkit-scrollbar {
-      height: 7px;
-    }
-    .forecast-cards::-webkit-scrollbar-track {
-      background: #0f172a;
-      border-radius: 6px;
-    }
-    .forecast-cards::-webkit-scrollbar-thumb {
-      background: #475569;
-      border-radius: 6px;
-    }
-    .forecast-cards::-webkit-scrollbar-thumb:hover {
-      background: #38bdf8;
     }
 
     .f-card {
@@ -318,11 +304,16 @@
       flex-wrap: wrap;
       gap: 8px;
     }
+
+    /* Οριζόντια κύλιση στις Ημερήσιες Κάρτες Αρχείου */
     .daily-cards-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(195px, 225px);
       gap: 8px;
+      padding-bottom: 6px;
       margin-bottom: 14px;
+      scroll-snap-type: x proximity;
     }
     .d-card {
       background: #0f172a;
@@ -332,6 +323,7 @@
       display: flex;
       flex-direction: column;
       gap: 4px;
+      scroll-snap-align: start;
     }
     .d-card-top {
       display: flex;
@@ -404,14 +396,19 @@
       border-bottom: none;
     }
 
-    .chart-container {
-      position: relative;
-      height: 220px;
+    /* Οριζόντια κύλιση στο Ωριαίο Γράφημα 24ώρου */
+    .chart-scroll-wrap {
       width: 100%;
       background: #0f172a;
       border-radius: 8px;
       padding: 10px;
       border: 1px solid #334155;
+    }
+    .chart-container {
+      position: relative;
+      height: 230px;
+      min-width: 960px;
+      width: 100%;
     }
     .windy-frame {
       width: 100%;
@@ -461,7 +458,7 @@
         <span>❄️ 24ΩΡΗ ΠΡΟΓΝΩΣΗ ΑΛΓΟΡΙΘΜΟΥ ΣΤΑΘΜΟΥ (ISAMAR38)</span>
         <span style="font-size:0.76rem; color:#94a3b8;">← Οριζόντια κύλιση →</span>
       </div>
-      <div class="forecast-cards" id="forecastGrid"></div>
+      <div class="forecast-cards h-scroll" id="forecastGrid"></div>
     </div>
 
     <div class="panel area-station">
@@ -469,7 +466,7 @@
         <span>📡 LIVE ΔΕΔΟΜΕΝΑ ΣΤΑΘΜΟΥ (ISAMAR38)</span>
         <span id="lastUpdate">--:--</span>
       </div>
-      <div class="station-grid">
+      <div class="station-grid h-scroll">
         <div class="s-tile">
           <div class="s-label">Θερμοκρασία</div>
           <div class="s-val" id="stTemp">--°C</div>
@@ -521,10 +518,12 @@
   <div class="panel collapsible-section" id="secChart">
     <div class="panel-header">
       <span>📈 ΩΡΙΑΙΟ ΓΡΑΦΗΜΑ 24ΩΡΟΥ: ΘΕΡΜΟΚΡΑΣΙΑ (ΟΡΙΟ ΠΑΓΕΤΟΥ 0°C) & ΥΕΤΟΣ / ΧΙΟΝΙ</span>
-      <span style="font-size:0.8rem; color:#94a3b8;">Υπολογισμός αποκλειστικά από δεδομένα σταθμού ISAMAR38</span>
+      <span style="font-size:0.78rem; color:#94a3b8;">← Οριζόντια κύλιση 24ώρου →</span>
     </div>
-    <div class="chart-container">
-      <canvas id="weatherChart"></canvas>
+    <div class="chart-scroll-wrap h-scroll">
+      <div class="chart-container">
+        <canvas id="weatherChart"></canvas>
+      </div>
     </div>
   </div>
 
@@ -535,9 +534,9 @@
     </div>
 
     <div class="archive-sub-title">
-      <span>📅 Ημερήσιες Κάρτες</span>
+      <span>📅 Ημερήσιες Κάρτες (← Οριζόντια κύλιση →)</span>
     </div>
-    <div class="daily-cards-grid" id="dailyCardsGrid"></div>
+    <div class="daily-cards-grid h-scroll" id="dailyCardsGrid"></div>
 
     <div class="archive-sub-title">
       <span>📜 Αρχείο Ημερών / Ιστορικό</span>
@@ -659,7 +658,7 @@
         return;
       }
 
-      cardsEl.innerHTML = archiveRecords.slice(0, 4).map(r => {
+      cardsEl.innerHTML = archiveRecords.slice(0, 14).map(r => {
         const hasSnow = r.snow > 0;
         const precipTxt = hasSnow
           ? `Χιόνι: ${r.snow.toFixed(1)} cm (${r.precip.toFixed(1)} mm)`
