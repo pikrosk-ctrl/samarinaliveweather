@@ -78,8 +78,8 @@
     }
     .area-cam { grid-area: cam; }
     .area-summary { grid-area: summary; }
-    .area-forecast { grid-area: forecast; }
-    .area-station { grid-area: station; }
+    .area-forecast { grid-area: forecast; min-width: 0; }
+    .area-station { grid-area: station; min-width: 0; }
 
     /* Κινητό / tablet: Κάμερα -> Σύνοψη -> Πρόγνωση -> Δεδομένα Σταθμού */
     @media (max-width: 980px) {
@@ -101,6 +101,7 @@
       padding: 12px;
       display: flex;
       flex-direction: column;
+      min-width: 0;
     }
     .panel-header {
       font-size: 0.9rem;
@@ -133,17 +134,42 @@
       object-fit: contain;
       display: block;
     }
+
+    /* Οριζόντια κύλιση στα δεδομένα σταθμού */
     .station-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(145px, 1fr);
       gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      scroll-snap-type: x proximity;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: #475569 #0f172a;
     }
+    .station-grid::-webkit-scrollbar {
+      height: 7px;
+    }
+    .station-grid::-webkit-scrollbar-track {
+      background: #0f172a;
+      border-radius: 6px;
+    }
+    .station-grid::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 6px;
+    }
+    .station-grid::-webkit-scrollbar-thumb:hover {
+      background: #38bdf8;
+    }
+
     .s-tile {
       background: #0f172a;
       padding: 10px 8px;
       border-radius: 8px;
       text-align: center;
       border: 1px solid #334155;
+      scroll-snap-align: start;
     }
     .s-label { font-size: 0.78rem; color: #94a3b8; }
     .s-val { font-size: 1.25rem; font-weight: bold; color: #38bdf8; margin-top: 3px; }
@@ -183,22 +209,43 @@
       color: #dcfce7;
     }
     .smart-summary-24h b { color: #34d399; }
+
+    /* Οριζόντια κύλιση στο πάνελ πρόγνωσης */
     .forecast-cards {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(122px, 1fr);
       gap: 8px;
       margin-top: 4px;
+      padding-bottom: 6px;
+      overflow-x: auto;
+      scroll-snap-type: x proximity;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: #475569 #0f172a;
     }
-    @media (max-width: 500px) {
-      .station-grid { grid-template-columns: repeat(2, 1fr); }
-      .forecast-cards { grid-template-columns: repeat(2, 1fr); }
+    .forecast-cards::-webkit-scrollbar {
+      height: 7px;
     }
+    .forecast-cards::-webkit-scrollbar-track {
+      background: #0f172a;
+      border-radius: 6px;
+    }
+    .forecast-cards::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 6px;
+    }
+    .forecast-cards::-webkit-scrollbar-thumb:hover {
+      background: #38bdf8;
+    }
+
     .f-card {
       background: #0f172a;
       padding: 8px 6px;
       border-radius: 8px;
       text-align: center;
       border: 1px solid #334155;
+      scroll-snap-align: start;
     }
     .f-time { font-size: 0.82rem; color: #94a3b8; font-weight: 600; }
     .f-icon { font-size: 1.35rem; margin: 2px 0; }
@@ -412,6 +459,7 @@
     <div class="panel area-forecast">
       <div class="panel-header">
         <span>❄️ 24ΩΡΗ ΠΡΟΓΝΩΣΗ ΑΛΓΟΡΙΘΜΟΥ ΣΤΑΘΜΟΥ (ISAMAR38)</span>
+        <span style="font-size:0.76rem; color:#94a3b8;">← Οριζόντια κύλιση →</span>
       </div>
       <div class="forecast-cards" id="forecastGrid"></div>
     </div>
