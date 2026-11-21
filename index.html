@@ -260,57 +260,6 @@
       display: flex;
     }
 
-    .verify-grid {
-      display: grid;
-      grid-template-columns: 1.45fr 1fr;
-      gap: 10px;
-      align-items: stretch;
-    }
-    @media (max-width: 600px) {
-      .verify-grid { grid-template-columns: 1fr; }
-    }
-    .v-card {
-      background: #0f172a;
-      padding: 10px 12px;
-      border-radius: 8px;
-      border: 1px solid #334155;
-      border-left: 3px solid #64748b;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-    .v-card.v-primary {
-      background: linear-gradient(135deg, #0f172a 0%, #102a38 100%);
-      border: 1px solid rgba(16, 185, 129, 0.55);
-      border-left: 5px solid #10b981;
-      box-shadow: 0 0 14px rgba(16, 185, 129, 0.14);
-      padding: 12px 14px;
-    }
-    .v-card.v-secondary { opacity: 0.88; }
-    .v-top-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-    .v-badge-main {
-      background: rgba(16, 185, 129, 0.18);
-      color: #34d399;
-      border: 1px solid rgba(52, 211, 153, 0.4);
-      font-size: 0.65rem;
-      font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 4px;
-      letter-spacing: 0.3px;
-    }
-    .v-horizon { font-size: 0.8rem; color: #cbd5e1; font-weight: 600; }
-    .v-card.v-primary .v-horizon { color: #f1f5f9; font-size: 0.85rem; }
-    .v-acc { font-size: 1.05rem; font-weight: bold; color: #94a3b8; margin: 4px 0; }
-    .v-card.v-primary .v-acc { font-size: 1.45rem; color: #34d399; margin: 5px 0; }
-    .v-mae { font-size: 0.76rem; color: #cbd5e1; }
-    .v-card.v-primary .v-mae { font-size: 0.82rem; color: #e2e8f0; }
-
     .archive-sub-title {
       font-size: 0.82rem;
       font-weight: 600;
@@ -517,7 +466,6 @@
   <div class="section-nav" aria-label="Επιπλέον ενότητες">
     <span class="section-nav-label">Επιπλέον στοιχεία:</span>
     <button type="button" class="toggle-btn" id="btnChart" onclick="toggleSection('chart')">📈 Ωριαίο Γράφημα 24h</button>
-    <button type="button" class="toggle-btn" id="btnVerify" onclick="toggleSection('verify')">🎯 Ακρίβεια & Στατιστικά</button>
     <button type="button" class="toggle-btn" id="btnArchive" onclick="toggleSection('archive')">🗂️ Ιστορικό & Αρχείο</button>
     <button type="button" class="toggle-btn" id="btnWindy" onclick="toggleSection('windy')">🗺️ Χάρτης Windy</button>
   </div>
@@ -529,28 +477,6 @@
     </div>
     <div class="chart-container">
       <canvas id="weatherChart"></canvas>
-    </div>
-  </div>
-
-  <div class="panel collapsible-section" id="secVerify">
-    <div class="panel-header">
-      <span>🎯 ΕΠΑΛΗΘΕΥΣΗ ΑΚΡΙΒΕΙΑΣ ΣΤΑΘΜΟΥ (ΚΥΡΙΟΣ ΔΕΙΚΤΗΣ +12h)</span>
-      <span id="verifySample" style="font-size:0.78rem; color:#38bdf8;">Φόρτωση...</span>
-    </div>
-    <div class="verify-grid" id="verifyGrid">
-      <div class="v-card v-primary">
-        <div class="v-top-row">
-          <div class="v-horizon">Πρόγνωση Σταθμού +12h</div>
-          <span class="v-badge-main">⭐ ΚΥΡΙΟΣ ΔΕΙΚΤΗΣ</span>
-        </div>
-        <div class="v-acc" style="color:#38bdf8; font-size:1.05rem;">Συλλογή δεδομένων...</div>
-        <div class="v-mae">Άμεση πρόγνωση (Nowcasting ISAMAR38)</div>
-      </div>
-      <div class="v-card v-secondary">
-        <div class="v-horizon">Τάση +24h (Δευτερεύον)</div>
-        <div class="v-acc" style="color:#94a3b8; font-size:0.9rem;">Συλλογή δεδομένων...</div>
-        <div class="v-mae">Μακροπρόθεσμη εκτίμηση</div>
-      </div>
     </div>
   </div>
 
@@ -581,7 +507,6 @@
             <th>Ελάχ. / Μέγ.</th>
             <th>Υετός / Χιόνι</th>
             <th>Μέγ. Ριπή</th>
-            <th>Απόκλιση (MAE)</th>
           </tr>
         </thead>
         <tbody id="archiveTableBody"></tbody>
@@ -604,11 +529,9 @@
   <script>
     const WU_STATION_ID = "ISAMAR38";
     const WU_API_KEY = "5c94ee0c13f240ec94ee0c13f2b0ecd9";
-    const STATS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ_y9OVAjf5gRIJN7ZKm_OuR_fP5UFcu2YWX3XNU7PRxSouu3L2-kPh6Rk1u3VP-pdBjOTIo22t3mN/pub?gid=409751746&single=true&output=csv";
     const ARCHIVE_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ_y9OVAjf5gRIJN7ZKm_OuR_fP5UFcu2YWX3XNU7PRxSouu3L2-kPh6Rk1u3VP-pdBjOTIo22t3mN/pub?gid=1184894056&single=true&output=csv";
 
     let weatherChartInstance = null;
-    let statsLoadedOnce = false;
     let archiveLoadedOnce = false;
     let currentArchiveFilter = 'all';
     let archiveRecords = [];
@@ -637,7 +560,6 @@
     function toggleSection(name) {
       const map = {
         chart: { sec: 'secChart', btn: 'btnChart' },
-        verify: { sec: 'secVerify', btn: 'btnVerify' },
         archive: { sec: 'secArchive', btn: 'btnArchive' },
         windy: { sec: 'secWindy', btn: 'btnWindy' }
       };
@@ -651,10 +573,6 @@
 
       if (isOpen && name === 'chart' && weatherChartInstance) {
         setTimeout(() => weatherChartInstance.resize(), 50);
-      }
-
-      if (isOpen && name === 'verify' && !statsLoadedOnce) {
-        loadVerificationStats();
       }
 
       if (isOpen && name === 'archive' && !archiveLoadedOnce) {
@@ -689,7 +607,7 @@
             <div class="d-card-meta">Δεν βρέθηκαν εγγραφές από το φύλλο Daily_Archive ή εκκρεμεί ανανέωση δημοσίευσης.</div>
           </div>
         `;
-        tbodyEl.innerHTML = `<tr><td colspan="5" style="color:#94a3b8; text-align:center;">Δεν υπάρχουν διαθέσιμες εγγραφές αρχείου.</td></tr>`;
+        tbodyEl.innerHTML = `<tr><td colspan="4" style="color:#94a3b8; text-align:center;">Δεν υπάρχουν διαθέσιμες εγγραφές αρχείου.</td></tr>`;
         return;
       }
 
@@ -699,7 +617,6 @@
           ? `Χιόνι: ${r.snow.toFixed(1)} cm (${r.precip.toFixed(1)} mm)`
           : (r.precip > 0 ? `Υετός: ${r.precip.toFixed(1)} mm` : `Χωρίς υετό`);
         const gustTxt = r.gust > 0 ? `${Math.round(r.gust)} km/h` : `Μη καταγρ.`;
-        const maeTxt = !isNaN(r.mae) ? `±${r.mae.toFixed(2)}°C` : `—`;
         return `
           <div class="d-card">
             <div class="d-card-top">
@@ -709,7 +626,7 @@
             <div class="d-card-temps">${r.tMin.toFixed(1)}°C / ${r.tMax.toFixed(1)}°C</div>
             <div class="d-card-meta">
               <div>${precipTxt}</div>
-              <div>Ριπή: ${gustTxt} • MAE: <b>${maeTxt}</b></div>
+              <div>Μέγ. Ριπή: <b>${gustTxt}</b></div>
             </div>
           </div>
         `;
@@ -722,7 +639,7 @@
       });
 
       if (!filtered.length) {
-        tbodyEl.innerHTML = `<tr><td colspan="5" style="color:#94a3b8; text-align:center;">Δεν βρέθηκαν εγγραφές για αυτό το φίλτρο.</td></tr>`;
+        tbodyEl.innerHTML = `<tr><td colspan="4" style="color:#94a3b8; text-align:center;">Δεν βρέθηκαν εγγραφές για αυτό το φίλτρο.</td></tr>`;
         return;
       }
 
@@ -731,14 +648,12 @@
           ? `❄️ ${r.snow.toFixed(1)} cm (${r.precip.toFixed(1)} mm)`
           : (r.precip > 0 ? `🌧️ ${r.precip.toFixed(1)} mm` : `—`);
         const gustTxt = r.gust > 0 ? `${Math.round(r.gust)} km/h` : `Μη καταγρ.`;
-        const maeTxt = !isNaN(r.mae) ? `±${r.mae.toFixed(2)}°C` : `—`;
         return `
           <tr>
             <td><b>${r.date}</b></td>
             <td>${r.tMin.toFixed(1)}°C / ${r.tMax.toFixed(1)}°C</td>
             <td>${wetLabel}</td>
             <td>${gustTxt}</td>
-            <td>${maeTxt}</td>
           </tr>
         `;
       }).join('');
@@ -771,7 +686,6 @@
         const idxTmax = headers.indexOf('tmax') !== -1 ? headers.indexOf('tmax') : 3;
         const idxPrecip = headers.indexOf('precipsum') !== -1 ? headers.indexOf('precipsum') : 5;
         const idxGust = headers.indexOf('windmax') !== -1 ? headers.indexOf('windmax') : 12;
-        const idxMae = headers.indexOf('mae_station') !== -1 ? headers.indexOf('mae_station') : 13;
         const idxSnow = headers.findIndex(h => h.includes('snow'));
 
         const parsed = [];
@@ -785,7 +699,6 @@
 
           const precip = parseFloat((cols[idxPrecip] || '0').replace(',', '.')) || 0;
           const gust = parseFloat((cols[idxGust] || '0').replace(',', '.')) || 0;
-          const mae = parseFloat((cols[idxMae] || '').replace(',', '.'));
 
           let snow = 0;
           if (idxSnow !== -1) {
@@ -803,7 +716,6 @@
             precip,
             snow,
             gust,
-            mae,
             icon
           });
         }
@@ -836,88 +748,6 @@
       }
       result.push(current.trim());
       return result;
-    }
-
-    async function loadVerificationStats() {
-      if (!STATS_CSV_URL) return;
-      try {
-        const res = await fetch(STATS_CSV_URL + "&t=" + Date.now());
-        const csvText = await res.text();
-        if (csvText.includes("<!DOCTYPE") || csvText.includes("<html")) {
-          document.getElementById('verifySample').innerText = "Έλεγχος δημοσίευσης Stats";
-          return;
-        }
-
-        const lines = csvText.trim().split(/\r?\n/);
-        const grid = document.getElementById('verifyGrid');
-        let card12Html = '';
-        let card24Html = '';
-
-        for (let r = 1; r < lines.length; r++) {
-          const cols = parseCSVLine(lines[r]);
-          const horizon = cols[0]?.replace(/"/g, '').trim();
-          if (horizon !== "+12h" && horizon !== "+24h") continue;
-
-          const count = parseInt(cols[1]) || 0;
-          const mae = parseFloat((cols[2] || '').replace(',', '.'));
-          const accPct = parseInt(cols[3]);
-          const precipPct = parseInt(cols[4]);
-
-          if (horizon === "+12h") {
-            if (count < 1 || isNaN(mae)) {
-              card12Html = `
-                <div class="v-card v-primary">
-                  <div class="v-top-row">
-                    <div class="v-horizon">Πρόγνωση Σταθμού +12h</div>
-                    <span class="v-badge-main">⭐ ΚΥΡΙΟΣ ΔΕΙΚΤΗΣ</span>
-                  </div>
-                  <div class="v-acc" style="color:#38bdf8; font-size:1.05rem;">Συλλογή (${count}/12h)</div>
-                  <div class="v-mae">Άμεση πρόγνωση (Nowcasting ISAMAR38)</div>
-                </div>
-              `;
-            } else {
-              const precipLine = !isNaN(precipPct) ? ` • Υετός: <b>${precipPct}%</b>` : '';
-              card12Html = `
-                <div class="v-card v-primary">
-                  <div class="v-top-row">
-                    <div class="v-horizon">Πρόγνωση +12h (${count} ώρες)</div>
-                    <span class="v-badge-main">⭐ ΚΥΡΙΟΣ ΔΕΙΚΤΗΣ</span>
-                  </div>
-                  <div class="v-acc">${accPct}% Ακρίβεια</div>
-                  <div class="v-mae">Απόκλιση Θερμ.: <b>±${mae.toFixed(2)}°C</b>${precipLine}</div>
-                </div>
-              `;
-            }
-          } else if (horizon === "+24h") {
-            if (count < 1 || isNaN(mae)) {
-              card24Html = `
-                <div class="v-card v-secondary">
-                  <div class="v-horizon">Τάση +24h (Δευτερεύον)</div>
-                  <div class="v-acc" style="color:#94a3b8; font-size:0.92rem;">Συλλογή (${count}/24h)</div>
-                  <div class="v-mae">Μακροπρόθεσμη εκτίμηση</div>
-                </div>
-              `;
-            } else {
-              const precipLine = !isNaN(precipPct) ? ` • Υετός: <b>${precipPct}%</b>` : '';
-              card24Html = `
-                <div class="v-card v-secondary">
-                  <div class="v-horizon">Τάση +24h (${count} ώρες)</div>
-                  <div class="v-acc" style="color:#cbd5e1;">${accPct}% Ακρίβεια</div>
-                  <div class="v-mae">Απόκλιση: <b>±${mae.toFixed(2)}°C</b>${precipLine}</div>
-                </div>
-              `;
-            }
-          }
-        }
-
-        if (card12Html || card24Html) {
-          grid.innerHTML = card12Html + card24Html;
-          document.getElementById('verifySample').innerText = "100% Δεδομένα ISAMAR38";
-          statsLoadedOnce = true;
-        }
-      } catch (err) {
-        document.getElementById('verifySample').innerText = "Αναμονή στατιστικών";
-      }
     }
 
     function degToCompass(num) {
@@ -1360,7 +1190,6 @@
     updateDashboard();
     setInterval(updateDashboard, 300000);
     setInterval(() => {
-      if (statsLoadedOnce) loadVerificationStats();
       if (archiveLoadedOnce && ARCHIVE_CSV_URL) loadArchiveData();
     }, 300000);
   </script>
