@@ -116,13 +116,26 @@
  display: flex;
  flex-direction: column;
  gap: 12px;
+ min-width: 0;
  }
  .station-grid {
- display: grid;
- grid-template-columns: repeat(3, 1fr);
+ display: flex;
+ flex-wrap: nowrap;
+ overflow-x: auto;
+ overflow-y: hidden;
  gap: 8px;
+ padding-bottom: 6px;
+ scrollbar-width: thin;
+ scrollbar-color: #38bdf8 #0f172a;
+ -webkit-overflow-scrolling: touch;
  }
+ .station-grid::-webkit-scrollbar { height: 7px; }
+ .station-grid::-webkit-scrollbar-track { background: #0f172a; border-radius: 4px; }
+ .station-grid::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+ .station-grid::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
  .s-tile {
+ flex: 0 0 132px;
+ min-width: 132px;
  background: #0f172a;
  padding: 10px 8px;
  border-radius: 8px;
@@ -157,16 +170,24 @@
  color: #e0f2fe;
  }
  .forecast-cards {
- display: grid;
- grid-template-columns: repeat(4, 1fr);
+ display: flex;
+ flex-wrap: nowrap;
+ overflow-x: auto;
+ overflow-y: hidden;
  gap: 8px;
  margin-top: 4px;
+ padding-bottom: 6px;
+ scrollbar-width: thin;
+ scrollbar-color: #38bdf8 #0f172a;
+ -webkit-overflow-scrolling: touch;
  }
- @media (max-width: 500px) {
- .station-grid { grid-template-columns: repeat(2, 1fr); }
- .forecast-cards { grid-template-columns: repeat(2, 1fr); }
- }
+ .forecast-cards::-webkit-scrollbar { height: 7px; }
+ .forecast-cards::-webkit-scrollbar-track { background: #0f172a; border-radius: 4px; }
+ .forecast-cards::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+ .forecast-cards::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
  .f-card {
+ flex: 0 0 118px;
+ min-width: 118px;
  background: #0f172a;
  padding: 8px 6px;
  border-radius: 8px;
@@ -376,13 +397,6 @@
  height: 138px;
  vertical-align: top;
  }
- .windy-frame {
- width: 100%;
- height: 460px;
- border: 0;
- border-radius: 8px;
- background: #0f172a;
- }
  .footer-bar {
  text-align: center;
  font-size: 0.8rem;
@@ -421,9 +435,13 @@
  <div class="panel">
  <div class="panel-header">
  <span>📡 LIVE ΔΕΔΟΜΕΝΑ ΣΤΑΘΜΟΥ (ISAMAR38)</span>
- <span id="lastUpdate">--:--</span>
+ <div class="meteogram-controls">
+ <span id="lastUpdate" style="font-size:0.78rem; color:#94a3b8;">--:--</span>
+ <button type="button" class="mg-btn" onclick="scrollEl('stationScroll', -220)">◀</button>
+ <button type="button" class="mg-btn" onclick="scrollEl('stationScroll', 220)">▶</button>
  </div>
- <div class="station-grid">
+ </div>
+ <div class="station-grid" id="stationScroll">
  <div class="s-tile">
  <div class="s-label">Θερμοκρασία</div>
  <div class="s-val" id="stTemp">--°C</div>
@@ -467,6 +485,10 @@
  <div class="panel">
  <div class="panel-header">
  <span>❄️ 24ΩΡΗ ΠΡΟΓΝΩΣΗ ΑΛΓΟΡΙΘΜΟΥ ΣΤΑΘΜΟΥ (ISAMAR38)</span>
+ <div class="meteogram-controls">
+ <button type="button" class="mg-btn" onclick="scrollEl('forecastGrid', -240)">◀</button>
+ <button type="button" class="mg-btn" onclick="scrollEl('forecastGrid', 240)">▶</button>
+ </div>
  </div>
  <div class="forecast-cards" id="forecastGrid"></div>
  </div>
@@ -531,14 +553,6 @@
  </div>
  </div>
 
- <div class="panel">
- <div class="panel-header">
- <span>🗺️ ΖΩΝΤΑΝΟΣ ΧΑΡΤΗΣ ΧΙΟΝΙΟΥ, ΒΡΟΧΗΣ & ΚΕΡΑΥΝΩΝ (WINDY — ΣΑΜΑΡΙΝΑ 40.105°N, 21.018°E)</span>
- <span style="font-size:0.8rem; color:#94a3b8;">Αλλάξτε επίπεδο (Νέο Χιόνι / Ραντάρ / Θερμοκρασία) από το μενού δεξιά στον χάρτη</span>
- </div>
- <iframe class="windy-frame" src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=%C2%B0C&metricWind=km%2Fh&zoom=8&overlay=rain&product=ecmwf&level=surface&lat=40.105&lon=21.018&detailLat=40.105&detailLon=21.018&detail=true&pressure=true&message=true" frameborder="0"></iframe>
- </div>
-
  <div class="footer-bar">
  Σαμαρίνα Live Weather Dashboard (1.450μ.) • Δεδομένα & Αλγόριθμος Πρόγνωσης: Bresser 5-in-1 (ISAMAR38)
  </div>
@@ -551,9 +565,13 @@
  let latestHourlySeries = [];
  let meteogramStepHours = 1;
 
- function scrollMeteogram(deltaPx) {
- const el = document.getElementById('mgScrollContainer');
+ function scrollEl(id, deltaPx) {
+ const el = document.getElementById(id);
  if (el) el.scrollBy({ left: deltaPx, behavior: 'smooth' });
+ }
+
+ function scrollMeteogram(deltaPx) {
+ scrollEl('mgScrollContainer', deltaPx);
  }
 
  function setMeteogramStep(step) {
