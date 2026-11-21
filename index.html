@@ -152,6 +152,12 @@
             color: #ffffff;
             box-shadow: 0 0 20px rgba(14, 165, 233, 0.45);
         }
+        .alert-fog {
+            background: linear-gradient(135deg, rgba(71, 85, 105, 0.85), rgba(51, 65, 85, 0.82));
+            border-color: rgba(148, 163, 184, 0.65);
+            color: #f1f5f9;
+            box-shadow: 0 0 18px rgba(148, 163, 184, 0.35);
+        }
         .alert-storm {
             background: linear-gradient(135deg, rgba(217, 119, 6, 0.85), rgba(239, 68, 68, 0.78));
             border-color: rgba(251, 191, 36, 0.6);
@@ -1856,13 +1862,37 @@
             return calcWetBulb(predTemp, estHum);
         }
 
-        function getMountainHazards({ temp, hum, wind, gust, rain, rate, chill, spread, estSnowCm24 }) {
+        function estimateHumFromTempDew(tempC, dewC) {
+            const eActual = 6.112 * Math.exp((17.67 * dewC) / (dewC + 243.5));
+            const eSat = 6.112 * Math.exp((17.67 * tempC) / (tempC + 243.5));
+            return clamp(Math.round((eActual / Math.max(0.01, eSat)) * 100), 15, 100);
+        }
+
+        function detectFogOrLowCloud({ temp, dew, hum, wind, dir, precip, hrs = 0 }) {
+            if (precip > 0) return false;
+            const spread = Math.max(0, temp - dew);
+            const effHum = Number.isFinite(hum) ? hum : estimateHumFromTempDew(temp, dew);
+            const isMoistUpslope = (dir >= 150 && dir <= 290); // ΝΔ έως Δ ρεύμα στον Σμόλικα
+
+            // 1. Κλασική ομίχλη κορεσμού / αναστροφής
+            if (spread <= 1.8 && wind < 8) return true;
+
+            // 2. Ορογραφική χαμηλή νέφωση στις πλαγιές του Σμόλικα (υγρασία >= 82% & spread <= 3.2°C)
+            if (effHum >= 82 && spread <= 3.2 && isMoistUpslope && wind < 12 && hrs <= 12) return true;
+
+            return false;
+        }
+
+        function getMountainHazards({ temp, hum, wind, gust, rain, rate, chill, spread, estSnowCm24, hasFogNow }) {
             const hazards = [];
             if (temp <= 0.0 && (wind >= 30 || gust >= THRESHOLDS.GUST_WARN_KMH) && (rate > 0 || rain > 0 || estSnowCm24 > 1)) {
                 hazards.push({ id: "snowstorm", level: "danger", badge: "🌨️ ΧΙΟΝΟΘΥΕΛΛΑ / ΑΝΕΜΟΣΟΥΡΙΑ", detail: `Ισχυρές ριπές (${gust} km/h) με ${temp.toFixed(1)}°C σηκώνουν χιόνι — κίνδυνος μηδενικής ορατότητας.` });
             }
             if (rate >= 1.5 && temp >= -0.8 && temp <= 0.8 && hum >= 90) {
                 hazards.push({ id: "wet_snow", level: "warn", badge: "🌲 ΒΑΡΥ ΥΓΡΟ ΧΙΟΝΙ", detail: `Έντονος υετός (${rate} mm/h) οριακά στους ${temp.toFixed(1)}°C — φορτίο σε δέντρα/καλώδια.` });
+            }
+            if (hasFogNow && spread <= 2.2) {
+                hazards.push({ id: "dense_fog", level: "warn", badge: "🌫️ ΠΕΡΙΟΡΙΣΜΕΝΗ ΟΡΑΤΟΤΗΤΑ (ΟΜΙΧΛΗ)", detail: `Πυκνή χαμηλή νέφωση / ομίχλη (Υγρασία ${hum}%, Σ.Δ. ${(temp - spread).toFixed(1)}°C) — προσοχή στο οδικό δίκτυο.` });
             }
             if (temp > 0 && temp <= 1.8 && rain > 0 && spread >= 3.0 && wind < 10) {
                 hazards.push({ id: "black_ice", level: "warn", badge: "🧊 ΚΙΝΔΥΝΟΣ ΜΑΥΡΟΥ ΠΑΓΟΥ", detail: `Βρεγμένο οδόστρωμα (${rain} mm) με ξαστεριά και άπνοια — παγώνει η άσφαλτος.` });
@@ -1890,10 +1920,11 @@
             return 12;
         }
 
-        function getForecastIcon(precip, snowCm, wetBulb, temp, isActiveRainNow) {
+        function getForecastIcon(precip, snowCm, wetBulb, temp, isActiveRainNow, hasFog = false) {
             if (snowCm >= 0.3 || ((precip >= 0.5 || isActiveRainNow) && wetBulb <= THRESHOLDS.WET_BULB_SNOW_C)) return "❄️";
             if (precip >= 0.5 || isActiveRainNow) return "🌧️";
             if (precip >= 0.1) return "⛅";
+            if (hasFog) return "🌫️";
             if (temp <= 0) return "🥶";
             return "🌤️";
         }
@@ -1958,8 +1989,10 @@
             const predDew = Number(Math.min(predT, predPr > 0 ? predT - 0.4 : dew + diurnalDelta * 0.35).toFixed(1));
             const predWind = clamp(Math.round(wind + (safeTrend < -1 ? Math.abs(safeTrend) * 3.5 * (hrs / 12) : 0)), 0, 90);
             const predDir = Math.round((dir + (safeTrend < -1.5 ? -15 * (hrs / 12) : 0) + 360) % 360);
+            const predHum = estimateHumFromTempDew(predT, predDew);
+            const hasFog = detectFogOrLowCloud({ temp: predT, dew: predDew, hum: predHum, wind: predWind, dir: predDir, precip: predPr, hrs });
 
-            return { temp: predT, dew: predDew, wetBulb: predTw, wind: predWind, dir: predDir, precip: predPr, snowCm, prob };
+            return { temp: predT, dew: predDew, hum: predHum, wetBulb: predTw, wind: predWind, dir: predDir, precip: predPr, snowCm, prob, hasFog };
         }
 
         function predictHybrid(hrs, temp, dew, hum, press, trend, wind, dir, activeRate, omData) {
@@ -1997,6 +2030,7 @@
             const modelDew = toFiniteNumber(omData.hourly.dew_point_2m?.[idxTarget], localPred.dew);
             const hybridDew = Number(Math.min(hybridTemp, (localPred.dew * wTempStation) + (modelDew * wTempModel)).toFixed(1));
             const hybridTw = estimateFutureWetBulb(hybridTemp, hybridDew);
+            const hybridHum = estimateHumFromTempDew(hybridTemp, hybridDew);
 
             const modelWind = toFiniteNumber(omData.hourly.wind_speed_10m?.[idxTarget], localPred.wind);
             const modelDir = toFiniteNumber(omData.hourly.wind_direction_10m?.[idxTarget], localPred.dir);
@@ -2013,19 +2047,21 @@
                 hybridSnowCm = Number((hybridPrecip * ratio).toFixed(1));
             }
 
+            const hasFog = detectFogOrLowCloud({ temp: hybridTemp, dew: hybridDew, hum: hybridHum, wind: hybridWind, dir: hybridDir, precip: hybridPrecip, hrs });
+
             const agreementBonus = Math.abs(localPred.temp - correctedModelTemp) <= 1.2 ? 4 : -4;
             const hybridProb = clamp(Math.round((localPred.prob * wTempStation) + (Math.max(60, 92 - hrs * 0.6) * wTempModel) + agreementBonus), 52, 98);
 
             return {
-                temp: hybridTemp, dew: hybridDew, wetBulb: hybridTw, wind: hybridWind, dir: hybridDir,
-                station: localPred, precip: hybridPrecip, snowCm: hybridSnowCm, prob: hybridProb,
+                temp: hybridTemp, dew: hybridDew, hum: hybridHum, wetBulb: hybridTw, wind: hybridWind, dir: hybridDir,
+                station: localPred, precip: hybridPrecip, snowCm: hybridSnowCm, prob: hybridProb, hasFog,
                 wTempStationPct: Math.round(wTempStation * 100), wPrecipStationPct: Math.round(wPrecipStation * 100), isHybrid: true
             };
         }
 
         function buildHybrid48hData(baseDate, temp, dew, hum, press, trend, wind, dir, rate, omData) {
             const steps3h = [];
-            const hourly48 = { temps: [], precip: [], snow: [], windSpeed: [], windDir: [] };
+            const hourly48 = { temps: [], precip: [], snow: [], windSpeed: [], windDir: [], fog: [] };
 
             for (let hrs = 0; hrs < 48; hrs++) {
                 const futureDate = new Date(baseDate.getTime() + hrs * 3600 * 1000);
@@ -2033,7 +2069,16 @@
                 const timeStr = futureDate.toLocaleTimeString("el-GR", { hour: "2-digit", minute: "2-digit" });
 
                 const pred = hrs === 0
-                    ? { temp: Number(temp.toFixed(1)), wetBulb: calcWetBulb(temp, hum), wind: Math.round(wind), dir, precip: Number((rate || 0).toFixed(1)), snowCm: 0, prob: 100 }
+                    ? {
+                        temp: Number(temp.toFixed(1)),
+                        wetBulb: calcWetBulb(temp, hum),
+                        wind: Math.round(wind),
+                        dir,
+                        precip: Number((rate || 0).toFixed(1)),
+                        snowCm: 0,
+                        prob: 100,
+                        hasFog: detectFogOrLowCloud({ temp, dew, hum, wind, dir, precip: rate, hrs: 0 })
+                    }
                     : predictHybrid(hrs, temp, dew, hum, press, trend, wind, dir, rate, omData);
 
                 hourly48.temps.push(pred.temp);
@@ -2041,6 +2086,7 @@
                 hourly48.snow.push(pred.snowCm);
                 hourly48.windSpeed.push(pred.wind);
                 hourly48.windDir.push(pred.dir);
+                hourly48.fog.push(Boolean(pred.hasFog));
 
                 if (hrs % 3 === 0) {
                     steps3h.push({
@@ -2054,7 +2100,7 @@
                         wind: pred.wind,
                         bf: kmhToBeaufort(pred.wind),
                         compass: degToCompass(pred.dir),
-                        icon: getForecastIcon(pred.precip, pred.snowCm, pred.wetBulb, pred.temp, rate > 0 && hrs <= 3)
+                        icon: getForecastIcon(pred.precip, pred.snowCm, pred.wetBulb, pred.temp, rate > 0 && hrs <= 3, pred.hasFog)
                     });
                 }
             }
@@ -2086,6 +2132,7 @@
                 const sliceS = hourly48.snow.slice(w.start, w.end + 1);
                 const sliceW = hourly48.windSpeed.slice(w.start, w.end + 1);
                 const sliceD = hourly48.windDir.slice(w.start, w.end + 1);
+                const sliceFog = hourly48.fog.slice(w.start, w.end + 1);
 
                 const tMin = sliceT.length ? Math.min(...sliceT).toFixed(1) : "--";
                 const tMax = sliceT.length ? Math.max(...sliceT).toFixed(1) : "--";
@@ -2093,16 +2140,18 @@
                 const sumSnow = sliceS.reduce((a, b) => a + b, 0).toFixed(1);
                 const maxWind = sliceW.length ? Math.max(...sliceW) : 0;
                 const midDir = sliceD[Math.floor(sliceD.length / 2)] || 0;
+                const fogHours = sliceFog.filter(Boolean).length;
 
                 let icon = "🌤️";
                 if (Number(sumSnow) >= 0.4) icon = "❄️";
                 else if (Number(sumPrecip) >= 0.8) icon = "🌧️";
                 else if (Number(sumPrecip) > 0) icon = "⛅";
+                else if (fogHours >= 2) icon = "🌫️";
                 else if (tMin !== "--" && Number(tMin) <= 0) icon = "🥶";
 
                 return {
                     title: `<span style="color:#fbbf24; display:block; font-size:0.72rem;">${dateRangeLabel}</span><span style="font-size:0.72rem; color:#cbd5e1;">${timeRangeLabel}</span>`,
-                    tMin, tMax, sumPrecip, sumSnow, maxWind,
+                    tMin, tMax, sumPrecip, sumSnow, maxWind, fogHours,
                     bf: kmhToBeaufort(maxWind),
                     compass: degToCompass(midDir),
                     icon
@@ -2647,6 +2696,7 @@
                 const chill = toFiniteNumber(obs.metric.windChill, temp);
                 const spread = temp - dew;
                 const wetBulb = calcWetBulb(temp, hum);
+                const hasFogNow = detectFogOrLowCloud({ temp, dew, hum, wind, dir, precip: rate, hrs: 0 });
 
                 const invInfo = updateInversionAndAstro(temp, omData, larData);
 
@@ -2766,7 +2816,19 @@
                     const futureDate = new Date(baseDate.getTime() + hrs * 3600 * 1000);
                     const tLabel = futureDate.toLocaleTimeString("el-GR", { hour: "2-digit", minute: "2-digit" });
                     const pred = hrs === 0
-                        ? { temp: Number(temp.toFixed(1)), dew: Number(dew.toFixed(1)), wetBulb, wind: Math.round(wind), dir, station: { temp: Number(temp.toFixed(1)), dew: Number(dew.toFixed(1)), wetBulb, wind: Math.round(wind), dir, precip: Number(rate.toFixed(1)), snowCm: 0, prob: 100 }, precip: Number(rate.toFixed(1)), snowCm: 0, prob: 100 }
+                        ? {
+                            temp: Number(temp.toFixed(1)),
+                            dew: Number(dew.toFixed(1)),
+                            hum,
+                            wetBulb,
+                            wind: Math.round(wind),
+                            dir,
+                            station: { temp: Number(temp.toFixed(1)), dew: Number(dew.toFixed(1)), hum, wetBulb, wind: Math.round(wind), dir, precip: Number(rate.toFixed(1)), snowCm: 0, prob: 100, hasFog: hasFogNow },
+                            precip: Number(rate.toFixed(1)),
+                            snowCm: 0,
+                            prob: 100,
+                            hasFog: hasFogNow
+                        }
                         : predictHybrid(hrs, temp, dew, hum, press, trend, wind, dir, rate, omData);
 
                     if (hrs <= 12) steps12h.push({ hrs, timeLabel: tLabel, decHour: futureDate.getHours(), station: pred.station, hybrid: pred });
@@ -2815,25 +2877,35 @@
                     const activeNow = (rate > 0 && hrs <= 3);
 
                     const hProbClass = pred.prob >= 85 ? "prob-high" : (pred.prob >= 72 ? "prob-med" : "prob-low");
-                    const hIcon = getForecastIcon(pred.precip, pred.snowCm, pred.wetBulb, pred.temp, activeNow);
+                    const hIcon = getForecastIcon(pred.precip, pred.snowCm, pred.wetBulb, pred.temp, activeNow, pred.hasFog);
+                    const hStatusText = pred.snowCm > 0
+                        ? "❄️" + pred.snowCm + "cm"
+                        : (pred.precip > 0
+                            ? "💧" + pred.precip + "mm"
+                            : (pred.hasFog ? "🌫️ Ομίχλη / Νέφη" : "Ξηρό"));
                     hybridHtml += `
                         <div class="f-card">
                             <div class="f-time">${fullHeaderHybrid}</div>
                             <div class="f-icon">${hIcon}</div>
                             <div class="f-temp">${pred.temp.toFixed(1)}°C</div>
-                            <div class="f-snow">${pred.snowCm > 0 ? "❄️" + pred.snowCm + "cm" : (pred.precip > 0 ? "💧" + pred.precip + "mm" : "Ξηρό")}</div>
+                            <div class="f-snow">${hStatusText}</div>
                             <div class="f-wind">💨${pred.wind} ${degToCompass(pred.dir)}</div>
                             <div class="f-prob ${hProbClass}">${pred.prob}%</div>
                         </div>`;
 
                     const sProbClass = st.prob >= 85 ? "prob-high" : (st.prob >= 72 ? "prob-med" : "prob-low");
-                    const sIcon = getForecastIcon(st.precip, st.snowCm, st.wetBulb, st.temp, activeNow);
+                    const sIcon = getForecastIcon(st.precip, st.snowCm, st.wetBulb, st.temp, activeNow, st.hasFog);
+                    const sStatusText = st.snowCm > 0
+                        ? "❄️" + st.snowCm + "cm"
+                        : (st.precip > 0
+                            ? "💧" + st.precip + "mm"
+                            : (st.hasFog ? "🌫️ Ομίχλη / Νέφη" : "Ξηρό"));
                     stationHtml += `
                         <div class="f-card-solo">
                             <div class="f-time">${fullHeaderStation}</div>
                             <div class="f-icon">${sIcon}</div>
                             <div class="f-temp">${st.temp.toFixed(1)}°C</div>
-                            <div class="f-snow">${st.snowCm > 0 ? "❄️" + st.snowCm + "cm" : (st.precip > 0 ? "💧" + st.precip + "mm" : "Ξηρό")}</div>
+                            <div class="f-snow">${sStatusText}</div>
                             <div class="f-wind">💨${st.wind} ${degToCompass(st.dir)}</div>
                             <div class="f-prob ${sProbClass}">${st.prob}%</div>
                         </div>`;
@@ -2847,14 +2919,14 @@
                         <div class="f-time">${b.title}</div>
                         <div class="f-icon">${b.icon}</div>
                         <div class="f-temp">${b.tMin}° / ${b.tMax}°C</div>
-                        <div class="f-snow">${Number(b.sumSnow) > 0 ? "❄️ Χιόνι: " + b.sumSnow + "cm" : (Number(b.sumPrecip) > 0 ? "💧 Υετός: " + b.sumPrecip + "mm" : "Ξηρό")}</div>
+                        <div class="f-snow">${Number(b.sumSnow) > 0 ? "❄️ Χιόνι: " + b.sumSnow + "cm" : (Number(b.sumPrecip) > 0 ? "💧 Υετός: " + b.sumPrecip + "mm" : (b.fogHours >= 2 ? "🌫️ Ομίχλη / Νέφη" : "Ξηρό"))}</div>
                         <div class="f-wind">💨 ${b.maxWind} km/h (${b.bf}Bf) ${b.compass}</div>
                     </div>
                 `).join(""));
 
                 renderMeteogram(data48.steps3h);
 
-                const hazards = getMountainHazards({ temp, hum, wind, gust, rain, rate, chill, spread, estSnowCm24 });
+                const hazards = getMountainHazards({ temp, hum, wind, gust, rain, rate, chill, spread, estSnowCm24, hasFogNow });
                 const roadEl = getEl("roadStatus");
                 if (roadEl) {
                     roadEl.className = "alert-box";
@@ -2867,6 +2939,9 @@
                     } else if (temp <= THRESHOLDS.ROAD_NIGHT_FROST_C || minTemp24 <= THRESHOLDS.ROAD_ICE_TEMP_C) {
                         roadEl.classList.add("road-warn");
                         roadEl.innerText = "⚠️ Δρόμος: Πιθανός παγετός τη νύχτα";
+                    } else if (hasFogNow && spread <= 2.2) {
+                        roadEl.classList.add("road-warn");
+                        roadEl.innerText = "🌫️ Δρόμος: Περιορισμένη ορατότητα";
                     } else {
                         roadEl.classList.add("road-ok");
                         roadEl.innerText = "🛣️ Δρόμος: Καθαρό οδόστρωμα";
@@ -2886,6 +2961,9 @@
                 } else if (estSnowCm24 > 0.3) {
                     if (topAlert) { topAlert.classList.add("alert-snow"); topAlert.innerText = "❄️ ΣΥΝΑΓΕΡΜΟΣ ΧΙΟΝΟΠΤΩΣΗΣ (24h)"; }
                     diagText = `❄️ <b>Ευνοϊκές συνθήκες χιονιού:</b> Εκτιμάται νέο χιόνι ~${estSnowCm24.toFixed(1)} cm το επόμενο 24ωρο.`;
+                } else if (hasFogNow) {
+                    if (topAlert) { topAlert.classList.add("alert-fog"); topAlert.innerText = "🌫️ ΟΜΙΧΛΗ / ΧΑΜΗΛΗ ΝΕΦΩΣΗ"; }
+                    diagText = `🌫️ <b>Ορογραφική νέφωση / ομίχλη (ISAMAR38):</b> Υγρασία <b>${hum}%</b> με Θερμοκρασία ${temp.toFixed(1)}°C, Σημείο Δρόσου ${dew.toFixed(1)}°C (απόσταση ${spread.toFixed(1)}°C) και ${degToCompass(dir)} ρεύμα — χαμηλά νέφη στις πλαγιές του Σμόλικα.`;
                 } else {
                     if (topAlert) topAlert.innerText = press >= 1018 ? `☀️ ΣΤΑΘΕΡΟΣ ΚΑΙΡΟΣ (${press.toFixed(0)} hPa)` : `⛅ ΜΕΤΑΒΛΗΤΟΣ ΚΑΙΡΟΣ (${press.toFixed(0)} hPa)`;
                     diagText = `🌤️ <b>Συνθήκες 1.450μ.:</b> Θερμοκρασία ${temp.toFixed(1)}°C, Υγρασία ${hum}%, Βαρόμετρο ${press.toFixed(1)} hPa. Ελάχιστη 24ώρου έως ${minTemp24.toFixed(1)}°C.`;
