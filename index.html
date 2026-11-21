@@ -542,7 +542,7 @@
   <div class="panel collapsible-section" id="secArchive">
     <div class="panel-header">
       <span>🗂️ ΙΣΤΟΡΙΚΟ, ΑΡΧΕΙΟ & ΗΜΕΡΗΣΙΕΣ ΚΑΡΤΕΣ (ISAMAR38)</span>
-      <span id="archiveSourceLabel" style="font-size:0.78rem; color:#38bdf8;">Αναμονή σύνδεσης Daily_Archive</span>
+      <span id="archiveSourceLabel" style="font-size:0.78rem; color:#38bdf8;">Φόρτωση Daily_Archive...</span>
     </div>
 
     <div class="archive-sub-title">
@@ -590,8 +590,7 @@
     const WU_STATION_ID = "ISAMAR38";
     const WU_API_KEY = "5c94ee0c13f240ec94ee0c13f2b0ecd9";
     const STATS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ_y9OVAjf5gRIJN7ZKm_OuR_fP5UFcu2YWX3XNU7PRxSouu3L2-kPh6Rk1u3VP-pdBjOTIo22t3mN/pub?gid=409751746&single=true&output=csv";
-    // Δημοσιευμένο CSV του φύλλου Daily_Archive από το Google Sheet σου
-    const ARCHIVE_CSV_URL = "";
+    const ARCHIVE_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ_y9OVAjf5gRIJN7ZKm_OuR_fP5UFcu2YWX3XNU7PRxSouu3L2-kPh6Rk1u3VP-pdBjOTIo22t3mN/pub?gid=1184894056&single=true&output=csv";
 
     let weatherChartInstance = null;
     let statsLoadedOnce = false;
@@ -601,7 +600,6 @@
 
     function calcSnowCm(temp, precip) {
       if (!precip || precip <= 0 || isNaN(temp)) return 0;
-      // Χιόνι μόνο σε θερμοκρασίες <= 0.5°C για αποφυγή ψευδούς χιονιού σε θετικούς βαθμούς
       if (temp > 0.5) return 0;
       const ratio = temp <= -4.0 ? 1.5 : (temp <= -1.5 ? 1.2 : 0.85);
       return Number((precip * ratio).toFixed(1));
@@ -659,10 +657,10 @@
         cardsEl.innerHTML = `
           <div class="d-card">
             <div class="d-card-top"><span>Daily_Archive</span><span>ℹ️</span></div>
-            <div class="d-card-meta">Δεν έχουν φορτωθεί ακόμη εγγραφές από το φύλλο Daily_Archive. Όρισε το ARCHIVE_CSV_URL για αυτόματη εμφάνιση πραγματικών ημερών.</div>
+            <div class="d-card-meta">Δεν βρέθηκαν εγγραφές από το φύλλο Daily_Archive ή εκκρεμεί ανανέωση δημοσίευσης.</div>
           </div>
         `;
-        tbodyEl.innerHTML = `<tr><td colspan="5" style="color:#94a3b8; text-align:center;">Αναμονή σύνδεσης με το CSV του Daily_Archive.</td></tr>`;
+        tbodyEl.innerHTML = `<tr><td colspan="5" style="color:#94a3b8; text-align:center;">Δεν υπάρχουν διαθέσιμες εγγραφές αρχείου.</td></tr>`;
         return;
       }
 
