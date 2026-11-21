@@ -68,13 +68,13 @@
     .main-grid {
       display: grid;
       grid-template-columns: 1.25fr 1fr;
-      grid-template-rows: auto auto 1fr;
+      grid-template-rows: auto auto auto;
       grid-template-areas:
         "cam summary"
         "cam forecast"
         "cam station";
       gap: 12px;
-      align-items: stretch;
+      align-items: start;
     }
     .area-cam { grid-area: cam; }
     .area-summary { grid-area: summary; }
@@ -117,7 +117,6 @@
     }
     .live-badge { color: #ef4444; font-weight: bold; }
     .cam-wrapper {
-      flex: 1;
       position: relative;
       width: 100%;
       min-height: 360px;
@@ -621,6 +620,20 @@
       return Number((precip * ratio).toFixed(1));
     }
 
+    function parseArchiveDateValue(dateStr) {
+      const clean = (dateStr || '').trim();
+      const parts = clean.split('-');
+      if (parts.length === 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        const d = parseInt(parts[2], 10);
+        const dt = new Date(y, m, d);
+        if (!isNaN(dt.getTime())) return dt.getTime();
+      }
+      const fallback = Date.parse(clean);
+      return isNaN(fallback) ? 0 : fallback;
+    }
+
     function toggleSection(name) {
       const map = {
         chart: { sec: 'secChart', btn: 'btnChart' },
@@ -684,8 +697,8 @@
         const hasSnow = r.snow > 0;
         const precipTxt = hasSnow
           ? `Χιόνι: ${r.snow.toFixed(1)} cm (${r.precip.toFixed(1)} mm)`
-          : (r.precip > 0 ? `Υετός: ${r.precip.toFixed(1)} mm` : `Ξηρή ημέρα`);
-        const gustTxt = r.gust > 0 ? `${Math.round(r.gust)} km/h` : `—`;
+          : (r.precip > 0 ? `Υετός: ${r.precip.toFixed(1)} mm` : `Χωρίς υετό`);
+        const gustTxt = r.gust > 0 ? `${Math.round(r.gust)} km/h` : `Μη καταγρ.`;
         const maeTxt = !isNaN(r.mae) ? `±${r.mae.toFixed(2)}°C` : `—`;
         return `
           <div class="d-card">
@@ -717,7 +730,7 @@
         const wetLabel = r.snow > 0
           ? `❄️ ${r.snow.toFixed(1)} cm (${r.precip.toFixed(1)} mm)`
           : (r.precip > 0 ? `🌧️ ${r.precip.toFixed(1)} mm` : `—`);
-        const gustTxt = r.gust > 0 ? `${Math.round(r.gust)} km/h` : `—`;
+        const gustTxt = r.gust > 0 ? `${Math.round(r.gust)} km/h` : `Μη καταγρ.`;
         const maeTxt = !isNaN(r.mae) ? `±${r.mae.toFixed(2)}°C` : `—`;
         return `
           <tr>
@@ -782,11 +795,22 @@
           }
 
           const icon = snow > 0 ? '❄️' : (precip > 0 ? '🌧️' : (tMin <= 0 ? '🥶' : '⛅'));
-          parsed.push({ date: dateStr, tMin, tMax, precip, snow, gust, mae, icon });
+          parsed.push({
+            date: dateStr,
+            dateTs: parseArchiveDateValue(dateStr),
+            tMin,
+            tMax,
+            precip,
+            snow,
+            gust,
+            mae,
+            icon
+          });
         }
 
         if (parsed.length) {
-          archiveRecords = parsed.reverse();
+          parsed.sort((a, b) => b.dateTs - a.dateTs);
+          archiveRecords = parsed;
           document.getElementById('archiveSourceLabel').innerText = "Daily_Archive (ISAMAR38)";
         }
       } catch (err) {
