@@ -201,7 +201,6 @@
     .prob-med { color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); }
     .prob-low { color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.35); }
 
-    /* Μπάρα ενοτήτων με κουμπιά */
     .section-nav {
       display: flex;
       flex-wrap: wrap;
@@ -296,7 +295,6 @@
     .v-mae { font-size: 0.76rem; color: #cbd5e1; }
     .v-card.v-primary .v-mae { font-size: 0.82rem; color: #e2e8f0; }
 
-    /* Ημερήσιες κάρτες & Ιστορικό / Αρχείο */
     .archive-sub-title {
       font-size: 0.82rem;
       font-weight: 600;
@@ -544,7 +542,7 @@
   <div class="panel collapsible-section" id="secArchive">
     <div class="panel-header">
       <span>🗂️ ΙΣΤΟΡΙΚΟ, ΑΡΧΕΙΟ & ΗΜΕΡΗΣΙΕΣ ΚΑΡΤΕΣ (ISAMAR38)</span>
-      <span id="archiveSourceLabel" style="font-size:0.78rem; color:#38bdf8;">Προεπισκόπηση διάταξης</span>
+      <span id="archiveSourceLabel" style="font-size:0.78rem; color:#38bdf8;">Αναμονή σύνδεσης Daily_Archive</span>
     </div>
 
     <div class="archive-sub-title">
@@ -568,7 +566,7 @@
             <th>Ελάχ. / Μέγ.</th>
             <th>Υετός / Χιόνι</th>
             <th>Μέγ. Ριπή</th>
-            <th>Ακρίβεια (+12h)</th>
+            <th>Απόκλιση (MAE)</th>
           </tr>
         </thead>
         <tbody id="archiveTableBody"></tbody>
@@ -592,6 +590,7 @@
     const WU_STATION_ID = "ISAMAR38";
     const WU_API_KEY = "5c94ee0c13f240ec94ee0c13f2b0ecd9";
     const STATS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ_y9OVAjf5gRIJN7ZKm_OuR_fP5UFcu2YWX3XNU7PRxSouu3L2-kPh6Rk1u3VP-pdBjOTIo22t3mN/pub?gid=409751746&single=true&output=csv";
+    // Δημοσιευμένο CSV του φύλλου Daily_Archive από το Google Sheet σου
     const ARCHIVE_CSV_URL = "";
 
     let weatherChartInstance = null;
@@ -600,12 +599,13 @@
     let currentArchiveFilter = 'all';
     let archiveRecords = [];
 
-    const SAMPLE_ARCHIVE = [
-      { date: "20/11/2026", tMin: -1.4, tMax: 5.8, precip: 2.4, snow: 1.5, gust: 34, acc12: "86%", icon: "❄️" },
-      { date: "19/11/2026", tMin: 0.6, tMax: 7.4, precip: 4.8, snow: 0.0, gust: 41, acc12: "82%", icon: "🌧️" },
-      { date: "18/11/2026", tMin: -2.1, tMax: 6.5, precip: 0.0, snow: 0.0, gust: 22, acc12: "90%", icon: "🥶" },
-      { date: "17/11/2026", tMin: 1.2, tMax: 9.1, precip: 0.0, snow: 0.0, gust: 18, acc12: "88%", icon: "⛅" }
-    ];
+    function calcSnowCm(temp, precip) {
+      if (!precip || precip <= 0 || isNaN(temp)) return 0;
+      // Χιόνι μόνο σε θερμοκρασίες <= 0.5°C για αποφυγή ψευδούς χιονιού σε θετικούς βαθμούς
+      if (temp > 0.5) return 0;
+      const ratio = temp <= -4.0 ? 1.5 : (temp <= -1.5 ? 1.2 : 0.85);
+      return Number((precip * ratio).toFixed(1));
+    }
 
     function toggleSection(name) {
       const map = {
@@ -655,30 +655,42 @@
       const tbodyEl = document.getElementById('archiveTableBody');
       if (!cardsEl || !tbodyEl) return;
 
-      const source = archiveRecords.length ? archiveRecords : SAMPLE_ARCHIVE;
+      if (!archiveRecords.length) {
+        cardsEl.innerHTML = `
+          <div class="d-card">
+            <div class="d-card-top"><span>Daily_Archive</span><span>ℹ️</span></div>
+            <div class="d-card-meta">Δεν έχουν φορτωθεί ακόμη εγγραφές από το φύλλο Daily_Archive. Όρισε το ARCHIVE_CSV_URL για αυτόματη εμφάνιση πραγματικών ημερών.</div>
+          </div>
+        `;
+        tbodyEl.innerHTML = `<tr><td colspan="5" style="color:#94a3b8; text-align:center;">Αναμονή σύνδεσης με το CSV του Daily_Archive.</td></tr>`;
+        return;
+      }
 
-      cardsEl.innerHTML = source.slice(0, 4).map(r => {
-        const precipTxt = r.snow > 0
-          ? `Χιόνι: ${Number(r.snow).toFixed(1)} cm (${Number(r.precip).toFixed(1)} mm)`
-          : (r.precip > 0 ? `Υετός: ${Number(r.precip).toFixed(1)} mm` : `Ξηρή ημέρα`);
+      cardsEl.innerHTML = archiveRecords.slice(0, 4).map(r => {
+        const hasSnow = r.snow > 0;
+        const precipTxt = hasSnow
+          ? `Χιόνι: ${r.snow.toFixed(1)} cm (${r.precip.toFixed(1)} mm)`
+          : (r.precip > 0 ? `Υετός: ${r.precip.toFixed(1)} mm` : `Ξηρή ημέρα`);
+        const gustTxt = r.gust > 0 ? `${Math.round(r.gust)} km/h` : `—`;
+        const maeTxt = !isNaN(r.mae) ? `±${r.mae.toFixed(2)}°C` : `—`;
         return `
           <div class="d-card">
             <div class="d-card-top">
               <span>${r.date}</span>
-              <span>${r.icon || '⛅'}</span>
+              <span>${r.icon}</span>
             </div>
-            <div class="d-card-temps">${Number(r.tMin).toFixed(1)}°C / ${Number(r.tMax).toFixed(1)}°C</div>
+            <div class="d-card-temps">${r.tMin.toFixed(1)}°C / ${r.tMax.toFixed(1)}°C</div>
             <div class="d-card-meta">
               <div>${precipTxt}</div>
-              <div>Ριπή: ${Math.round(Number(r.gust || 0))} km/h • +12h: <b>${r.acc12 || '—'}</b></div>
+              <div>Ριπή: ${gustTxt} • MAE: <b>${maeTxt}</b></div>
             </div>
           </div>
         `;
       }).join('');
 
-      const filtered = source.filter(r => {
-        if (currentArchiveFilter === 'precip') return Number(r.precip || 0) > 0 || Number(r.snow || 0) > 0;
-        if (currentArchiveFilter === 'frost') return Number(r.tMin) <= 0;
+      const filtered = archiveRecords.filter(r => {
+        if (currentArchiveFilter === 'precip') return r.precip > 0 || r.snow > 0;
+        if (currentArchiveFilter === 'frost') return r.tMin <= 0;
         return true;
       });
 
@@ -689,15 +701,17 @@
 
       tbodyEl.innerHTML = filtered.map(r => {
         const wetLabel = r.snow > 0
-          ? `❄️ ${Number(r.snow).toFixed(1)} cm (${Number(r.precip).toFixed(1)} mm)`
-          : (r.precip > 0 ? `🌧️ ${Number(r.precip).toFixed(1)} mm` : `—`);
+          ? `❄️ ${r.snow.toFixed(1)} cm (${r.precip.toFixed(1)} mm)`
+          : (r.precip > 0 ? `🌧️ ${r.precip.toFixed(1)} mm` : `—`);
+        const gustTxt = r.gust > 0 ? `${Math.round(r.gust)} km/h` : `—`;
+        const maeTxt = !isNaN(r.mae) ? `±${r.mae.toFixed(2)}°C` : `—`;
         return `
           <tr>
             <td><b>${r.date}</b></td>
-            <td>${Number(r.tMin).toFixed(1)}°C / ${Number(r.tMax).toFixed(1)}°C</td>
+            <td>${r.tMin.toFixed(1)}°C / ${r.tMax.toFixed(1)}°C</td>
             <td>${wetLabel}</td>
-            <td>${Math.round(Number(r.gust || 0))} km/h</td>
-            <td>${r.acc12 || '—'}</td>
+            <td>${gustTxt}</td>
+            <td>${maeTxt}</td>
           </tr>
         `;
       }).join('');
@@ -707,7 +721,7 @@
       archiveLoadedOnce = true;
       if (!ARCHIVE_CSV_URL) {
         archiveRecords = [];
-        document.getElementById('archiveSourceLabel').innerText = "Ενδεικτικά δεδομένα (σύνδεση Daily_Archive)";
+        document.getElementById('archiveSourceLabel').innerText = "Χωρίς συνδεδεμένο Daily_Archive CSV";
         renderArchiveViews();
         return;
       }
@@ -720,20 +734,43 @@
           return;
         }
         const lines = csvText.trim().split(/\r?\n/);
+        if (!lines.length) {
+          renderArchiveViews();
+          return;
+        }
+        const headers = parseCSVLine(lines[0]).map(h => h.replace(/"/g, '').trim().toLowerCase());
+        const idxDate = headers.indexOf('date') !== -1 ? headers.indexOf('date') : 0;
+        const idxTmin = headers.indexOf('tmin') !== -1 ? headers.indexOf('tmin') : 2;
+        const idxTmax = headers.indexOf('tmax') !== -1 ? headers.indexOf('tmax') : 3;
+        const idxPrecip = headers.indexOf('precipsum') !== -1 ? headers.indexOf('precipsum') : 5;
+        const idxGust = headers.indexOf('windmax') !== -1 ? headers.indexOf('windmax') : 12;
+        const idxMae = headers.indexOf('mae_station') !== -1 ? headers.indexOf('mae_station') : 13;
+        const idxSnow = headers.findIndex(h => h.includes('snow'));
+
         const parsed = [];
         for (let r = 1; r < lines.length; r++) {
           const cols = parseCSVLine(lines[r]).map(c => c.replace(/"/g, '').trim());
-          if (!cols[0]) continue;
-          const tMin = parseFloat((cols[1] || '').replace(',', '.'));
-          const tMax = parseFloat((cols[2] || '').replace(',', '.'));
-          const precip = parseFloat((cols[3] || '0').replace(',', '.')) || 0;
-          const snow = parseFloat((cols[4] || '0').replace(',', '.')) || 0;
-          const gust = parseFloat((cols[5] || '0').replace(',', '.')) || 0;
-          const acc12 = cols[6] || '—';
+          const dateStr = cols[idxDate];
+          if (!dateStr) continue;
+          const tMin = parseFloat((cols[idxTmin] || '').replace(',', '.'));
+          const tMax = parseFloat((cols[idxTmax] || '').replace(',', '.'));
           if (isNaN(tMin) || isNaN(tMax)) continue;
+
+          const precip = parseFloat((cols[idxPrecip] || '0').replace(',', '.')) || 0;
+          const gust = parseFloat((cols[idxGust] || '0').replace(',', '.')) || 0;
+          const mae = parseFloat((cols[idxMae] || '').replace(',', '.'));
+
+          let snow = 0;
+          if (idxSnow !== -1) {
+            snow = parseFloat((cols[idxSnow] || '0').replace(',', '.')) || 0;
+          } else if (precip > 0 && tMin <= 0.5) {
+            snow = calcSnowCm(tMin, precip);
+          }
+
           const icon = snow > 0 ? '❄️' : (precip > 0 ? '🌧️' : (tMin <= 0 ? '🥶' : '⛅'));
-          parsed.push({ date: cols[0], tMin, tMax, precip, snow, gust, acc12, icon });
+          parsed.push({ date: dateStr, tMin, tMax, precip, snow, gust, mae, icon });
         }
+
         if (parsed.length) {
           archiveRecords = parsed.reverse();
           document.getElementById('archiveSourceLabel').innerText = "Daily_Archive (ISAMAR38)";
@@ -951,9 +988,9 @@
           Number(h12.temp ?? 99),
           Number(h24.temp ?? 99)
         );
-        const kindText = coldestPrecipTemp <= 1.0
+        const kindText = coldestPrecipTemp <= 0.5
           ? "χιόνι ή χιονόνερο"
-          : (coldestPrecipTemp <= 3.5 ? "βροχή ή χιονόνερο στα ψηλότερα σημεία" : "βροχή");
+          : (coldestPrecipTemp <= 3.0 ? "βροχή ή χιονόνερο στα ψηλότερα σημεία" : "βροχή");
 
         if (hasRainSoon) {
           parts.push(`Τις επόμενες ώρες αυξάνεται η πιθανότητα για ${kindText}.`);
@@ -1088,14 +1125,7 @@
             ? { temp: Number(temp.toFixed(1)), precip: Number((rate || 0).toFixed(1)), prob: 100, hasFog: false }
             : predictFromStation(hrs, temp, dew, press, trend, wind, dir);
 
-          let stepSnowCm = 0;
-          if (pred.temp <= 1.2 && pred.precip > 0) {
-            let ratio = 1.0;
-            if (pred.temp <= -4.0) ratio = 1.5;
-            else if (pred.temp <= -1.5) ratio = 1.2;
-            else ratio = 0.85;
-            stepSnowCm = Number((pred.precip * ratio).toFixed(1));
-          }
+          const stepSnowCm = calcSnowCm(pred.temp, pred.precip);
 
           if (hrs > 0) {
             totalPrecip24 += pred.precip;
@@ -1129,16 +1159,11 @@
             horizonPreds["h" + hrs] = pred;
           }
 
-          let sn = 0;
-          if (pred.temp <= 1.2 && pred.precip > 0) {
-            const ratio = pred.temp <= -4.0 ? 1.5 : (pred.temp <= -1.5 ? 1.2 : 0.85);
-            sn = Number((pred.precip * ratio).toFixed(1));
-          }
-
+          const sn = calcSnowCm(pred.temp, pred.precip);
           const probClass = pred.prob >= 85 ? 'prob-high' : (pred.prob >= 72 ? 'prob-med' : 'prob-low');
 
           let icon = '⛅';
-          if (sn > 0 || (pred.precip > 0 && pred.temp <= 1.2)) icon = '❄️';
+          if (sn > 0) icon = '❄️';
           else if (pred.precip > 0) icon = '🌧️';
           else if (pred.temp <= 0) icon = '🥶';
 
@@ -1155,7 +1180,7 @@
 
         const roadEl = document.getElementById('roadStatus');
         roadEl.className = 'alert-box';
-        if (estSnowCm24 >= 2.0 || (rate > 0 && temp <= 1.0)) {
+        if (estSnowCm24 >= 2.0 || (rate > 0 && temp <= 0.5)) {
           roadEl.classList.add('road-danger');
           roadEl.innerText = '⛓️ Δρόμος: Απαραίτητες αλυσίδες';
         } else if (temp <= 0.5 && (hum >= 80 || rain > 0 || totalPrecip24 > 0.5)) {
@@ -1174,7 +1199,7 @@
         topAlert.className = 'alert-box';
         let diagText = '';
 
-        if (estSnowCm24 > 0.3 || ((totalPrecip24 > 1.0 || trend <= -1.5) && (dew <= 0.5 || minTemp24 <= 1.0))) {
+        if (estSnowCm24 > 0.2 || ((totalPrecip24 > 1.0 || trend <= -1.5) && dew <= 0.0 && minTemp24 <= 0.5)) {
           topAlert.classList.add('alert-snow');
           topAlert.innerText = `❄️ ΣΥΝΑΓΕΡΜΟΣ ΧΙΟΝΟΠΤΩΣΗΣ (24h)`;
           diagText = `❄️ <b>Ευνοϊκές συνθήκες χιονιού (ISAMAR38):</b> Ο σταθμός μετρά ${temp.toFixed(1)}°C (Σημ. Δρόσου ${dew.toFixed(1)}°C) και ο τοπικός αλγόριθμος εκτιμά ελάχιστη ${minTemp24.toFixed(1)}°C και νέο χιόνι ~${estSnowCm24.toFixed(1)} cm το επόμενο 24ωρο.`;
