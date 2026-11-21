@@ -235,13 +235,14 @@
 
         #liveSection { display: flex; flex-direction: column; gap: 14px; }
 
+        /* ΚΥΡΙΟ ΠΛΕΓΜΑ: ΑΡΙΣΤΕΡΑ ΚΑΜΕΡΑ, ΔΕΞΙΑ ΠΡΟΓΝΩΣΕΙΣ (ΚΑΤΩ ΑΠΟ ΚΑΜΕΡΑ ΣΕ ΚΙΝΗΤΟ) */
         .main-grid {
             display: grid;
-            grid-template-columns: 1.05fr 1.25fr;
+            grid-template-columns: 1fr 1.25fr;
             gap: 14px;
             align-items: stretch;
         }
-        .left-col, .right-col { display: flex; flex-direction: column; gap: 14px; }
+        .left-col, .right-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
         @media (max-width: 1050px) { .main-grid { grid-template-columns: 1fr; } }
 
         /* CORE GLASSMORPHISM PANEL */
@@ -257,6 +258,7 @@
             flex-direction: column;
             box-shadow: 0 10px 32px rgba(2, 6, 23, 0.45), var(--glass-highlight);
             transition: border-color 0.25s ease;
+            min-width: 0;
         }
         .panel:hover { border-color: rgba(56, 189, 248, 0.28); }
 
@@ -296,6 +298,7 @@
         .cam-wrapper {
             position: relative;
             width: 100%;
+            flex: 1;
             overflow: hidden;
             border-radius: 10px;
             background: rgba(7, 13, 25, 0.8);
@@ -305,16 +308,16 @@
             justify-content: center;
             box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
         }
-        .cam-img { width: 100%; height: auto; display: block; }
+        .cam-img { width: 100%; height: auto; display: block; object-fit: cover; }
 
         /* WEATHER UNDERGROUND 5-DIAL GAUGE CLUSTER */
         .wu-gauges-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
+            gap: 10px;
             margin-bottom: 10px;
         }
-        @media (max-width: 1280px) {
+        @media (max-width: 1100px) {
             .wu-gauges-grid { grid-template-columns: repeat(3, 1fr); }
         }
         @media (max-width: 560px) {
@@ -467,7 +470,7 @@
         .hazard-warn { background: rgba(146, 64, 14, 0.5); border-left: 3px solid #f59e0b; color: #fef3c7; }
 
         /* Αστρονομικά & Αναστροφή */
-        .astro-inv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .astro-inv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
         @media (max-width: 640px) { .astro-inv-grid { grid-template-columns: 1fr; } }
         .ai-panel {
             position: relative;
@@ -503,21 +506,23 @@
         .inv-active { background: rgba(239, 68, 68, 0.25); border: 1px solid rgba(239, 68, 68, 0.55); color: #fecaca; }
         .astro-shade-badge { background: rgba(245, 158, 11, 0.18); border: 1px solid rgba(245, 158, 11, 0.45); color: #fde68a; }
 
-        /* Καθαρή Πρόγνωση σε 2 Οριζόντιες Σειρές */
+        /* Καθαρή Πρόγνωση σε 2 Οριζόντιες Σειρές (Δίπλα στην κάμερα) */
         .dual-forecast-grid {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 11px;
+            flex: 1;
+            justify-content: space-between;
         }
         .tf-column {
             background: rgba(11, 18, 34, 0.48);
             backdrop-filter: blur(12px);
             border: 1px solid var(--glass-border);
             border-radius: 12px;
-            padding: 11px 12px;
+            padding: 10px 11px;
             display: flex;
             flex-direction: column;
-            gap: 9px;
+            gap: 8px;
         }
         .tf-col-hybrid24 { border-top: 3px solid #38bdf8; }
         .tf-col-hybrid48 { border-top: 3px solid #f59e0b; }
@@ -525,9 +530,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.85rem;
+            font-size: 0.83rem;
             font-weight: 700;
-            padding-bottom: 6px;
+            padding-bottom: 5px;
             border-bottom: 1px solid rgba(148, 163, 184, 0.15);
             gap: 6px;
             flex-wrap: wrap;
@@ -567,19 +572,19 @@
 
         .forecast-cards {
             display: grid;
-            grid-template-columns: repeat(8, minmax(115px, 1fr));
-            gap: 9px;
+            grid-template-columns: repeat(8, minmax(112px, 1fr));
+            gap: 8px;
             overflow-x: auto;
-            padding-bottom: 4px;
+            padding-bottom: 5px;
             -webkit-overflow-scrolling: touch;
             scroll-snap-type: x proximity;
         }
         .forecast-cards-48 {
             display: grid;
-            grid-template-columns: repeat(4, minmax(215px, 1fr));
-            gap: 9px;
+            grid-template-columns: repeat(8, minmax(136px, 1fr));
+            gap: 8px;
             overflow-x: auto;
-            padding-bottom: 4px;
+            padding-bottom: 5px;
             -webkit-overflow-scrolling: touch;
             scroll-snap-type: x proximity;
         }
@@ -587,7 +592,7 @@
             scroll-snap-align: start;
             background: rgba(20, 32, 58, 0.52);
             backdrop-filter: blur(10px);
-            padding: 9px 6px;
+            padding: 8px 6px;
             border-radius: 10px;
             text-align: center;
             border: 1px solid rgba(148, 163, 184, 0.16);
@@ -599,15 +604,15 @@
             border-color: rgba(56, 189, 248, 0.45);
         }
         .f-card-solo { border-color: rgba(16, 185, 129, 0.35); }
-        .f-card-48 { border-color: rgba(245, 158, 11, 0.32); padding: 10px 8px; }
-        .f-time { font-size: 0.78rem; color: var(--text-muted); font-weight: 600; line-height: 1.25; }
-        .f-icon { font-size: 1.38rem; margin: 4px 0; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4)); }
-        .f-temp { font-size: 1.04rem; font-weight: 800; color: #38bdf8; }
+        .f-card-48 { border-color: rgba(245, 158, 11, 0.32); padding: 8px 6px; }
+        .f-time { font-size: 0.76rem; color: var(--text-muted); font-weight: 600; line-height: 1.25; }
+        .f-icon { font-size: 1.32rem; margin: 3px 0; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4)); }
+        .f-temp { font-size: 1.0rem; font-weight: 800; color: #38bdf8; }
         .f-card-solo .f-temp { color: #34d399; }
-        .f-card-48 .f-temp { color: #fde68a; font-size: 0.98rem; }
-        .f-snow { font-size: 0.72rem; color: #bae6fd; margin-top: 2px; }
-        .f-wind { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
-        .f-prob { display: inline-block; margin-top: 5px; padding: 2px 7px; border-radius: 999px; font-size: 0.65rem; font-weight: 700; background: rgba(10, 17, 32, 0.65); }
+        .f-card-48 .f-temp { color: #fde68a; font-size: 0.92rem; }
+        .f-snow { font-size: 0.7rem; color: #bae6fd; margin-top: 2px; }
+        .f-wind { font-size: 0.68rem; color: var(--text-muted); margin-top: 2px; }
+        .f-prob { display: inline-block; margin-top: 4px; padding: 2px 7px; border-radius: 999px; font-size: 0.64rem; font-weight: 700; background: rgba(10, 17, 32, 0.65); }
         .prob-high { color: #34d399; border: 1px solid rgba(52, 211, 153, 0.4); }
         .prob-med { color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); }
         .prob-low { color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.4); }
@@ -935,14 +940,14 @@
 
     <!-- ΕΝΟΤΗΤΑ 1: ΖΩΝΤΑΝΟ DASHBOARD -->
     <div id="liveSection">
-        <!-- 1. ΚΑΜΕΡΑ + 5 ΟΡΓΑΝΑ WEATHER UNDERGROUND (GAUGES) & ΑΝΑΣΤΡΟΦΗ -->
+        <!-- 1. ΑΡΙΣΤΕΡΑ: LIVE ΚΑΜΕΡΑ | ΔΕΞΙΑ (ή ΚΑΤΩ ΣΕ ΚΙΝΗΤΟ): ΠΡΟΓΝΩΣΕΙΣ 24ΩΡΟΥ & 48ΩΡΟΥ -->
         <div class="main-grid">
             <div class="left-col">
                 <div class="panel" style="height:100%;">
                     <div class="panel-header">
                         <span><span class="live-badge">● LIVE</span> ΚΑΜΕΡΑ ΣΑΜΑΡΙΝΑ ΧΩΡΙΟ</span>
                         <div class="cam-header-right">
-                            <a href="https://www.forecastweather.gr/kameres/makedonias/samarina-grevenon-chorio.html" target="_blank" rel="noopener noreferrer" class="fw-link-btn">🎞️ Timelapse / ForecastWeather ↗</a>
+                            <a href="https://www.forecastweather.gr/kameres/makedonias/samarina-grevenon-chorio.html" target="_blank" rel="noopener noreferrer" class="fw-link-btn">🎞️ Timelapse ↗</a>
                             <span id="clock" style="font-size:0.82rem; color:#94a3b8;"></span>
                         </div>
                     </div>
@@ -955,170 +960,198 @@
             </div>
 
             <div class="right-col">
-                <div class="panel">
+                <div class="panel" style="height:100%;">
                     <div class="panel-header">
-                        <span>📡 LIVE ΟΡΓΑΝΑ ΣΤΑΘΜΟΥ (ISAMAR38 • PWS GAUGES)</span>
-                        <span id="lastUpdate">--:--</span>
+                        <span>🔮 ΠΡΟΓΝΩΣΗ ΚΑΙΡΟΥ ΣΑΜΑΡΙΝΑΣ (24ΩΡΟ &amp; 48ΩΡΟ)</span>
+                        <span id="hybridBadge" style="font-size:0.78rem; color:#38bdf8;">Συγχρονισμός...</span>
                     </div>
-
-                    <!-- 5 WEATHER UNDERGROUND STYLE SVG GAUGES -->
-                    <div class="wu-gauges-grid">
-                        <!-- 1. TEMPERATURE GAUGE -->
-                        <div class="wu-gauge-card">
-                            <div class="wu-g-title">TEMPERATURE</div>
-                            <div class="wu-g-svg-box">
-                                <svg viewBox="0 0 110 95">
-                                    <defs>
-                                        <linearGradient id="wuTempGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-                                            <stop offset="0%" stop-color="#3b82f6"/>
-                                            <stop offset="30%" stop-color="#06b6d4"/>
-                                            <stop offset="55%" stop-color="#10b981"/>
-                                            <stop offset="80%" stop-color="#f59e0b"/>
-                                            <stop offset="100%" stop-color="#ef4444"/>
-                                        </linearGradient>
-                                    </defs>
-                                    <path d="M 22 76 A 42 42 0 1 1 88 76" fill="none" stroke="rgba(148,163,184,0.2)" stroke-width="7" stroke-linecap="round"/>
-                                    <path d="M 22 76 A 42 42 0 1 1 88 76" fill="none" stroke="url(#wuTempGrad)" stroke-width="7" stroke-linecap="round"/>
-                                    <circle id="wuTempKnob" cx="55" cy="10" r="5.5" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
-                                </svg>
+                    <div class="dual-forecast-grid">
+                        <div class="tf-column tf-col-hybrid24" id="col24Container">
+                            <div class="tf-col-header">
+                                <span id="col24Title">❄️ 24ωρη Υβριδική Πρόγνωση (Ανά 3ωρο)</span>
+                                <div class="source-pill-group">
+                                    <button type="button" id="pillHybrid24" class="source-pill active-pill" onclick="switch24CardsSource('hybrid')">Υβριδικό</button>
+                                    <button type="button" id="pillStation24" class="source-pill" onclick="switch24CardsSource('station')">Μόνο Σταθμός</button>
+                                </div>
                             </div>
-                            <div class="wu-g-main"><span id="stTempVal">--</span><sup>°C</sup></div>
-                            <div class="wu-g-sub" id="stChillSub">FEELS LIKE --°</div>
-                            <div class="wu-g-sub2" id="stWetSub">Υγρό: --°C</div>
+                            <div class="forecast-cards" id="forecastGrid"></div>
                         </div>
 
-                        <!-- 2. HUMIDITY RING GAUGE -->
-                        <div class="wu-gauge-card">
-                            <div class="wu-g-title">HUMIDITY</div>
-                            <div class="wu-g-svg-box">
-                                <svg viewBox="0 0 110 95">
-                                    <circle cx="55" cy="48" r="36" fill="none" stroke="rgba(148,163,184,0.18)" stroke-width="8"/>
-                                    <circle id="wuHumRing" cx="55" cy="48" r="36" fill="none" stroke="#38bdf8" stroke-width="8"
-                                            stroke-dasharray="226.2" stroke-dashoffset="113" stroke-linecap="round"
-                                            transform="rotate(-90 55 48)"/>
-                                </svg>
+                        <div class="tf-column tf-col-hybrid48">
+                            <div class="tf-col-header">
+                                <span>📅 Πρόγνωση 48 Ωρών (Ανά 6ωρο)</span>
+                                <span style="font-size:0.72rem; color:#94a3b8;">← Σύρετε οριζόντια • Ελάχ. / Μέγ.</span>
                             </div>
-                            <div class="wu-g-main"><span id="stHumVal">--</span><sup>%</sup></div>
-                            <div class="wu-g-sub" id="stDewSub">--° DEW POINT</div>
-                            <div class="wu-g-sub2" id="stSpreadSub">Απόστ.: --°C</div>
+                            <div class="forecast-cards-48" id="forecast48Grid"></div>
                         </div>
-
-                        <!-- 3. WIND COMPASS DIAL -->
-                        <div class="wu-gauge-card">
-                            <div class="wu-g-title">WIND</div>
-                            <div class="wu-g-svg-box">
-                                <svg viewBox="0 0 110 95">
-                                    <circle cx="55" cy="48" r="38" fill="rgba(15,23,42,0.45)" stroke="rgba(148,163,184,0.3)" stroke-width="1.2"/>
-                                    <circle cx="55" cy="48" r="33" fill="none" stroke="rgba(148,163,184,0.22)" stroke-width="3" stroke-dasharray="1.5 3.68"/>
-                                    <text x="55" y="18" text-anchor="middle" fill="#f8fafc" font-size="8.5" font-weight="800">N</text>
-                                    <text x="87" y="51" text-anchor="middle" fill="#94a3b8" font-size="8" font-weight="700">E</text>
-                                    <text x="55" y="83" text-anchor="middle" fill="#94a3b8" font-size="8" font-weight="700">S</text>
-                                    <text x="23" y="51" text-anchor="middle" fill="#94a3b8" font-size="8" font-weight="700">W</text>
-                                    <g id="wuWindArrow" transform="rotate(0 55 48)">
-                                        <polygon points="55,10 50,21 55,18 60,21" fill="#ef4444"/>
-                                        <circle cx="55" cy="48" r="3" fill="#38bdf8"/>
-                                    </g>
-                                </svg>
-                            </div>
-                            <div class="wu-g-main"><span id="stWindVal">--</span><sup>km/h</sup></div>
-                            <div class="wu-g-sub" id="stGustSub">GUSTS -- KM/H</div>
-                            <div class="wu-g-sub2" id="stDirSub">--° --</div>
-                        </div>
-
-                        <!-- 4. PRECIPITATION CYLINDER -->
-                        <div class="wu-gauge-card">
-                            <div class="wu-g-title">PRECIPITATION</div>
-                            <div class="wu-g-svg-box">
-                                <svg viewBox="0 0 110 95">
-                                    <defs>
-                                        <clipPath id="wuRainClip">
-                                            <rect x="37" y="12" width="36" height="72" rx="6"/>
-                                        </clipPath>
-                                    </defs>
-                                    <rect x="37" y="12" width="36" height="72" rx="6" fill="rgba(15,23,42,0.65)" stroke="rgba(148,163,184,0.4)" stroke-width="1.5"/>
-                                    <g clip-path="url(#wuRainClip)">
-                                        <rect id="wuRainFillRect" x="37" y="82" width="36" height="2" fill="rgba(14, 165, 233, 0.72)"/>
-                                        <line id="wuRainTopLine" x1="37" y1="82" x2="73" y2="82" stroke="#38bdf8" stroke-width="2"/>
-                                    </g>
-                                    <line x1="37" y1="30" x2="43" y2="30" stroke="rgba(148,163,184,0.45)" stroke-width="1"/>
-                                    <line x1="37" y1="48" x2="45" y2="48" stroke="rgba(148,163,184,0.45)" stroke-width="1"/>
-                                    <line x1="37" y1="66" x2="43" y2="66" stroke="rgba(148,163,184,0.45)" stroke-width="1"/>
-                                </svg>
-                            </div>
-                            <div class="wu-g-main"><span id="stRainVal">--</span><sup>mm</sup></div>
-                            <div class="wu-g-sub" id="stRateSub">0 MM/HR</div>
-                            <div class="wu-g-sub2" id="stFlSub">Παγοπ.: -- μ.</div>
-                        </div>
-
-                        <!-- 5. PRESSURE BAROMETER DIAL -->
-                        <div class="wu-gauge-card">
-                            <div class="wu-g-title">PRESSURE</div>
-                            <div class="wu-g-svg-box">
-                                <svg viewBox="0 0 110 95">
-                                    <circle cx="55" cy="48" r="38" fill="rgba(15,23,42,0.5)" stroke="rgba(148,163,184,0.32)" stroke-width="1.4"/>
-                                    <path d="M 27 72 A 34 34 0 1 1 83 72" fill="none" stroke="rgba(148,163,184,0.28)" stroke-width="4" stroke-dasharray="1.5 4"/>
-                                    <text x="27" y="64" fill="#94a3b8" font-size="6.5" font-weight="700">980</text>
-                                    <text x="55" y="21" text-anchor="middle" fill="#94a3b8" font-size="6.5" font-weight="700">1013</text>
-                                    <text x="73" y="64" fill="#94a3b8" font-size="6.5" font-weight="700">1045</text>
-                                    <g id="wuPressNeedle" transform="rotate(0 55 48)">
-                                        <line x1="55" y1="54" x2="55" y2="17" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round"/>
-                                        <circle cx="55" cy="48" r="4" fill="#cbd5e1" stroke="#0f172a" stroke-width="1.2"/>
-                                    </g>
-                                </svg>
-                            </div>
-                            <div class="wu-g-main"><span id="stPressVal">--</span><sup>hPa</sup></div>
-                            <div class="wu-g-sub" id="stTrendSub">ΤΑΣΗ: --</div>
-                            <div class="wu-g-sub2" id="stPressStatus">Κανονική</div>
-                        </div>
-                    </div>
-
-                    <!-- INTERACTIVE DAY SCRUBBER -->
-                    <div class="wu-scrubber-bar">
-                        <div class="wu-scrubber-top">
-                            <span class="wu-scrubber-badge" id="wuScrubberLabel">● Τώρα (Live)</span>
-                            <button type="button" id="wuLiveResetBtn" class="wu-live-reset-btn" style="display:none;" onclick="resetWuScrubberToLive()">↺ Επιστροφή στο Live</button>
-                        </div>
-                        <input type="range" id="wuDayScrubber" class="wu-scrubber-slider" min="0" max="287" value="287" oninput="onWuScrubberChange(this.value)">
-                        <div class="wu-scrubber-ticks">
-                            <span>12a</span><span>3a</span><span>6a</span><span>9a</span><span>12p</span><span>3p</span><span>6p</span><span>9p</span>
-                        </div>
-                    </div>
-
-                    <div class="extremes-bar" id="dailyExtremes">
-                        <span>📉 Ελάχ. Ημέρας: <b>--°C</b></span>
-                        <span>📈 Μέγ. Ημέρας: <b>--°C</b></span>
-                        <span>💨 Μέγ. Ριπή: <b>-- km/h</b></span>
-                        <span>❄️ Νέο Χιόνι 24h: <b>0.0 cm</b></span>
-                    </div>
-                    <div class="smart-box" id="smartDiagnosis">Σύνδεση με σταθμό ISAMAR38...</div>
-                </div>
-
-                <div class="astro-inv-grid">
-                    <div class="ai-panel">
-                        <div class="ai-header">🌡️ ΑΝΑΣΤΡΟΦΗ (ΣΑΜΑΡΙΝΑ vs ΛΑΡΙΣΑ)</div>
-                        <div>
-                            <div class="ai-row"><span>🏔️ Σαμαρίνα (1.450μ.):</span><strong id="invSamTemp" style="color:#f87171;">--°C</strong></div>
-                            <div class="ai-row"><span>🏙️ Λάρισα (70μ.):</span><strong id="invLarTemp">--°C</strong></div>
-                            <div class="ai-row"><span>Διαφορά ΔT:</span><strong id="invDiffTemp">--°C</strong></div>
-                            <div class="ai-sub-note" id="invLapseNote">Υψομετρική διαφορά: 1.380 μ.</div>
-                        </div>
-                        <div id="invStatusBadge" class="ai-badge inv-normal">Υπολογισμός...</div>
-                    </div>
-
-                    <div class="ai-panel">
-                        <div class="ai-header">☀️ ΑΣΤΡΟΝΟΜΙΚΑ &amp; ΣΚΙΑΣΗ ΣΜΟΛΙΚΑ</div>
-                        <div>
-                            <div class="ai-row"><span>🌅 Ανατολή Ηλίου:</span><strong id="astroSunrise">--:--</strong></div>
-                            <div class="ai-row"><span>🌇 Δύση Ηλίου:</span><strong id="astroSunset">--:--</strong></div>
-                            <div class="ai-row"><span>🕒 Διάρκεια Ημέρας:</span><strong id="astroDaylight">--ω --λ</strong></div>
-                        </div>
-                        <div id="astroShadeBadge" class="ai-badge astro-shade-badge">🏔️ Τοπική Σκίαση Σμόλικα: ~--:--</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 2. ΠΡΑΓΜΑΤΙΚΟ ΓΡΑΦΗΜΑ ΣΤΑΘΜΟΥ 24ΩΡΟΥ (ISAMAR38) -->
+        <!-- 2. LIVE ΟΡΓΑΝΑ ΣΤΑΘΜΟΥ (ISAMAR38) & ΑΝΑΣΤΡΟΦΗ / ΑΣΤΡΟΝΟΜΙΚΑ -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>📡 LIVE ΟΡΓΑΝΑ ΣΤΑΘΜΟΥ (ISAMAR38 • PWS GAUGES)</span>
+                <span id="lastUpdate">--:--</span>
+            </div>
+
+            <!-- 5 WEATHER UNDERGROUND STYLE SVG GAUGES -->
+            <div class="wu-gauges-grid">
+                <!-- 1. TEMPERATURE GAUGE -->
+                <div class="wu-gauge-card">
+                    <div class="wu-g-title">TEMPERATURE</div>
+                    <div class="wu-g-svg-box">
+                        <svg viewBox="0 0 110 95">
+                            <defs>
+                                <linearGradient id="wuTempGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="#3b82f6"/>
+                                    <stop offset="30%" stop-color="#06b6d4"/>
+                                    <stop offset="55%" stop-color="#10b981"/>
+                                    <stop offset="80%" stop-color="#f59e0b"/>
+                                    <stop offset="100%" stop-color="#ef4444"/>
+                                </linearGradient>
+                            </defs>
+                            <path d="M 22 76 A 42 42 0 1 1 88 76" fill="none" stroke="rgba(148,163,184,0.2)" stroke-width="7" stroke-linecap="round"/>
+                            <path d="M 22 76 A 42 42 0 1 1 88 76" fill="none" stroke="url(#wuTempGrad)" stroke-width="7" stroke-linecap="round"/>
+                            <circle id="wuTempKnob" cx="55" cy="10" r="5.5" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <div class="wu-g-main"><span id="stTempVal">--</span><sup>°C</sup></div>
+                    <div class="wu-g-sub" id="stChillSub">FEELS LIKE --°</div>
+                    <div class="wu-g-sub2" id="stWetSub">Υγρό: --°C</div>
+                </div>
+
+                <!-- 2. HUMIDITY RING GAUGE -->
+                <div class="wu-gauge-card">
+                    <div class="wu-g-title">HUMIDITY</div>
+                    <div class="wu-g-svg-box">
+                        <svg viewBox="0 0 110 95">
+                            <circle cx="55" cy="48" r="36" fill="none" stroke="rgba(148,163,184,0.18)" stroke-width="8"/>
+                            <circle id="wuHumRing" cx="55" cy="48" r="36" fill="none" stroke="#38bdf8" stroke-width="8"
+                                    stroke-dasharray="226.2" stroke-dashoffset="113" stroke-linecap="round"
+                                    transform="rotate(-90 55 48)"/>
+                        </svg>
+                    </div>
+                    <div class="wu-g-main"><span id="stHumVal">--</span><sup>%</sup></div>
+                    <div class="wu-g-sub" id="stDewSub">--° DEW POINT</div>
+                    <div class="wu-g-sub2" id="stSpreadSub">Απόστ.: --°C</div>
+                </div>
+
+                <!-- 3. WIND COMPASS DIAL -->
+                <div class="wu-gauge-card">
+                    <div class="wu-g-title">WIND</div>
+                    <div class="wu-g-svg-box">
+                        <svg viewBox="0 0 110 95">
+                            <circle cx="55" cy="48" r="38" fill="rgba(15,23,42,0.45)" stroke="rgba(148,163,184,0.3)" stroke-width="1.2"/>
+                            <circle cx="55" cy="48" r="33" fill="none" stroke="rgba(148,163,184,0.22)" stroke-width="3" stroke-dasharray="1.5 3.68"/>
+                            <text x="55" y="18" text-anchor="middle" fill="#f8fafc" font-size="8.5" font-weight="800">N</text>
+                            <text x="87" y="51" text-anchor="middle" fill="#94a3b8" font-size="8" font-weight="700">E</text>
+                            <text x="55" y="83" text-anchor="middle" fill="#94a3b8" font-size="8" font-weight="700">S</text>
+                            <text x="23" y="51" text-anchor="middle" fill="#94a3b8" font-size="8" font-weight="700">W</text>
+                            <g id="wuWindArrow" transform="rotate(0 55 48)">
+                                <polygon points="55,10 50,21 55,18 60,21" fill="#ef4444"/>
+                                <circle cx="55" cy="48" r="3" fill="#38bdf8"/>
+                            </g>
+                        </svg>
+                    </div>
+                    <div class="wu-g-main"><span id="stWindVal">--</span><sup>km/h</sup></div>
+                    <div class="wu-g-sub" id="stGustSub">GUSTS -- KM/H</div>
+                    <div class="wu-g-sub2" id="stDirSub">--° --</div>
+                </div>
+
+                <!-- 4. PRECIPITATION CYLINDER -->
+                <div class="wu-gauge-card">
+                    <div class="wu-g-title">PRECIPITATION</div>
+                    <div class="wu-g-svg-box">
+                        <svg viewBox="0 0 110 95">
+                            <defs>
+                                <clipPath id="wuRainClip">
+                                    <rect x="37" y="12" width="36" height="72" rx="6"/>
+                                </clipPath>
+                            </defs>
+                            <rect x="37" y="12" width="36" height="72" rx="6" fill="rgba(15,23,42,0.65)" stroke="rgba(148,163,184,0.4)" stroke-width="1.5"/>
+                            <g clip-path="url(#wuRainClip)">
+                                <rect id="wuRainFillRect" x="37" y="82" width="36" height="2" fill="rgba(14, 165, 233, 0.72)"/>
+                                <line id="wuRainTopLine" x1="37" y1="82" x2="73" y2="82" stroke="#38bdf8" stroke-width="2"/>
+                            </g>
+                            <line x1="37" y1="30" x2="43" y2="30" stroke="rgba(148,163,184,0.45)" stroke-width="1"/>
+                            <line x1="37" y1="48" x2="45" y2="48" stroke="rgba(148,163,184,0.45)" stroke-width="1"/>
+                            <line x1="37" y1="66" x2="43" y2="66" stroke="rgba(148,163,184,0.45)" stroke-width="1"/>
+                        </svg>
+                    </div>
+                    <div class="wu-g-main"><span id="stRainVal">--</span><sup>mm</sup></div>
+                    <div class="wu-g-sub" id="stRateSub">0 MM/HR</div>
+                    <div class="wu-g-sub2" id="stFlSub">Παγοπ.: -- μ.</div>
+                </div>
+
+                <!-- 5. PRESSURE BAROMETER DIAL -->
+                <div class="wu-gauge-card">
+                    <div class="wu-g-title">PRESSURE</div>
+                    <div class="wu-g-svg-box">
+                        <svg viewBox="0 0 110 95">
+                            <circle cx="55" cy="48" r="38" fill="rgba(15,23,42,0.5)" stroke="rgba(148,163,184,0.32)" stroke-width="1.4"/>
+                            <path d="M 27 72 A 34 34 0 1 1 83 72" fill="none" stroke="rgba(148,163,184,0.28)" stroke-width="4" stroke-dasharray="1.5 4"/>
+                            <text x="27" y="64" fill="#94a3b8" font-size="6.5" font-weight="700">980</text>
+                            <text x="55" y="21" text-anchor="middle" fill="#94a3b8" font-size="6.5" font-weight="700">1013</text>
+                            <text x="73" y="64" fill="#94a3b8" font-size="6.5" font-weight="700">1045</text>
+                            <g id="wuPressNeedle" transform="rotate(0 55 48)">
+                                <line x1="55" y1="54" x2="55" y2="17" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round"/>
+                                <circle cx="55" cy="48" r="4" fill="#cbd5e1" stroke="#0f172a" stroke-width="1.2"/>
+                            </g>
+                        </svg>
+                    </div>
+                    <div class="wu-g-main"><span id="stPressVal">--</span><sup>hPa</sup></div>
+                    <div class="wu-g-sub" id="stTrendSub">ΤΑΣΗ: --</div>
+                    <div class="wu-g-sub2" id="stPressStatus">Κανονική</div>
+                </div>
+            </div>
+
+            <!-- INTERACTIVE DAY SCRUBBER -->
+            <div class="wu-scrubber-bar">
+                <div class="wu-scrubber-top">
+                    <span class="wu-scrubber-badge" id="wuScrubberLabel">● Τώρα (Live)</span>
+                    <button type="button" id="wuLiveResetBtn" class="wu-live-reset-btn" style="display:none;" onclick="resetWuScrubberToLive()">↺ Επιστροφή στο Live</button>
+                </div>
+                <input type="range" id="wuDayScrubber" class="wu-scrubber-slider" min="0" max="287" value="287" oninput="onWuScrubberChange(this.value)">
+                <div class="wu-scrubber-ticks">
+                    <span>12a</span><span>3a</span><span>6a</span><span>9a</span><span>12p</span><span>3p</span><span>6p</span><span>9p</span>
+                </div>
+            </div>
+
+            <div class="extremes-bar" id="dailyExtremes">
+                <span>📉 Ελάχ. Ημέρας: <b>--°C</b></span>
+                <span>📈 Μέγ. Ημέρας: <b>--°C</b></span>
+                <span>💨 Μέγ. Ριπή: <b>-- km/h</b></span>
+                <span>❄️ Νέο Χιόνι 24h: <b>0.0 cm</b></span>
+            </div>
+            <div class="smart-box" id="smartDiagnosis">Σύνδεση με σταθμό ISAMAR38...</div>
+
+            <div class="astro-inv-grid">
+                <div class="ai-panel">
+                    <div class="ai-header">🌡️ ΑΝΑΣΤΡΟΦΗ (ΣΑΜΑΡΙΝΑ vs ΛΑΡΙΣΑ)</div>
+                    <div>
+                        <div class="ai-row"><span>🏔️ Σαμαρίνα (1.450μ.):</span><strong id="invSamTemp" style="color:#f87171;">--°C</strong></div>
+                        <div class="ai-row"><span>🏙️ Λάρισα (70μ.):</span><strong id="invLarTemp">--°C</strong></div>
+                        <div class="ai-row"><span>Διαφορά ΔT:</span><strong id="invDiffTemp">--°C</strong></div>
+                        <div class="ai-sub-note" id="invLapseNote">Υψομετρική διαφορά: 1.380 μ.</div>
+                    </div>
+                    <div id="invStatusBadge" class="ai-badge inv-normal">Υπολογισμός...</div>
+                </div>
+
+                <div class="ai-panel">
+                    <div class="ai-header">☀️ ΑΣΤΡΟΝΟΜΙΚΑ &amp; ΣΚΙΑΣΗ ΣΜΟΛΙΚΑ</div>
+                    <div>
+                        <div class="ai-row"><span>🌅 Ανατολή Ηλίου:</span><strong id="astroSunrise">--:--</strong></div>
+                        <div class="ai-row"><span>🌇 Δύση Ηλίου:</span><strong id="astroSunset">--:--</strong></div>
+                        <div class="ai-row"><span>🕒 Διάρκεια Ημέρας:</span><strong id="astroDaylight">--ω --λ</strong></div>
+                    </div>
+                    <div id="astroShadeBadge" class="ai-badge astro-shade-badge">🏔️ Τοπική Σκίαση Σμόλικα: ~--:--</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. ΠΡΑΓΜΑΤΙΚΟ ΓΡΑΦΗΜΑ ΣΤΑΘΜΟΥ 24ΩΡΟΥ (ISAMAR38) -->
         <div class="panel">
             <div class="panel-header">
                 <span style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -1133,34 +1166,6 @@
                     <div class="chart-container" style="height:295px;">
                         <canvas id="samarina24hRealtimeChart"></canvas>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 3. ΚΑΘΑΡΗ ΠΡΟΓΝΩΣΗ ΣΕ ΟΡΙΖΟΝΤΙΑ ΚΥΛΙΣΗ (24ΩΡΟ ΠΑΝΩ & 48ΩΡΟ ΚΑΤΩ) -->
-        <div class="panel">
-            <div class="panel-header">
-                <span>🔮 ΠΡΟΓΝΩΣΗ ΚΑΙΡΟΥ ΣΑΜΑΡΙΝΑΣ (24ΩΡΟ &amp; 48ΩΡΟ)</span>
-                <span id="hybridBadge" style="font-size:0.78rem; color:#38bdf8;">Συγχρονισμός...</span>
-            </div>
-            <div class="dual-forecast-grid">
-                <div class="tf-column tf-col-hybrid24" id="col24Container">
-                    <div class="tf-col-header">
-                        <span id="col24Title">❄️ 24ωρη Υβριδική Πρόγνωση (Ανά 3ωρο)</span>
-                        <div class="source-pill-group">
-                            <button type="button" id="pillHybrid24" class="source-pill active-pill" onclick="switch24CardsSource('hybrid')">Υβριδικό</button>
-                            <button type="button" id="pillStation24" class="source-pill" onclick="switch24CardsSource('station')">Μόνο Σταθμός</button>
-                        </div>
-                    </div>
-                    <div class="forecast-cards" id="forecastGrid"></div>
-                </div>
-
-                <div class="tf-column tf-col-hybrid48">
-                    <div class="tf-col-header">
-                        <span>📅 Πρόγνωση 48 Ωρών (Ανά 12ωρο)</span>
-                        <span style="font-size:0.72rem; color:#94a3b8;">Ημερομηνία • Ελάχ. / Μέγ.</span>
-                    </div>
-                    <div class="forecast-cards-48" id="forecast48Grid"></div>
                 </div>
             </div>
         </div>
@@ -1883,7 +1888,6 @@
             const targetHour = (currentHour + hrs) % 24;
             const spread = Math.max(0, temp - dew);
 
-            // Πιο ρεαλιστική ημερήσια πορεία: μειώνεται όταν φυσάει (άνεμος ανακατεύει τον αέρα) ή όταν ο αέρας είναι κορεσμένος
             const diurnalFactor = h => -Math.cos(((h - 4) / 24) * 2 * Math.PI);
             const windDamping = wind > 15 ? 0.35 : (wind > 8 ? 0.65 : 1.0);
             const moistureDamping = spread < 2.0 ? 0.55 : 1.0;
@@ -1963,11 +1967,9 @@
 
             const modelTempNow = idxNow !== -1 ? toFiniteNumber(omData.hourly.temperature_2m[idxNow], temp) : temp;
             const initialBias = temp - modelTempNow;
-            // Το bias του σταθμού σβήνει πιο γρήγορα (σε ~12 ώρες) για να μην παρασύρει μεσοπρόθεσμα
             const decayedBias = initialBias * Math.max(0, 1 - (hrs / 12));
             const correctedModelTemp = modelTargetTemp + decayedBias;
 
-            // Νέα στάθμιση: ισχυρό nowcasting στις πρώτες 3 ώρες, πιο δυνατός ο ρόλος του μοντέλου στο +6h..+24h
             const wTempStation = hrs <= 3 ? 0.80 : (hrs <= 6 ? 0.45 : (hrs <= 12 ? 0.22 : (hrs <= 24 ? 0.15 : 0.08)));
             const wTempModel = 1 - wTempStation;
 
@@ -2040,11 +2042,16 @@
                 }
             }
 
+            // 8 εξάωρα παράθυρα για οριζόντια κύλιση 48ώρου
             const windows = [
-                { title: "Επόμενο 12ωρο", start: 1, end: 12 },
-                { title: "+12h έως +24h", start: 13, end: 24 },
-                { title: "+24h έως +36h", start: 25, end: 36 },
-                { title: "+36h έως +48h", start: 37, end: 47 }
+                { title: "+00–06h", start: 1, end: 6 },
+                { title: "+06–12h", start: 7, end: 12 },
+                { title: "+12–18h", start: 13, end: 18 },
+                { title: "+18–24h", start: 19, end: 24 },
+                { title: "+24–30h", start: 25, end: 30 },
+                { title: "+30–36h", start: 31, end: 36 },
+                { title: "+36–42h", start: 37, end: 42 },
+                { title: "+42–48h", start: 43, end: 47 }
             ];
 
             const fmtShortTime = d => d.toLocaleTimeString("el-GR", { hour: "2-digit", minute: "2-digit" });
@@ -2054,8 +2061,8 @@
                 const endDate = new Date(baseDate.getTime() + w.end * 3600 * 1000);
                 const dStart = formatShortDayDate(startDate);
                 const dEnd = formatShortDayDate(endDate);
-                const dateRangeLabel = dStart === dEnd ? dStart : `${dStart} – ${dEnd}`;
-                const timeRangeLabel = `${fmtShortTime(startDate)} - ${fmtShortTime(endDate)}`;
+                const dateRangeLabel = dStart === dEnd ? dStart : `${dStart}–${dEnd}`;
+                const timeRangeLabel = `${fmtShortTime(startDate)}-${fmtShortTime(endDate)}`;
 
                 const sliceT = hourly48.temps.slice(w.start, w.end + 1).filter(v => Number.isFinite(v));
                 const sliceP = hourly48.precip.slice(w.start, w.end + 1);
@@ -2071,13 +2078,13 @@
                 const midDir = sliceD[Math.floor(sliceD.length / 2)] || 0;
 
                 let icon = "🌤️";
-                if (Number(sumSnow) >= 0.5) icon = "❄️";
-                else if (Number(sumPrecip) >= 1.0) icon = "🌧️";
+                if (Number(sumSnow) >= 0.4) icon = "❄️";
+                else if (Number(sumPrecip) >= 0.8) icon = "🌧️";
                 else if (Number(sumPrecip) > 0) icon = "⛅";
                 else if (tMin !== "--" && Number(tMin) <= 0) icon = "🥶";
 
                 return {
-                    title: `<span style="color:#fbbf24; display:block; font-size:0.78rem;">📅 ${dateRangeLabel}</span><span style="font-size:0.7rem; color:#94a3b8;">${timeRangeLabel} (${w.title})</span>`,
+                    title: `<span style="color:#fbbf24; display:block; font-size:0.72rem;">${dateRangeLabel}</span><span style="font-size:0.72rem; color:#cbd5e1;">${timeRangeLabel}</span>`,
                     tMin, tMax, sumPrecip, sumSnow, maxWind,
                     bf: kmhToBeaufort(maxWind),
                     compass: degToCompass(midDir),
@@ -2817,8 +2824,8 @@
                         <div class="f-time">${b.title}</div>
                         <div class="f-icon">${b.icon}</div>
                         <div class="f-temp">${b.tMin}° / ${b.tMax}°C</div>
-                        <div class="f-snow">${Number(b.sumSnow) > 0 ? "❄️ Χιόνι: " + b.sumSnow + "cm" : (Number(b.sumPrecip) > 0 ? "💧 Υετός: " + b.sumPrecip + "mm" : "Ξηρό διάστημα")}</div>
-                        <div class="f-wind">💨 Έως ${b.maxWind} km/h (${b.bf} Bf) ${b.compass}</div>
+                        <div class="f-snow">${Number(b.sumSnow) > 0 ? "❄️ Χιόνι: " + b.sumSnow + "cm" : (Number(b.sumPrecip) > 0 ? "💧 Υετός: " + b.sumPrecip + "mm" : "Ξηρό")}</div>
+                        <div class="f-wind">💨 ${b.maxWind} km/h (${b.bf}Bf) ${b.compass}</div>
                     </div>
                 `).join(""));
 
