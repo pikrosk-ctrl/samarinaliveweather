@@ -63,15 +63,34 @@
       display: block;
       border-radius: 4px;
     }
+
+    /* Υπολογιστής: αριστερά κάμερα, δεξιά πρόγνωση πάνω και δεδομένα σταθμού κάτω */
     .main-grid {
       display: grid;
       grid-template-columns: 1.25fr 1fr;
+      grid-template-areas:
+        "cam forecast"
+        "cam station";
       gap: 12px;
+      align-items: start;
     }
+    .area-cam { grid-area: cam; height: 100%; }
+    .area-forecast { grid-area: forecast; }
+    .area-station { grid-area: station; }
+
+    /* Κινητό / tablet: κάμερα -> πρόγνωση -> δεδομένα σταθμού */
     @media (max-width: 980px) {
-      .main-grid { grid-template-columns: 1fr; }
+      .main-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "cam"
+          "forecast"
+          "station";
+      }
+      .area-cam { height: auto; }
       .cam-wrapper { min-height: 250px; }
     }
+
     .panel {
       background: #1e293b;
       border-radius: 10px;
@@ -110,11 +129,6 @@
       height: 100%;
       object-fit: contain;
       display: block;
-    }
-    .right-col {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
     }
     .station-grid {
       display: grid;
@@ -432,7 +446,7 @@
   </div>
 
   <div class="main-grid">
-    <div class="panel">
+    <div class="panel area-cam">
       <div class="panel-header">
         <span><span class="live-badge">● LIVE</span> ΚΑΜΕΡΑ ΣΑΜΑΡΙΝΑ ΧΩΡΙΟ</span>
         <span id="clock" style="font-size:0.82rem; color:#94a3b8;"></span>
@@ -442,60 +456,58 @@
       </div>
     </div>
 
-    <div class="right-col">
-      <div class="panel">
-        <div class="panel-header">
-          <span>📡 LIVE ΔΕΔΟΜΕΝΑ ΣΤΑΘΜΟΥ (ISAMAR38)</span>
-          <span id="lastUpdate">--:--</span>
-        </div>
-        <div class="station-grid">
-          <div class="s-tile">
-            <div class="s-label">Θερμοκρασία</div>
-            <div class="s-val" id="stTemp">--°C</div>
-            <div class="s-sub" id="stDew">Σημ. Δρόσου: --°C</div>
-          </div>
-          <div class="s-tile">
-            <div class="s-label">Πίεση</div>
-            <div class="s-val" id="stPress">-- hPa</div>
-            <div class="s-sub" id="stTrend">Τάση: --</div>
-          </div>
-          <div class="s-tile">
-            <div class="s-label">Υγρασία</div>
-            <div class="s-val" id="stHum">--%</div>
-            <div class="s-sub" id="stSpread">Απόσταση: --°C</div>
-          </div>
-          <div class="s-tile">
-            <div class="s-label">Άνεμος</div>
-            <div class="s-val" id="stWind">-- km/h</div>
-            <div class="s-sub" id="stDir">Διεύθυνση: --</div>
-          </div>
-          <div class="s-tile">
-            <div class="s-label">Υετός Ημέρας</div>
-            <div class="s-val" id="stRain">-- mm</div>
-            <div class="s-sub" id="stRate">Ρυθμός: -- mm/h</div>
-          </div>
-          <div class="s-tile">
-            <div class="s-label">Αίσθηση Ψύχους</div>
-            <div class="s-val" id="stChill">--°C</div>
-            <div class="s-sub" id="stFl">Παγοποίηση: -- μ.</div>
-          </div>
-        </div>
-        <div class="extremes-bar" id="dailyExtremes">
-          <span>📉 Ελάχ. Ημέρας: <b>--°C</b></span>
-          <span>📈 Μέγ. Ημέρας: <b>--°C</b></span>
-          <span>💨 Μέγ. Ριπή: <b>-- km/h</b></span>
-          <span>❄️ Νέο Χιόνι 24h: <b>0.0 cm</b></span>
-        </div>
-        <div class="smart-box" id="smartDiagnosis">Σύνδεση με σταθμό ISAMAR38...</div>
-        <div class="smart-summary-24h" id="smartSummary24h"><b>Σύνοψη 24ώρου:</b> Αναμονή δεδομένων...</div>
+    <div class="panel area-forecast">
+      <div class="panel-header">
+        <span>❄️ 24ΩΡΗ ΠΡΟΓΝΩΣΗ ΑΛΓΟΡΙΘΜΟΥ ΣΤΑΘΜΟΥ (ISAMAR38)</span>
       </div>
+      <div class="forecast-cards" id="forecastGrid"></div>
+    </div>
 
-      <div class="panel">
-        <div class="panel-header">
-          <span>❄️ 24ΩΡΗ ΠΡΟΓΝΩΣΗ ΑΛΓΟΡΙΘΜΟΥ ΣΤΑΘΜΟΥ (ISAMAR38)</span>
-        </div>
-        <div class="forecast-cards" id="forecastGrid"></div>
+    <div class="panel area-station">
+      <div class="panel-header">
+        <span>📡 LIVE ΔΕΔΟΜΕΝΑ ΣΤΑΘΜΟΥ (ISAMAR38)</span>
+        <span id="lastUpdate">--:--</span>
       </div>
+      <div class="station-grid">
+        <div class="s-tile">
+          <div class="s-label">Θερμοκρασία</div>
+          <div class="s-val" id="stTemp">--°C</div>
+          <div class="s-sub" id="stDew">Σημ. Δρόσου: --°C</div>
+        </div>
+        <div class="s-tile">
+          <div class="s-label">Πίεση</div>
+          <div class="s-val" id="stPress">-- hPa</div>
+          <div class="s-sub" id="stTrend">Τάση: --</div>
+        </div>
+        <div class="s-tile">
+          <div class="s-label">Υγρασία</div>
+          <div class="s-val" id="stHum">--%</div>
+          <div class="s-sub" id="stSpread">Απόσταση: --°C</div>
+        </div>
+        <div class="s-tile">
+          <div class="s-label">Άνεμος</div>
+          <div class="s-val" id="stWind">-- km/h</div>
+          <div class="s-sub" id="stDir">Διεύθυνση: --</div>
+        </div>
+        <div class="s-tile">
+          <div class="s-label">Υετός Ημέρας</div>
+          <div class="s-val" id="stRain">-- mm</div>
+          <div class="s-sub" id="stRate">Ρυθμός: -- mm/h</div>
+        </div>
+        <div class="s-tile">
+          <div class="s-label">Αίσθηση Ψύχους</div>
+          <div class="s-val" id="stChill">--°C</div>
+          <div class="s-sub" id="stFl">Παγοποίηση: -- μ.</div>
+        </div>
+      </div>
+      <div class="extremes-bar" id="dailyExtremes">
+        <span>📉 Ελάχ. Ημέρας: <b>--°C</b></span>
+        <span>📈 Μέγ. Ημέρας: <b>--°C</b></span>
+        <span>💨 Μέγ. Ριπή: <b>-- km/h</b></span>
+        <span>❄️ Νέο Χιόνι 24h: <b>0.0 cm</b></span>
+      </div>
+      <div class="smart-box" id="smartDiagnosis">Σύνδεση με σταθμό ISAMAR38...</div>
+      <div class="smart-summary-24h" id="smartSummary24h"><b>Σύνοψη 24ώρου:</b> Αναμονή δεδομένων...</div>
     </div>
   </div>
 
