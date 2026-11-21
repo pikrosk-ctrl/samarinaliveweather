@@ -64,30 +64,34 @@
       border-radius: 4px;
     }
 
-    /* Υπολογιστής: αριστερά κάμερα, δεξιά πρόγνωση πάνω και δεδομένα σταθμού κάτω */
+    /* Υπολογιστής: αριστερά κάμερα, δεξιά Σύνοψη -> Πρόγνωση -> Δεδομένα Σταθμού */
     .main-grid {
       display: grid;
       grid-template-columns: 1.25fr 1fr;
+      grid-template-rows: auto auto 1fr;
       grid-template-areas:
+        "cam summary"
         "cam forecast"
         "cam station";
       gap: 12px;
-      align-items: start;
+      align-items: stretch;
     }
-    .area-cam { grid-area: cam; height: 100%; }
+    .area-cam { grid-area: cam; }
+    .area-summary { grid-area: summary; }
     .area-forecast { grid-area: forecast; }
     .area-station { grid-area: station; }
 
-    /* Κινητό / tablet: κάμερα -> πρόγνωση -> δεδομένα σταθμού */
+    /* Κινητό / tablet: Κάμερα -> Σύνοψη -> Πρόγνωση -> Δεδομένα Σταθμού */
     @media (max-width: 980px) {
       .main-grid {
         grid-template-columns: 1fr;
+        grid-template-rows: auto;
         grid-template-areas:
           "cam"
+          "summary"
           "forecast"
           "station";
       }
-      .area-cam { height: auto; }
       .cam-wrapper { min-height: 250px; }
     }
 
@@ -170,7 +174,6 @@
       color: #e0f2fe;
     }
     .smart-summary-24h {
-      margin-top: 8px;
       padding: 10px 12px;
       background: #0f172a;
       border-radius: 8px;
@@ -456,6 +459,8 @@
       </div>
     </div>
 
+    <div class="smart-summary-24h area-summary" id="smartSummary24h"><b>Σύνοψη 24ώρου:</b> Αναμονή δεδομένων...</div>
+
     <div class="panel area-forecast">
       <div class="panel-header">
         <span>❄️ 24ΩΡΗ ΠΡΟΓΝΩΣΗ ΑΛΓΟΡΙΘΜΟΥ ΣΤΑΘΜΟΥ (ISAMAR38)</span>
@@ -507,7 +512,6 @@
         <span>❄️ Νέο Χιόνι 24h: <b>0.0 cm</b></span>
       </div>
       <div class="smart-box" id="smartDiagnosis">Σύνδεση με σταθμό ISAMAR38...</div>
-      <div class="smart-summary-24h" id="smartSummary24h"><b>Σύνοψη 24ώρου:</b> Αναμονή δεδομένων...</div>
     </div>
   </div>
 
