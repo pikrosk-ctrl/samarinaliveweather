@@ -418,7 +418,7 @@
  <div class="top-bar">
  <div class="title">
  <h1>🏔️ ΣΑΜΑΡΙΝΑ ΓΡΕΒΕΝΩΝ (1.450μ.) — LIVE WEATHER</h1>
- <span>Σταθμός: Bresser 5-in-1 (ISAMAR38) | Κάμερα: Σαμαρίνα Χωριό | Σύνθεση: ISAMAR38 + ICON + ECMWF</span>
+ <span>Σταθμός: Bresser 5-in-1 (ISAMAR38) | Κάμερα: Σαμαρίνα Χωριό | Σύνθεση: ISAMAR38 + ICON + ECMWF (MOS & Wet-Bulb)</span>
  </div>
  <div class="top-badges">
  <div id="roadStatus" class="alert-box">🛣️ Έλεγχος δρόμου...</div>
@@ -491,7 +491,7 @@
  <div class="s-tile">
  <div class="s-label">Αίσθηση Ψύχους</div>
  <div class="s-val" id="stChill">--°C</div>
- <div class="s-sub" id="stFl">Παγοποίηση: -- μ.</div>
+ <div class="s-sub" id="stFl">Υγρό Θερμ.: --°C</div>
  </div>
  </div>
  <div class="extremes-bar" id="dailyExtremes">
@@ -504,22 +504,22 @@
 
  <div class="panel">
  <div class="panel-header">
- <span>🎯 ΕΠΑΛΗΘΕΥΣΗ ΑΚΡΙΒΕΙΑΣ ΤΟΠΙΚΟΥ ΣΤΑΘΜΟΥ (ISAMAR38)</span>
+ <span>🎯 ΕΠΑΛΗΘΕΥΣΗ ΑΚΡΙΒΕΙΑΣ (ISAMAR38 & ΥΒΡΙΔΙΚΟ ΜΟΝΤΕΛΟ)</span>
  <span id="verifySample" style="font-size:0.78rem; color:#38bdf8;">ISAMAR38 + ICON + ECMWF</span>
  </div>
  <div class="verify-grid" id="verifyGrid">
  <div class="v-card v-primary">
  <div class="v-top-row">
- <div class="v-horizon">Τοπικός Σταθμός +3h</div>
+ <div class="v-horizon">📡 Τοπικός Σταθμός ISAMAR38 (+3h)</div>
  <span class="v-badge-main">⭐ ΚΥΡΙΟΣ ΔΕΙΚΤΗΣ</span>
  </div>
  <div class="v-acc" style="color:#38bdf8; font-size:1.05rem;">Συλλογή δεδομένων...</div>
  <div class="v-mae">Άμεση πρόγνωση (Nowcasting ISAMAR38)</div>
  </div>
  <div class="v-card v-secondary">
- <div class="v-horizon">Τοπικός Σταθμός +6h</div>
+ <div class="v-horizon">🌐 Υβριδικό Μοντέλο (+6h)</div>
  <div class="v-acc" style="color:#94a3b8; font-size:0.9rem;">Συλλογή δεδομένων...</div>
- <div class="v-mae">Βραχυπρόθεσμη εκτίμηση</div>
+ <div class="v-mae">Σύνθεση ISAMAR38 + ICON + ECMWF</div>
  </div>
  </div>
  </div>
@@ -542,6 +542,7 @@
  <b style="color:#38bdf8;">Καμπύλες 24ώρου</b><br>
  <span style="color:#f87171;">━</span> Θερμ. (°C)<br>
  <span style="color:#38bdf8;">┄</span> Αισθητή (°C)<br>
+ <span style="color:#34d399;">┄</span> Υγρό Θερμ. (Tw)<br>
  <span style="color:#a78bfa;">┄</span> Σημ. Δρόσου
  </div>
  <div class="mg-chart-canvas-wrap">
@@ -576,13 +577,19 @@
  </div>
 
  <div class="footer-bar">
- Σαμαρίνα Live Weather Dashboard (1.450μ.) • Σταθμός Bresser 5-in-1 (ISAMAR38) + ICON + ECMWF
+ Σαμαρίνα Live Weather Dashboard (1.450μ.) • Σταθμός Bresser 5-in-1 (ISAMAR38) + ICON + ECMWF (Wet-Bulb & Dynamic MOS)
  </div>
 
  <script>
  const WU_STATION_ID = "ISAMAR38";
  const WU_API_KEY = "5c94ee0c13f240ec94ee0c13f2b0ecd9";
  const STATS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ_y9OVAjf5gRIJN7ZKm_OuR_fP5UFcu2YWX3XNU7PRxSouu3L2-kPh6Rk1u3VP-pdBjOTIo22t3mN/pub?gid=409751746&single=true&output=csv";
+
+ // Προαιρετικό endpoint Cloudflare Worker / Server-side cache (π.χ. "https://samarina-api.forecastweather.gr/forecast.json")
+ // Όταν μείνει κενό (""), το frontend χρησιμοποιεί αυτόματα το 5-λεπτο localStorage cache + απευθείας APIs.
+ const WORKER_CACHE_URL = "";
+ const CLIENT_CACHE_TTL_MS = 5 * 60 * 1000;
+
  const LAT = 40.1;
  const LON = 21.02;
  const ELEV = 1450;
@@ -590,6 +597,19 @@
  let meteogramChartInstance = null;
  let latestHourlySeries = [];
  let meteogramStepHours = 1;
+
+ // Δυναμική κατάσταση MOS (Model Output Statistics) από τα ιστορικά στατιστικά επαλήθευσης
+ let mosState = {
+ ready: false,
+ sampleHours: 0,
+ mae3h: null,
+ mae6h: null,
+ acc3h: null,
+ acc6h: null,
+ precipSkillPct: null,
+ stationWeightBias: 0, // Προσαρμογή βάρους σταθμού βάσει πραγματικής επίδοσης
+ orographicScale: 1.15 // Δυναμικός συντελεστής ορογραφικής ενίσχυσης
+ };
 
  function syncScrollButtons(containerId, prevBtnId, nextBtnId) {
  const el = document.getElementById(containerId);
@@ -641,12 +661,24 @@
  }
  }
 
+ // 1. Υπολογισμός Αίσθησης Ψύχους (Wind Chill)
  function calcWindChill(tempC, windKmh) {
  if (tempC <= 10 && windKmh > 4.8) {
  const wc = 13.12 + 0.6215 * tempC - 11.37 * Math.pow(windKmh, 0.16) + 0.3965 * tempC * Math.pow(windKmh, 0.16);
  return Number(wc.toFixed(1));
  }
  return Number(tempC.toFixed(1));
+ }
+
+ // 2. Υπολογισμός Θερμοκρασίας Υγρού Θερμομέτρου (Wet-Bulb Temperature - τύπος Stull)
+ function calcWetBulb(tempC, rh) {
+ const safeRh = Math.max(1, Math.min(100, rh));
+ const tw = tempC * Math.atan(0.151977 * Math.pow(safeRh + 8.313659, 0.5))
+ + Math.atan(tempC + safeRh)
+ - Math.atan(safeRh - 1.676331)
+ + 0.00391838 * Math.pow(safeRh, 1.5) * Math.atan(0.023101 * safeRh)
+ - 4.686035;
+ return Number(tw.toFixed(1));
  }
 
  function degToCompass(num) {
@@ -674,6 +706,39 @@
  return result;
  }
 
+ // Ενημέρωση παραμέτρων Dynamic Bias Correction (MOS) από τα πραγματικά στατιστικά επαλήθευσης
+ function updateDynamicMOS(statsMap) {
+ const s3 = statsMap["+3h_HYB"] || statsMap["+3h"];
+ const s6 = statsMap["+6h_HYB"] || statsMap["+6h"];
+
+ if (s3 && s3.count >= 5 && !isNaN(s3.mae)) {
+ mosState.ready = true;
+ mosState.sampleHours = s3.count;
+ mosState.mae3h = s3.mae;
+ mosState.acc3h = s3.accPct;
+
+ // Αν το MAE του +3h είναι πολύ χαμηλό (< 1.2°C), αυξάνουμε το βάρος nowcasting του σταθμού.
+ // Αν είναι υψηλό (> 2.2°C), δίνουμε μεγαλύτερη βαρύτητα στα αριθμητικά μοντέλα ICON/ECMWF.
+ if (s3.mae <= 1.2) mosState.stationWeightBias = 0.06;
+ else if (s3.mae >= 2.2) mosState.stationWeightBias = -0.08;
+ else mosState.stationWeightBias = 0;
+ }
+
+ if (s6 && s6.count >= 5 && !isNaN(s6.mae)) {
+ mosState.mae6h = s6.mae;
+ mosState.acc6h = s6.accPct;
+ }
+
+ // Προσαρμογή ορογραφικής ενίσχυσης υετού βάσει ιστορικής επαλήθευσης υετού
+ const precipPct = s3?.precipPct ?? s6?.precipPct;
+ if (!isNaN(precipPct) && precipPct > 0) {
+ mosState.precipSkillPct = precipPct;
+ if (precipPct >= 85) mosState.orographicScale = 1.15;
+ else if (precipPct >= 70) mosState.orographicScale = 1.10;
+ else mosState.orographicScale = 1.04;
+ }
+ }
+
  async function loadVerificationStats(retryCount = 0) {
  if (!STATS_CSV_URL) return;
 
@@ -694,10 +759,14 @@
  };
  }
 
+ updateDynamicMOS(statsMap);
+
  const primaryKey = statsMap["+3h_HYB"] ? "+3h_HYB" : (statsMap["+3h"] ? "+3h" : "+12h");
  const secondaryKey = statsMap["+6h_HYB"] ? "+6h_HYB" : (statsMap["+6h"] ? "+6h" : "+24h");
- const primaryLabel = primaryKey === "+3h_HYB" ? "Τοπικός Σταθμός +3h" : (primaryKey === "+3h" ? "Μοντέλο +3h" : "Μοντέλο +12h");
- const secondaryLabel = secondaryKey === "+6h_HYB" ? "Τοπικός Σταθμός +6h" : (secondaryKey === "+6h" ? "Μοντέλο +6h" : "Τάση +24h");
+ const primaryLabel = "📡 Τοπικός Σταθμός ISAMAR38 (+3h)";
+ const secondaryLabel = secondaryKey.includes("+6h")
+ ? "🌐 Υβριδικό Μοντέλο (+6h)"
+ : "🌐 Υβριδικό Μοντέλο (+24h)";
 
  let cardPrimaryHtml = '';
  let cardSecondaryHtml = '';
@@ -737,7 +806,7 @@
  <div class="v-card v-secondary">
  <div class="v-horizon">${secondaryLabel}</div>
  <div class="v-acc" style="color:#94a3b8; font-size:0.92rem;">Συλλογή (${sData.count} δείγμ.)</div>
- <div class="v-mae">Βραχυπρόθεσμη εκτίμηση</div>
+ <div class="v-mae">Σύνθεση ISAMAR38 + ICON + ECMWF</div>
  </div>
  `;
  } else {
@@ -754,8 +823,9 @@
 
  if (cardPrimaryHtml || cardSecondaryHtml) {
  grid.innerHTML = cardPrimaryHtml + cardSecondaryHtml;
- const extra12 = statsMap["+12h_HYB"] ? ` • +12h: ${statsMap["+12h_HYB"].accPct}%` : '';
- document.getElementById('verifySample').innerText = `Υβριδικό Μοντέλο ISAMAR38${extra12}`;
+ const extra12 = statsMap["+12h_HYB"] ? ` • Υβριδικό +12h: ${statsMap["+12h_HYB"].accPct}%` : '';
+ const mosBadge = mosState.ready ? ' • MOS ✓' : '';
+ document.getElementById('verifySample').innerText = `ISAMAR38 + ICON + ECMWF${extra12}${mosBadge}`;
  return true;
  }
  return false;
@@ -782,9 +852,54 @@
  if (retryCount < 2) {
  setTimeout(() => loadVerificationStats(retryCount + 1), 4000);
  } else if (!localStorage.getItem('isamar38_stats_csv')) {
- document.getElementById('verifySample').innerText = "Υβριδικό Μοντέλο ISAMAR38";
+ document.getElementById('verifySample').innerText = "ISAMAR38 + ICON + ECMWF";
  }
  }
+ }
+
+ // Client + Worker Caching Wrapper για τα αριθμητικά μοντέλα
+ async function fetchModelsWithCache() {
+ const cacheKey = "isamar38_models_cache_v2";
+ try {
+ const rawCache = localStorage.getItem(cacheKey);
+ if (rawCache) {
+ const parsed = JSON.parse(rawCache);
+ if (Date.now() - parsed.ts < CLIENT_CACHE_TTL_MS && (parsed.icon || parsed.ecmwf)) {
+ return { iconHourly: parsed.icon, ecmwfHourly: parsed.ecmwf, source: "client-cache" };
+ }
+ }
+ } catch (e) {}
+
+ // Αν έχει ρυθμιστεί server-side Worker cache endpoint, το προτιμάμε
+ if (WORKER_CACHE_URL) {
+ try {
+ const wRes = await fetch(WORKER_CACHE_URL);
+ if (wRes.ok) {
+ const wData = await wRes.json();
+ if (wData.icon || wData.ecmwf) {
+ try {
+ localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), icon: wData.icon, ecmwf: wData.ecmwf }));
+ } catch (e) {}
+ return { iconHourly: wData.icon, ecmwfHourly: wData.ecmwf, source: "worker-cache" };
+ }
+ }
+ } catch (e) {}
+ }
+
+ const [iconRes, ecmwfRes] = await Promise.allSettled([
+ fetchModelHourly("icon_seamless"),
+ fetchModelHourly("ecmwf_ifs025")
+ ]);
+ const iconHourly = iconRes.status === 'fulfilled' ? iconRes.value : null;
+ const ecmwfHourly = ecmwfRes.status === 'fulfilled' ? ecmwfRes.value : null;
+
+ if (iconHourly || ecmwfHourly) {
+ try {
+ localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), icon: iconHourly, ecmwf: ecmwfHourly }));
+ } catch (e) {}
+ }
+
+ return { iconHourly, ecmwfHourly, source: "live-api" };
  }
 
  async function fetchModelHourly(modelName) {
@@ -843,11 +958,12 @@
  const isNight = (targetHour >= 20 || targetHour < 7);
 
  if (hrs === 0) {
+ const tw0 = calcWetBulb(station.temp, station.hum);
  const p0 = Number((station.rate || 0).toFixed(1));
- const s0 = (station.temp <= 1.2 && p0 > 0) ? Number((p0 * (station.temp <= -4 ? 1.5 : station.temp <= -1.5 ? 1.2 : 0.85)).toFixed(1)) : 0;
+ const s0 = (tw0 <= 0.8 && p0 > 0) ? Number((p0 * (tw0 <= -4 ? 1.5 : tw0 <= -1.5 ? 1.2 : 0.85)).toFixed(1)) : 0;
  const cloud0 = Math.round(avgValid([iconH?.cloud, ecmwfH?.cloud], station.hum >= 85 ? 80 : 30));
  let icon0 = isNight ? '🌙' : '🌤️';
- if (s0 > 0 || (p0 > 0 && station.temp <= 1.2)) icon0 = '❄️';
+ if (s0 > 0 || (p0 > 0 && tw0 <= 0.8)) icon0 = '❄️';
  else if (p0 > 0) icon0 = '🌧️';
  else if ((station.temp - station.dew) <= 1.5 && station.hum >= 90) icon0 = '🌫️';
  else if (station.temp <= 0) icon0 = '🥶';
@@ -860,6 +976,7 @@
  icon: icon0,
  temp: Number(station.temp.toFixed(1)),
  chill: Number(station.chill.toFixed(1)),
+ wetBulb: tw0,
  dew: Number(station.dew.toFixed(1)),
  hum: Math.round(station.hum),
  dir: station.dir,
@@ -875,7 +992,10 @@
  };
  }
 
- const stationWeight = Math.max(0.15, 0.75 - hrs * 0.03);
+ // Δυναμική στάθμιση με ενσωμάτωση του MOS bias correction
+ const baseStationW = Math.max(0.15, 0.75 - hrs * 0.03);
+ const mosAdjust = mosState.ready ? mosState.stationWeightBias * Math.max(0, 1 - hrs / 18) : 0;
+ const stationWeight = Math.max(0.12, Math.min(0.85, baseStationW + mosAdjust));
  const modelWeight = 1 - stationWeight;
 
  const spread = station.temp - station.dew;
@@ -900,6 +1020,9 @@
  const localHum = Math.max(25, Math.min(100, Math.round(station.hum - (predT - station.temp) * 3.2 + (station.trend < -1 ? 6 : 0))));
  const modelHum = avgValid([iconH?.hum, ecmwfH?.hum], localHum);
  const predHum = Math.max(25, Math.min(100, Math.round(localHum * stationWeight + modelHum * modelWeight)));
+
+ // Θερμοκρασία Υγρού Θερμομέτρου (Wet-Bulb) για την προβλεπόμενη ώρα
+ const predTw = calcWetBulb(predT, predHum);
 
  const localPress = station.press + (station.trend / 3) * Math.min(hrs, 12) * 0.65;
  const modelPress = avgValid([iconH?.press, ecmwfH?.press], localPress);
@@ -955,21 +1078,21 @@
  if (modelPrecip < 0.1) {
  predPr = (hrs === 1 && station.rate > 0) ? Number((station.rate * 0.5).toFixed(1)) : 0;
  } else {
- const orographicBoost = (precipScore >= 65) ? 1.15 : 1.0;
+ const orographicBoost = (precipScore >= 65) ? mosState.orographicScale : 1.0;
  predPr = Number((modelPrecip * orographicBoost).toFixed(1));
  }
  } else {
  predPr = localPrecip;
  }
 
+ // Υπολογισμός χιονόπτωσης με βάση τη Θερμοκρασία Υγρού Θερμομέτρου (predTw <= 0.8°C)
  let stepSnowCm = 0;
  const modelSnowVals = [iconH?.snowfall, ecmwfH?.snowfall].filter(v => typeof v === 'number' && !isNaN(v));
  const modelSnow = modelSnowVals.length > 0 ? modelSnowVals.reduce((a, b) => a + b, 0) / modelSnowVals.length : null;
- if (predT <= 1.2 && predPr > 0) {
- let ratio = 1.0;
- if (predT <= -4.0) ratio = 1.5;
- else if (predT <= -1.5) ratio = 1.2;
- else ratio = 0.85;
+ if (predTw <= 0.8 && predPr > 0) {
+ let ratio = 0.85;
+ if (predTw <= -4.0) ratio = 1.5;
+ else if (predTw <= -1.5) ratio = 1.2;
  const localSnow = Number((predPr * ratio).toFixed(1));
  stepSnowCm = modelSnow !== null ? Number((modelSnow * 0.65 + localSnow * 0.35).toFixed(1)) : localSnow;
  }
@@ -978,10 +1101,11 @@
  let prob = (modelsAgree ? 94 : 88) - (hrs * 1.1);
  if (Math.abs(station.trend) >= 1.8) prob -= 5;
  else if (predPress >= 1018 && Math.abs(station.trend) < 0.8) prob += 3;
+ if (mosState.ready && mosState.mae3h !== null && mosState.mae3h <= 1.3) prob += 2;
  prob = Math.max(55, Math.min(97, Math.round(prob)));
 
  let icon = isNight ? '🌙' : '🌤️';
- if (stepSnowCm > 0 || (predPr > 0 && predT <= 1.2)) icon = '❄️';
+ if (stepSnowCm > 0 || (predPr > 0 && predTw <= 0.8)) icon = '❄️';
  else if (predPr > 0) icon = '🌧️';
  else if (currentSpread <= 1.5 && predHum >= 90) icon = '🌫️';
  else if (predT <= 0) icon = '🥶';
@@ -994,6 +1118,7 @@
  icon,
  temp: predT,
  chill: calcWindChill(predT, predWind),
+ wetBulb: predTw,
  dew: predDew,
  hum: predHum,
  dir: predDir,
@@ -1039,6 +1164,7 @@
  const rowIcons = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="font-size:1.25rem;">${d.icon}</td>`).join('');
  const rowTemp = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}"><span class="mg-pill ${getTempClass(d.temp)}">${d.temp.toFixed(1)}°</span></td>`).join('');
  const rowChill = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}"><span class="mg-pill ${getTempClass(d.chill)}">${d.chill.toFixed(1)}°</span></td>`).join('');
+ const rowWetBulb = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:${d.wetBulb <= 0.8 ? '#38bdf8' : '#34d399'}; font-weight:${d.wetBulb <= 0.8 ? '700' : '400'};">${d.wetBulb.toFixed(1)}°</td>`).join('');
  const rowDew = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:#c4b5fd;">${d.dew.toFixed(1)}°</td>`).join('');
  const rowHum = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:#93c5fd;">${d.hum}%</td>`).join('');
  const rowWind = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}"><span class="wind-arrow" style="transform:rotate(${(d.dir + 180) % 360}deg);">↑</span> ${d.dirText}</td>`).join('');
@@ -1053,6 +1179,7 @@
  <tr><td class="mg-sticky-col">☁️ Κατάσταση</td>${rowIcons}</tr>
  <tr><td class="mg-sticky-col">🌡️ Θερμοκρασία (°C)</td>${rowTemp}</tr>
  <tr><td class="mg-sticky-col">🥶 Αίσθηση Ψύχους (°C)</td>${rowChill}</tr>
+ <tr><td class="mg-sticky-col">🌡️ Υγρό Θερμ. Tw (°C)</td>${rowWetBulb}</tr>
  <tr><td class="mg-sticky-col">💧 Σημείο Δρόσου (°C)</td>${rowDew}</tr>
  <tr><td class="mg-sticky-col">💦 Υγρασία (%)</td>${rowHum}</tr>
  <tr><td class="mg-sticky-col">🧭 Διεύθυνση Ανέμου</td>${rowWind}</tr>
@@ -1086,6 +1213,15 @@
  borderColor: '#38bdf8',
  borderDash: [4, 3],
  borderWidth: 2,
+ tension: 0.35,
+ pointRadius: 2
+ },
+ {
+ label: 'Υγρό Θερμόμετρο Tw (°C)',
+ data: filtered.map(d => d.wetBulb),
+ borderColor: '#34d399',
+ borderDash: [3, 3],
+ borderWidth: 1.8,
  tension: 0.35,
  pointRadius: 2
  },
@@ -1153,6 +1289,7 @@
  const rain = obs.metric.precipTotal;
  const rate = obs.metric.precipRate;
  const chill = obs.metric.windChill;
+ const wetBulbNow = calcWetBulb(temp, hum);
  const spread = temp - dew;
 
  let trend = 0;
@@ -1176,6 +1313,7 @@
  document.getElementById('stRain').innerText = `${rain} mm`;
  document.getElementById('stRate').innerText = `Ρυθμός: ${rate} mm/h`;
  document.getElementById('stChill').innerText = `${chill.toFixed(1)}°C`;
+ document.getElementById('stFl').innerText = `Υγρό Θερμ.: ${wetBulbNow.toFixed(1)}°C`;
  document.getElementById('lastUpdate').innerText = `Ενημ.: ${new Date().toLocaleTimeString('el-GR', {hour:'2-digit', minute:'2-digit'})}`;
 
  let minDayT = temp, maxDayT = temp, maxDayGust = gust;
@@ -1198,15 +1336,7 @@
  }
  } catch (err) {}
 
- const fl = Math.round(1450 + (temp / 6.5) * 1000);
- document.getElementById('stFl').innerText = `Παγοποίηση: ${fl} μ.`;
-
- const [iconRes, ecmwfRes] = await Promise.allSettled([
- fetchModelHourly("icon_seamless"),
- fetchModelHourly("ecmwf_ifs025")
- ]);
- const iconHourly = iconRes.status === 'fulfilled' ? iconRes.value : null;
- const ecmwfHourly = ecmwfRes.status === 'fulfilled' ? ecmwfRes.value : null;
+ const { iconHourly, ecmwfHourly } = await fetchModelsWithCache();
 
  const stationState = { temp, dew, press, hum, wind, gust, dir, rain, rate, chill, trend };
  const hourlySeries = [];
@@ -1268,7 +1398,7 @@
 
  const roadEl = document.getElementById('roadStatus');
  roadEl.className = 'alert-box';
- if (estSnowCm24 >= 2.0 || (rate > 0 && temp <= 1.0)) {
+ if (estSnowCm24 >= 2.0 || (rate > 0 && wetBulbNow <= 0.8)) {
  roadEl.classList.add('road-danger');
  roadEl.innerText = '⛓️ Δρόμος: Απαραίτητες αλυσίδες';
  } else if (temp <= 0.5 && (hum >= 80 || rain > 0 || totalPrecip24 > 0.5)) {
@@ -1288,10 +1418,10 @@
  const modelsStatus = `${iconHourly ? 'ICON ✓' : 'ICON —'} / ${ecmwfHourly ? 'ECMWF ✓' : 'ECMWF —'}`;
  let diagText = '';
 
- if (estSnowCm24 > 0.3 || ((totalPrecip24 > 1.0 || trend <= -1.5) && (dew <= 0.5 || minTemp24 <= 1.0))) {
+ if (estSnowCm24 > 0.3 || ((totalPrecip24 > 1.0 || trend <= -1.5) && (wetBulbNow <= 0.8 || minTemp24 <= 1.0))) {
  topAlert.classList.add('alert-snow');
  topAlert.innerText = `❄️ ΣΥΝΑΓΕΡΜΟΣ ΧΙΟΝΟΠΤΩΣΗΣ (24h)`;
- diagText = `❄️ <b>Συνθήκες χιονιού (${modelsStatus}):</b> Ο σταθμός ISAMAR38 μετρά ${temp.toFixed(1)}°C (Σημ. Δρόσου ${dew.toFixed(1)}°C) και η σύνθεση με ICON/ECMWF εκτιμά ελάχιστη ${minTemp24.toFixed(1)}°C και νέο χιόνι ~${estSnowCm24.toFixed(1)} cm το επόμενο 24ωρο.`;
+ diagText = `❄️ <b>Συνθήκες χιονιού (${modelsStatus}):</b> Ο σταθμός ISAMAR38 μετρά ${temp.toFixed(1)}°C (Υγρό Θερμ. Tw ${wetBulbNow.toFixed(1)}°C) και η σύνθεση με ICON/ECMWF εκτιμά ελάχιστη ${minTemp24.toFixed(1)}°C και νέο χιόνι ~${estSnowCm24.toFixed(1)} cm το επόμενο 24ωρο.`;
  } else if (trend <= -1.5 && isSoutherly && totalPrecip24 > 0.3) {
  topAlert.classList.add('alert-storm');
  topAlert.innerText = `🌧️ ΕΡΧΕΤΑΙ ΕΠΙΔΕΙΝΩΣΗ (ΠΤΩΣΗ ΠΙΕΣΗΣ)`;
@@ -1316,8 +1446,10 @@
  setupScrollHelpers('mgScrollContainer', 'btnMgPrev', 'btnMgNext');
  window.addEventListener('resize', updateAllScrollButtons);
 
+ // Φορτώνουμε πρώτα τα ιστορικά στατιστικά για να ενεργοποιηθεί το Dynamic MOS πριν τον 1ο υπολογισμό
+ loadVerificationStats().finally(() => {
  updateDashboard();
- loadVerificationStats();
+ });
  setInterval(updateDashboard, 300000);
  setInterval(loadVerificationStats, 600000);
  </script>
