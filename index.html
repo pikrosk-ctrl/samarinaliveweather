@@ -261,7 +261,6 @@
  .v-card.v-primary .v-acc { font-size: 1.45rem; color: #34d399; margin: 5px 0; }
  .v-mae { font-size: 0.76rem; color: #cbd5e1; }
  .v-card.v-primary .v-mae { font-size: 0.82rem; color: #e2e8f0; }
- /* --- ΔΥΝΑΜΙΚΟ 24ΩΡΟ ΜΕΤΕΩΓΡΑΜΜΑ ΜΕ ΟΡΙΖΟΝΤΙΑ ΚΥΛΙΣΗ --- */
  .meteogram-controls {
  display: flex;
  align-items: center;
@@ -340,12 +339,8 @@
  color: #38bdf8;
  border-bottom: 2px solid #38bdf8;
  }
- .mg-night {
- background: rgba(15, 23, 42, 0.65);
- }
- .mg-day {
- background: rgba(30, 41, 59, 0.25);
- }
+ .mg-night { background: rgba(15, 23, 42, 0.65); }
+ .mg-day { background: rgba(30, 41, 59, 0.25); }
  .mg-pill {
  display: inline-block;
  padding: 2px 6px;
@@ -408,13 +403,13 @@
  <div class="top-bar">
  <div class="title">
  <h1>🏔️ ΣΑΜΑΡΙΝΑ ΓΡΕΒΕΝΩΝ (1.450μ.) — LIVE SNOW & WEATHER</h1>
- <span>Σταθμός: Bresser 5-in-1 (ISAMAR38) | Κάμερα: Σαμαρίνα Χωριό | Αλγόριθμος Πρόγνωσης Σταθμού (Zambretti & Ψυχρομετρία)</span>
+ <span>Σταθμός: Bresser 5-in-1 (ISAMAR38) | Κάμερα: Σαμαρίνα Χωριό | Σύνθεση: ISAMAR38 + ICON + ECMWF</span>
  </div>
  <div class="top-badges">
  <div id="roadStatus" class="alert-box">🛣️ Έλεγχος δρόμου...</div>
  <div id="topAlert" class="alert-box">Έλεγχος συνθηκών...</div>
  <div class="visitor-badge" title="Συνολικές επισκέψεις σελίδας">
- <img src="https://visitor-badge.laobi.icu/badge?page_id=samarinaliveweather&left_color=%230f172a&right_color=%230284c7&left_text=%CE%95%CF%80%CE%B9%CF%83%CE%BA%CE%AD%CF%88%CE%B5%CE%B9%CF%82" alt="Επισκέψεις">
+ <img src="https://visitor-badge.laobi.icu/badge?page_id=samarinaliveweather&left_color=%230f172a&right_color=%230284c7&left_text=%CE%95%CF%80%CE%B9%CF%83%CE%BA%CE%AD%CF%88%CE%B5%CE%B9%CF%%82" alt="Επισκέψεις">
  </div>
  </div>
  </div>
@@ -433,14 +428,14 @@
  <div class="right-col">
  <div class="panel">
  <div class="panel-header">
- <span>❄️ 24ΩΡΗ ΠΡΟΓΝΩΣΗ ΑΛΓΟΡΙΘΜΟΥ ΣΤΑΘΜΟΥ (ISAMAR38)</span>
+ <span>❄️ 24ΩΡΗ ΠΡΟΓΝΩΣΗ ISAMAR38 + ICON + ECMWF</span>
  <div class="meteogram-controls">
  <button type="button" class="mg-btn" onclick="scrollEl('forecastGrid', -240)">◀</button>
  <button type="button" class="mg-btn" onclick="scrollEl('forecastGrid', 240)">▶</button>
  </div>
  </div>
  <div class="forecast-cards" id="forecastGrid"></div>
- <div class="smart-box" id="smartDiagnosis">Σύνδεση με σταθμό ISAMAR38...</div>
+ <div class="smart-box" id="smartDiagnosis">Σύνδεση με σταθμό ISAMAR38, ICON & ECMWF...</div>
  </div>
 
  <div class="panel">
@@ -516,10 +511,9 @@
  </div>
  </div>
 
- <!-- ΔΥΝΑΜΙΚΟ 24ΩΡΟ ΜΕΤΕΩΓΡΑΜΜΑ ΜΕ ΟΡΙΖΟΝΤΙΑ ΚΥΛΙΣΗ -->
  <div class="panel">
  <div class="panel-header">
- <span>📊 ΔΥΝΑΜΙΚΟ 24ΩΡΟ ΜΕΤΕΩΓΡΑΜΜΑ (ΟΡΙΖΟΝΤΙΑ ΚΥΛΙΣΗ — ΟΛΕΣ ΟΙ ΠΑΡΑΜΕΤΡΟΙ ISAMAR38)</span>
+ <span>📊 ΔΥΝΑΜΙΚΟ 24ΩΡΟ ΜΕΤΕΩΓΡΑΜΜΑ (ISAMAR38 + ICON + ECMWF)</span>
  <div class="meteogram-controls">
  <button type="button" class="mg-btn active" id="btnStep1h" onclick="setMeteogramStep(1)">Ανά 1 ώρα (24h)</button>
  <button type="button" class="mg-btn" id="btnStep3h" onclick="setMeteogramStep(3)">Ανά 3 ώρες</button>
@@ -542,7 +536,7 @@
  <table class="mg-table" id="meteogramTable">
  <thead>
  <tr class="mg-head-row" id="mgHeadRow">
- <th class="mg-sticky-col">Ώρα (ISAMAR38)</th>
+ <th class="mg-sticky-col">Ώρα (Σύνθεση)</th>
  </tr>
  </thead>
  <tbody id="mgBody">
@@ -553,13 +547,17 @@
  </div>
 
  <div class="footer-bar">
- Σαμαρίνα Live Weather Dashboard (1.450μ.) • Δεδομένα & Αλγόριθμος Πρόγνωσης: Bresser 5-in-1 (ISAMAR38)
+ Σαμαρίνα Live Weather Dashboard (1.450μ.) • Σταθμός Bresser 5-in-1 (ISAMAR38) + ICON + ECMWF
  </div>
 
  <script>
  const WU_STATION_ID = "ISAMAR38";
  const WU_API_KEY = "5c94ee0c13f240ec94ee0c13f2b0ecd9";
  const STATS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ_y9OVAjf5gRIJN7ZKm_OuR_fP5UFcu2YWX3XNU7PRxSouu3L2-kPh6Rk1u3VP-pdBjOTIo22t3mN/pub?gid=409751746&single=true&output=csv";
+ const LAT = 40.1;
+ const LON = 21.02;
+ const ELEV = 1450;
+
  let meteogramChartInstance = null;
  let latestHourlySeries = [];
  let meteogramStepHours = 1;
@@ -590,121 +588,10 @@
  return Number(tempC.toFixed(1));
  }
 
- function renderMeteogram(series, step) {
- const filtered = series.filter((_, idx) => idx % step === 0);
- const colWidth = step === 1 ? 62 : 120;
- const totalWidth = Math.max(920, 155 + filtered.length * colWidth);
-
- document.getElementById('mgChartBox').style.minWidth = totalWidth + 'px';
- document.getElementById('meteogramTable').style.minWidth = totalWidth + 'px';
-
- const headRow = document.getElementById('mgHeadRow');
- headRow.innerHTML = `<th class="mg-sticky-col">Ώρα (ISAMAR38)</th>` + filtered.map((d, i) => {
- const isNow = i === 0;
- return `<th class="${isNow ? 'mg-now' : ''}">${isNow ? 'ΤΩΡΑ (' + d.time + ')' : d.time}<br><span style="font-weight:400; font-size:0.68rem; color:#64748b;">+${d.hrs}h</span></th>`;
- }).join('');
-
- const getTempClass = (t) => {
- if (t <= 0) return 't-freeze';
- if (t <= 5) return 't-cold';
- if (t <= 12) return 't-mild';
- return 't-warm';
- };
-
- const getWindClass = (w) => {
- if (w >= 35) return 'w-strong';
- if (w >= 18) return 'w-mod';
- return 'w-calm';
- };
-
- const rowIcons = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="font-size:1.25rem;">${d.icon}</td>`).join('');
- const rowTemp = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}"><span class="mg-pill ${getTempClass(d.temp)}">${d.temp.toFixed(1)}°</span></td>`).join('');
- const rowChill = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}"><span class="mg-pill ${getTempClass(d.chill)}">${d.chill.toFixed(1)}°</span></td>`).join('');
- const rowDew = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:#c4b5fd;">${d.dew.toFixed(1)}°</td>`).join('');
- const rowHum = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:#93c5fd;">${d.hum}%</td>`).join('');
- const rowWind = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}"><span class="wind-arrow" style="transform:rotate(${(d.dir + 180) % 360}deg);">↑</span> ${d.dirText}</td>`).join('');
- const rowWindSpd = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}"><span class="${getWindClass(d.wind)}">${d.wind} / ${d.gust}</span></td>`).join('');
- const rowPress = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:#cbd5e1;">${d.press.toFixed(1)}</td>`).join('');
- const rowPrecip = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:${d.precip > 0 ? '#38bdf8' : '#64748b'}; font-weight:${d.precip > 0 ? '700' : '400'};">${d.precip > 0 ? d.precip.toFixed(1) : '-'}</td>`).join('');
- const rowSnow = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:${d.snow > 0 ? '#e0f2fe' : '#64748b'}; font-weight:${d.snow > 0 ? '700' : '400'};">${d.snow > 0 ? d.snow.toFixed(1) + ' cm' : '-'}</td>`).join('');
- const rowFl = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:#94a3b8;">${d.fl} μ.</td>`).join('');
- const rowProb = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:${d.prob >= 80 ? '#34d399' : '#fbbf24'};">${d.prob}%</td>`).join('');
-
- document.getElementById('mgBody').innerHTML = `
- <tr><td class="mg-sticky-col">☁️ Κατάσταση</td>${rowIcons}</tr>
- <tr><td class="mg-sticky-col">🌡️ Θερμοκρασία (°C)</td>${rowTemp}</tr>
- <tr><td class="mg-sticky-col">🥶 Αίσθηση Ψύχους (°C)</td>${rowChill}</tr>
- <tr><td class="mg-sticky-col">💧 Σημείο Δρόσου (°C)</td>${rowDew}</tr>
- <tr><td class="mg-sticky-col">💦 Υγρασία (%)</td>${rowHum}</tr>
- <tr><td class="mg-sticky-col">🧭 Διεύθυνση Ανέμου</td>${rowWind}</tr>
- <tr><td class="mg-sticky-col">💨 Άνεμος / Ριπή (km/h)</td>${rowWindSpd}</tr>
- <tr><td class="mg-sticky-col">⏲️ Πίεση (hPa)</td>${rowPress}</tr>
- <tr><td class="mg-sticky-col">🌧️ Υετός (mm/h)</td>${rowPrecip}</tr>
- <tr><td class="mg-sticky-col">❄️ Νέο Χιόνι (cm)</td>${rowSnow}</tr>
- <tr><td class="mg-sticky-col">🏔️ Επίπεδο Παγοποίησης</td>${rowFl}</tr>
- <tr><td class="mg-sticky-col">🎯 Βεβαιότητα Αλγορ.</td>${rowProb}</tr>
- `;
-
- const mgCtx = document.getElementById('meteogramLineChart').getContext('2d');
- if (meteogramChartInstance) meteogramChartInstance.destroy();
- meteogramChartInstance = new Chart(mgCtx, {
- type: 'line',
- data: {
- labels: filtered.map(d => d.time),
- datasets: [
- {
- label: 'Θερμοκρασία (°C)',
- data: filtered.map(d => d.temp),
- borderColor: '#f87171',
- backgroundColor: 'rgba(248, 113, 113, 0.12)',
- borderWidth: 2.5,
- tension: 0.35,
- pointRadius: 3
- },
- {
- label: 'Αίσθηση Ψύχους (°C)',
- data: filtered.map(d => d.chill),
- borderColor: '#38bdf8',
- borderDash: [4, 3],
- borderWidth: 2,
- tension: 0.35,
- pointRadius: 2
- },
- {
- label: 'Σημείο Δρόσου (°C)',
- data: filtered.map(d => d.dew),
- borderColor: '#a78bfa',
- borderDash: [2, 2],
- borderWidth: 1.8,
- tension: 0.35,
- pointRadius: 2
- },
- {
- label: '0°C',
- data: filtered.map(() => 0),
- borderColor: 'rgba(239, 68, 68, 0.5)',
- borderWidth: 1,
- borderDash: [5, 5],
- pointRadius: 0
- }
- ]
- },
- options: {
- responsive: true,
- maintainAspectRatio: false,
- interaction: { mode: 'index', intersect: false },
- plugins: {
- legend: { display: false }
- },
- scales: {
- x: { display: false },
- y: {
- ticks: { color: '#94a3b8', font: { size: 10 } },
- grid: { color: 'rgba(51, 65, 85, 0.35)' }
- }
- }
- }
- });
+ function degToCompass(num) {
+ const val = Math.floor((num / 22.5) + 0.5);
+ const arr = ["Β", "ΒΒΑ", "ΒΑ", "ΑΒΑ", "Α", "ΑΝΑ", "ΝΑ", "ΝΝΑ", "Ν", "ΝΝΔ", "ΝΔ", "ΔΝΔ", "Δ", "ΔΒΔ", "ΒΔ", "ΒΒΔ"];
+ return arr[(val % 16)];
  }
 
  function parseCSVLine(line) {
@@ -820,82 +707,336 @@
  }
  }
 
- function degToCompass(num) {
- const val = Math.floor((num / 22.5) + 0.5);
- const arr = ["Β", "ΒΒΑ", "ΒΑ", "ΑΒΑ", "Α", "ΑΝΑ", "ΝΑ", "ΝΝΑ", "Ν", "ΝΝΔ", "ΝΔ", "ΔΝΔ", "Δ", "ΔΒΔ", "ΒΔ", "ΒΒΔ"];
- return arr[(val % 16)];
+ async function fetchModelHourly(modelName) {
+ const params = new URLSearchParams({
+ latitude: LAT,
+ longitude: LON,
+ elevation: ELEV,
+ models: modelName,
+ hourly: "temperature_2m,dew_point_2m,relative_humidity_2m,precipitation,snowfall,cloud_cover,wind_speed_10m,wind_gusts_10m,wind_direction_10m,pressure_msl",
+ wind_speed_unit: "kmh",
+ timezone: "Europe/Athens",
+ forecast_days: "2"
+ });
+ const url = `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
+ const res = await fetch(url);
+ if (!res.ok) throw new Error(`${modelName} HTTP ${res.status}`);
+ const data = await res.json();
+ if (!data.hourly || !Array.isArray(data.hourly.time)) throw new Error(`${modelName} missing hourly`);
+ return data.hourly;
  }
 
- function predictFromStation(hrs, temp, dew, press, trend, wind, dir, hum, gust) {
+ function getModelHourAt(hourly, targetDate) {
+ if (!hourly || !hourly.time) return null;
+ const y = targetDate.getFullYear();
+ const m = String(targetDate.getMonth() + 1).padStart(2, '0');
+ const d = String(targetDate.getDate()).padStart(2, '0');
+ const h = String(targetDate.getHours()).padStart(2, '0');
+ const key = `${y}-${m}-${d}T${h}:00`;
+ const idx = hourly.time.indexOf(key);
+ if (idx === -1) return null;
+
+ return {
+ temp: hourly.temperature_2m?.[idx],
+ dew: hourly.dew_point_2m?.[idx],
+ hum: hourly.relative_humidity_2m?.[idx],
+ precip: hourly.precipitation?.[idx] ?? 0,
+ snowfall: hourly.snowfall?.[idx] ?? 0,
+ cloud: hourly.cloud_cover?.[idx] ?? 0,
+ wind: hourly.wind_speed_10m?.[idx],
+ gust: hourly.wind_gusts_10m?.[idx],
+ dir: hourly.wind_direction_10m?.[idx],
+ press: hourly.pressure_msl?.[idx]
+ };
+ }
+
+ function avgValid(vals, fallback) {
+ const valid = vals.filter(v => typeof v === 'number' && !isNaN(v));
+ if (valid.length === 0) return fallback;
+ return valid.reduce((a, b) => a + b, 0) / valid.length;
+ }
+
+ function combineHourForecast(hrs, targetDate, station, iconH, ecmwfH) {
  const now = new Date();
  const currentHour = now.getHours() + (now.getMinutes() / 60);
- const targetHour = (currentHour + hrs) % 24;
- const spread = temp - dew;
+ const targetHour = targetDate.getHours();
+ const isNight = (targetHour >= 20 || targetHour < 7);
 
+ if (hrs === 0) {
+ const p0 = Number((station.rate || 0).toFixed(1));
+ const s0 = (station.temp <= 1.2 && p0 > 0) ? Number((p0 * (station.temp <= -4 ? 1.5 : station.temp <= -1.5 ? 1.2 : 0.85)).toFixed(1)) : 0;
+ return {
+ hrs: 0,
+ time: targetDate.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' }),
+ isNight,
+ temp: Number(station.temp.toFixed(1)),
+ chill: Number(station.chill.toFixed(1)),
+ dew: Number(station.dew.toFixed(1)),
+ hum: Math.round(station.hum),
+ dir: station.dir,
+ dirText: degToCompass(station.dir),
+ wind: Math.round(station.wind),
+ gust: Math.round(station.gust),
+ press: Number(station.press.toFixed(1)),
+ precip: p0,
+ snow: s0,
+ cloud: Math.round(avgValid([iconH?.cloud, ecmwfH?.cloud], station.hum >= 85 ? 80 : 30)),
+ fl: Math.round(1450 + (station.temp / 6.5) * 1000),
+ prob: 100
+ };
+ }
+
+ const stationWeight = Math.max(0.15, 0.75 - hrs * 0.03);
+ const modelWeight = 1 - stationWeight;
+
+ const spread = station.temp - station.dew;
  const diurnalFactor = (h) => -Math.cos(((h - 4) / 24) * 2 * Math.PI);
- const baseSwing = (spread > 4 && wind < 12) ? 3.8 : 2.2;
+ const baseSwing = (spread > 4 && station.wind < 12) ? 3.8 : 2.2;
  const diurnalDelta = (diurnalFactor(targetHour) - diurnalFactor(currentHour)) * baseSwing;
-
- const isNortherly = (dir >= 315 || dir <= 65);
- const isSoutherly = (dir >= 135 && dir <= 250);
+ const isNortherly = (station.dir >= 315 || station.dir <= 65);
+ const isSoutherly = (station.dir >= 135 && station.dir <= 250);
  let advectionDelta = 0;
- if (isNortherly && wind > 5) advectionDelta = -0.12 * Math.min(wind, 35) * (hrs / 12);
- else if (isSoutherly && wind > 5) advectionDelta = 0.08 * Math.min(wind, 35) * (hrs / 12);
+ if (isNortherly && station.wind > 5) advectionDelta = -0.12 * Math.min(station.wind, 35) * (hrs / 12);
+ else if (isSoutherly && station.wind > 5) advectionDelta = 0.08 * Math.min(station.wind, 35) * (hrs / 12);
+ const pressTempDelta = station.trend * 0.25 * (hrs / 12);
+ const localT = station.temp + diurnalDelta + advectionDelta + pressTempDelta;
 
- const pressTempDelta = trend * 0.25 * (hrs / 12);
- const predT = Number((temp + diurnalDelta + advectionDelta + pressTempDelta).toFixed(1));
+ const modelT = avgValid([iconH?.temp, ecmwfH?.temp], localT);
+ const predT = Number((localT * stationWeight + modelT * modelWeight).toFixed(1));
 
- const predDew = Number(Math.min(predT - 0.2, dew + (diurnalDelta * 0.45) + (trend < -1 ? 0.6 : 0)).toFixed(1));
- const predHum = Math.max(25, Math.min(100, Math.round(hum - (predT - temp) * 3.2 + (trend < -1 ? 6 : 0))));
- const predPress = Number((press + (trend / 3) * Math.min(hrs, 12) * 0.65).toFixed(1));
+ const localDew = Math.min(predT - 0.2, station.dew + (diurnalDelta * 0.45) + (station.trend < -1 ? 0.6 : 0));
+ const modelDew = avgValid([iconH?.dew, ecmwfH?.dew], localDew);
+ const predDew = Number(Math.min(predT - 0.2, localDew * stationWeight + modelDew * modelWeight).toFixed(1));
+
+ const localHum = Math.max(25, Math.min(100, Math.round(station.hum - (predT - station.temp) * 3.2 + (station.trend < -1 ? 6 : 0))));
+ const modelHum = avgValid([iconH?.hum, ecmwfH?.hum], localHum);
+ const predHum = Math.max(25, Math.min(100, Math.round(localHum * stationWeight + modelHum * modelWeight)));
+
+ const localPress = station.press + (station.trend / 3) * Math.min(hrs, 12) * 0.65;
+ const modelPress = avgValid([iconH?.press, ecmwfH?.press], localPress);
+ const predPress = Number((localPress * stationWeight + modelPress * modelWeight).toFixed(1));
+
  const windDiurnal = Math.sin(((targetHour - 6) / 24) * 2 * Math.PI) * 3.5;
- const predWind = Math.max(0, Math.round(wind + windDiurnal + (trend <= -1.5 ? 4 : 0)));
- const gustRatio = wind > 0 ? Math.max(1.3, (gust || wind * 1.4) / wind) : 1.4;
- const predGust = Math.max(predWind, Math.round(predWind * gustRatio));
- const predDir = (dir + Math.round(hrs * 1.5)) % 360;
+ const localWind = Math.max(0, station.wind + windDiurnal + (station.trend <= -1.5 ? 4 : 0));
+ const modelWind = avgValid([iconH?.wind, ecmwfH?.wind], localWind);
+ const predWind = Math.max(0, Math.round(localWind * stationWeight + modelWind * modelWeight));
+
+ const gustRatio = station.wind > 0 ? Math.max(1.3, (station.gust || station.wind * 1.4) / station.wind) : 1.4;
+ const localGust = Math.max(predWind, Math.round(predWind * gustRatio));
+ const modelGust = avgValid([iconH?.gust, ecmwfH?.gust], localGust);
+ const predGust = Math.max(predWind, Math.round(localGust * stationWeight + modelGust * modelWeight));
+
+ const localDir = (station.dir + Math.round(hrs * 1.5)) % 360;
+ const modelDir = avgValid([iconH?.dir, ecmwfH?.dir], localDir);
+ const predDir = Math.round(localDir * stationWeight + modelDir * modelWeight) % 360;
+
+ const modelPrecipVals = [iconH?.precip, ecmwfH?.precip].filter(v => typeof v === 'number' && !isNaN(v));
+ const modelPrecip = modelPrecipVals.length > 0 ? modelPrecipVals.reduce((a, b) => a + b, 0) / modelPrecipVals.length : null;
+ const modelCloudVals = [iconH?.cloud, ecmwfH?.cloud].filter(v => typeof v === 'number' && !isNaN(v));
+ const modelCloud = modelCloudVals.length > 0 ? modelCloudVals.reduce((a, b) => a + b, 0) / modelCloudVals.length : 50;
 
  let precipScore = 0;
- if (press <= 1004) precipScore += 45;
- else if (press <= 1010) precipScore += 30;
- else if (press <= 1015) precipScore += 15;
- else if (press >= 1022) precipScore -= 25;
+ if (predPress <= 1004) precipScore += 45;
+ else if (predPress <= 1010) precipScore += 30;
+ else if (predPress <= 1015) precipScore += 15;
+ else if (predPress >= 1022) precipScore -= 25;
 
- if (trend <= -2.5) precipScore += 40;
- else if (trend <= -1.2) precipScore += 25;
- else if (trend <= -0.5) precipScore += 10;
- else if (trend >= 1.2) precipScore -= 25;
+ if (station.trend <= -2.5) precipScore += 40;
+ else if (station.trend <= -1.2) precipScore += 25;
+ else if (station.trend <= -0.5) precipScore += 10;
+ else if (station.trend >= 1.2) precipScore -= 25;
 
- if (spread <= 1.5) precipScore += 25;
- else if (spread <= 3.0) precipScore += 12;
- else if (spread > 6.5) precipScore -= 20;
+ const currentSpread = predT - predDew;
+ if (currentSpread <= 1.5) precipScore += 25;
+ else if (currentSpread <= 3.0) precipScore += 12;
+ else if (currentSpread > 6.5) precipScore -= 20;
 
- if (isSoutherly || (dir >= 250 && dir <= 300)) precipScore += 12;
+ if (isSoutherly || (predDir >= 250 && predDir <= 300)) precipScore += 12;
 
  const timeDecay = Math.max(0.75, 1 - (hrs / 120));
  precipScore = Math.round(precipScore * timeDecay);
 
- let predPr = 0;
- if (precipScore >= 55) {
- predPr = Number(((precipScore - 45) * 0.08).toFixed(1));
+ let localPrecip = 0;
+ if (precipScore >= 65) {
+ localPrecip = Number(((precipScore - 55) * 0.07).toFixed(1));
  }
 
- let prob = 96 - (hrs * 1.2);
- if (Math.abs(trend) >= 1.8) prob -= 6;
- else if (press >= 1018 && Math.abs(trend) < 0.8) prob += 3;
- prob = Math.max(54, Math.min(97, Math.round(prob)));
+ let predPr = 0;
+ if (modelPrecip !== null) {
+ // Αν τα μοντέλα δεν δίνουν υετό (< 0.1 mm), απαιτούμε πολύ ισχυρό τοπικό σήμα (>= 85) και υψηλή υγρασία (>= 88%)
+ if (modelPrecip < 0.1) {
+ if (precipScore >= 85 && predHum >= 88) {
+ predPr = Number((localPrecip * 0.4).toFixed(1));
+ } else {
+ predPr = 0;
+ }
+ } else {
+ predPr = Number((modelPrecip * 0.65 + localPrecip * 0.35).toFixed(1));
+ }
+ } else {
+ predPr = localPrecip;
+ }
+
+ let stepSnowCm = 0;
+ const modelSnowVals = [iconH?.snowfall, ecmwfH?.snowfall].filter(v => typeof v === 'number' && !isNaN(v));
+ const modelSnow = modelSnowVals.length > 0 ? modelSnowVals.reduce((a, b) => a + b, 0) / modelSnowVals.length : null;
+ if (predT <= 1.2 && predPr > 0) {
+ let ratio = 1.0;
+ if (predT <= -4.0) ratio = 1.5;
+ else if (predT <= -1.5) ratio = 1.2;
+ else ratio = 0.85;
+ const localSnow = Number((predPr * ratio).toFixed(1));
+ stepSnowCm = modelSnow !== null ? Number((modelSnow * 0.65 + localSnow * 0.35).toFixed(1)) : localSnow;
+ }
+
+ const modelsAgree = (iconH && ecmwfH) ? (Math.abs(iconH.temp - ecmwfH.temp) < 2.5) : false;
+ let prob = (modelsAgree ? 94 : 88) - (hrs * 1.1);
+ if (Math.abs(station.trend) >= 1.8) prob -= 5;
+ else if (predPress >= 1018 && Math.abs(station.trend) < 0.8) prob += 3;
+ prob = Math.max(55, Math.min(97, Math.round(prob)));
+
+ let icon = isNight ? '🌙' : '🌤️';
+ if (stepSnowCm > 0 || (predPr > 0 && predT <= 1.2)) icon = '❄️';
+ else if (predPr > 0) icon = '🌧️';
+ else if (currentSpread <= 1.5 && predHum >= 90) icon = '🌫️';
+ else if (predT <= 0) icon = '🥶';
+ else if (modelCloud >= 65 || predPress < 1012) icon = '⛅';
 
  return {
+ hrs,
+ time: targetDate.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' }),
+ isNight,
+ icon,
  temp: predT,
+ chill: calcWindChill(predT, predWind),
  dew: predDew,
  hum: predHum,
- press: predPress,
+ dir: predDir,
+ dirText: degToCompass(predDir),
  wind: predWind,
  gust: predGust,
- dir: predDir,
- chill: calcWindChill(predT, predWind),
+ press: predPress,
  precip: predPr,
- prob: prob
+ snow: stepSnowCm,
+ cloud: Math.round(modelCloud),
+ fl: Math.round(1450 + (predT / 6.5) * 1000),
+ prob
  };
+ }
+
+ function renderMeteogram(series, step) {
+ const filtered = series.filter((_, idx) => idx % step === 0);
+ const colWidth = step === 1 ? 62 : 120;
+ const totalWidth = Math.max(920, 155 + filtered.length * colWidth);
+
+ document.getElementById('mgChartBox').style.minWidth = totalWidth + 'px';
+ document.getElementById('meteogramTable').style.minWidth = totalWidth + 'px';
+
+ const headRow = document.getElementById('mgHeadRow');
+ headRow.innerHTML = `<th class="mg-sticky-col">Ώρα (Σύνθεση)</th>` + filtered.map((d, i) => {
+ const isNow = i === 0;
+ return `<th class="${isNow ? 'mg-now' : ''}">${isNow ? 'ΤΩΡΑ (' + d.time + ')' : d.time}<br><span style="font-weight:400; font-size:0.68rem; color:#64748b;">+${d.hrs}h</span></th>`;
+ }).join('');
+
+ const getTempClass = (t) => {
+ if (t <= 0) return 't-freeze';
+ if (t <= 5) return 't-cold';
+ if (t <= 12) return 't-mild';
+ return 't-warm';
+ };
+
+ const getWindClass = (w) => {
+ if (w >= 35) return 'w-strong';
+ if (w >= 18) return 'w-mod';
+ return 'w-calm';
+ };
+
+ const rowIcons = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="font-size:1.25rem;">${d.icon}</td>`).join('');
+ const rowTemp = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}"><span class="mg-pill ${getTempClass(d.temp)}">${d.temp.toFixed(1)}°</span></td>`).join('');
+ const rowChill = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}"><span class="mg-pill ${getTempClass(d.chill)}">${d.chill.toFixed(1)}°</span></td>`).join('');
+ const rowDew = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:#c4b5fd;">${d.dew.toFixed(1)}°</td>`).join('');
+ const rowHum = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:#93c5fd;">${d.hum}%</td>`).join('');
+ const rowWind = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}"><span class="wind-arrow" style="transform:rotate(${(d.dir + 180) % 360}deg);">↑</span> ${d.dirText}</td>`).join('');
+ const rowWindSpd = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}"><span class="${getWindClass(d.wind)}">${d.wind} / ${d.gust}</span></td>`).join('');
+ const rowPress = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:#cbd5e1;">${d.press.toFixed(1)}</td>`).join('');
+ const rowPrecip = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:${d.precip > 0 ? '#38bdf8' : '#64748b'}; font-weight:${d.precip > 0 ? '700' : '400'};">${d.precip > 0 ? d.precip.toFixed(1) : '-'}</td>`).join('');
+ const rowSnow = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:${d.snow > 0 ? '#e0f2fe' : '#64748b'}; font-weight:${d.snow > 0 ? '700' : '400'};">${d.snow > 0 ? d.snow.toFixed(1) + ' cm' : '-'}</td>`).join('');
+ const rowFl = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:#94a3b8;">${d.fl} μ.</td>`).join('');
+ const rowProb = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:${d.prob >= 80 ? '#34d399' : '#fbbf24'};">${d.prob}%</td>`).join('');
+
+ document.getElementById('mgBody').innerHTML = `
+ <tr><td class="mg-sticky-col">☁️ Κατάσταση</td>${rowIcons}</tr>
+ <tr><td class="mg-sticky-col">🌡️ Θερμοκρασία (°C)</td>${rowTemp}</tr>
+ <tr><td class="mg-sticky-col">🥶 Αίσθηση Ψύχους (°C)</td>${rowChill}</tr>
+ <tr><td class="mg-sticky-col">💧 Σημείο Δρόσου (°C)</td>${rowDew}</tr>
+ <tr><td class="mg-sticky-col">💦 Υγρασία (%)</td>${rowHum}</tr>
+ <tr><td class="mg-sticky-col">🧭 Διεύθυνση Ανέμου</td>${rowWind}</tr>
+ <tr><td class="mg-sticky-col">💨 Άνεμος / Ριπή (km/h)</td>${rowWindSpd}</tr>
+ <tr><td class="mg-sticky-col">⏲️ Πίεση (hPa)</td>${rowPress}</tr>
+ <tr><td class="mg-sticky-col">🌧️ Υετός (mm/h)</td>${rowPrecip}</tr>
+ <tr><td class="mg-sticky-col">❄️ Νέο Χιόνι (cm)</td>${rowSnow}</tr>
+ <tr><td class="mg-sticky-col">🏔️ Επίπεδο Παγοποίησης</td>${rowFl}</tr>
+ <tr><td class="mg-sticky-col">🎯 Βεβαιότητα Σύνθ.</td>${rowProb}</tr>
+ `;
+
+ const mgCtx = document.getElementById('meteogramLineChart').getContext('2d');
+ if (meteogramChartInstance) meteogramChartInstance.destroy();
+ meteogramChartInstance = new Chart(mgCtx, {
+ type: 'line',
+ data: {
+ labels: filtered.map(d => d.time),
+ datasets: [
+ {
+ label: 'Θερμοκρασία (°C)',
+ data: filtered.map(d => d.temp),
+ borderColor: '#f87171',
+ backgroundColor: 'rgba(248, 113, 113, 0.12)',
+ borderWidth: 2.5,
+ tension: 0.35,
+ pointRadius: 3
+ },
+ {
+ label: 'Αίσθηση Ψύχους (°C)',
+ data: filtered.map(d => d.chill),
+ borderColor: '#38bdf8',
+ borderDash: [4, 3],
+ borderWidth: 2,
+ tension: 0.35,
+ pointRadius: 2
+ },
+ {
+ label: 'Σημείο Δρόσου (°C)',
+ data: filtered.map(d => d.dew),
+ borderColor: '#a78bfa',
+ borderDash: [2, 2],
+ borderWidth: 1.8,
+ tension: 0.35,
+ pointRadius: 2
+ },
+ {
+ label: '0°C',
+ data: filtered.map(() => 0),
+ borderColor: 'rgba(239, 68, 68, 0.5)',
+ borderWidth: 1,
+ borderDash: [5, 5],
+ pointRadius: 0
+ }
+ ]
+ },
+ options: {
+ responsive: true,
+ maintainAspectRatio: false,
+ interaction: { mode: 'index', intersect: false },
+ plugins: { legend: { display: false } },
+ scales: {
+ x: { display: false },
+ y: {
+ ticks: { color: '#94a3b8', font: { size: 10 } },
+ grid: { color: 'rgba(51, 65, 85, 0.35)' }
+ }
+ }
+ }
+ });
  }
 
  setInterval(() => {
@@ -973,6 +1114,14 @@
  const fl = Math.round(1450 + (temp / 6.5) * 1000);
  document.getElementById('stFl').innerText = `Παγοποίηση: ${fl} μ.`;
 
+ const [iconRes, ecmwfRes] = await Promise.allSettled([
+ fetchModelHourly("icon_seamless"),
+ fetchModelHourly("ecmwf_ifs025")
+ ]);
+ const iconHourly = iconRes.status === 'fulfilled' ? iconRes.value : null;
+ const ecmwfHourly = ecmwfRes.status === 'fulfilled' ? ecmwfRes.value : null;
+
+ const stationState = { temp, dew, press, hum, wind, gust, dir, rain, rate, chill, trend };
  const hourlySeries = [];
 
  let totalPrecip24 = 0;
@@ -985,67 +1134,19 @@
 
  for (let hrs = 0; hrs <= 24; hrs++) {
  const futureDate = new Date(baseDate.getTime() + hrs * 3600 * 1000);
- const tLabel = futureDate.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
- const hourNum = futureDate.getHours();
- const isNight = (hourNum >= 20 || hourNum < 7);
+ const iconH = getModelHourAt(iconHourly, futureDate);
+ const ecmwfH = getModelHourAt(ecmwfHourly, futureDate);
 
- const pred = hrs === 0
- ? {
- temp: Number(temp.toFixed(1)),
- dew: Number(dew.toFixed(1)),
- hum: Math.round(hum),
- press: Number(press.toFixed(1)),
- wind: Math.round(wind),
- gust: Math.round(gust),
- dir: dir,
- chill: Number(chill.toFixed(1)),
- precip: Number((rate || 0).toFixed(1)),
- prob: 100
- }
- : predictFromStation(hrs, temp, dew, press, trend, wind, dir, hum, gust);
-
- let stepSnowCm = 0;
- if (pred.temp <= 1.2 && pred.precip > 0) {
- let ratio = 1.0;
- if (pred.temp <= -4.0) ratio = 1.5;
- else if (pred.temp <= -1.5) ratio = 1.2;
- else ratio = 0.85;
- stepSnowCm = Number((pred.precip * ratio).toFixed(1));
- }
+ const item = combineHourForecast(hrs, futureDate, stationState, iconH, ecmwfH);
 
  if (hrs > 0) {
- totalPrecip24 += pred.precip;
- estSnowCm24 += stepSnowCm;
+ totalPrecip24 += item.precip;
+ estSnowCm24 += item.snow;
  }
- if (pred.temp < minTemp24) minTemp24 = pred.temp;
- if (pred.chill < minChill24) minChill24 = pred.chill;
+ if (item.temp < minTemp24) minTemp24 = item.temp;
+ if (item.chill < minChill24) minChill24 = item.chill;
 
- let icon = isNight ? '🌙' : '🌤️';
- if (stepSnowCm > 0 || (pred.precip > 0 && pred.temp <= 1.2)) icon = '❄️';
- else if (pred.precip > 0) icon = '🌧️';
- else if (pred.temp - pred.dew <= 1.5) icon = '🌫️';
- else if (pred.temp <= 0) icon = '🥶';
- else if (pred.press < 1012) icon = '⛅';
-
- hourlySeries.push({
- hrs: hrs,
- time: tLabel,
- isNight: isNight,
- icon: icon,
- temp: pred.temp,
- chill: pred.chill,
- dew: pred.dew,
- hum: pred.hum,
- dir: pred.dir,
- dirText: degToCompass(pred.dir),
- wind: pred.wind,
- gust: pred.gust,
- press: pred.press,
- precip: pred.precip,
- snow: stepSnowCm,
- fl: Math.round(1450 + (pred.temp / 6.5) * 1000),
- prob: pred.prob
- });
+ hourlySeries.push(item);
  }
 
  latestHourlySeries = hourlySeries;
@@ -1071,7 +1172,7 @@
  <div class="f-icon">${item.icon}</div>
  <div class="f-temp">${item.temp.toFixed(1)}°C</div>
  <div class="f-snow">${item.snow > 0 ? 'Χιόνι: ' + item.snow + 'cm' : (item.precip > 0 ? 'Υετός: ' + item.precip + 'mm' : 'Ξηρό')}</div>
- <div class="f-prob ${probClass}" title="Βεβαιότητα τοπικού αλγορίθμου ISAMAR38">Βεβαιότ.: ${item.prob}%</div>
+ <div class="f-prob ${probClass}" title="Βεβαιότητα σύνθεσης ISAMAR38 + ICON + ECMWF">Βεβαιότ.: ${item.prob}%</div>
  </div>
  `;
  }
@@ -1095,22 +1196,23 @@
  const isSoutherly = (dir >= 135 && dir <= 250);
  const topAlert = document.getElementById('topAlert');
  topAlert.className = 'alert-box';
+ const modelsStatus = `${iconHourly ? 'ICON ✓' : 'ICON —'} / ${ecmwfHourly ? 'ECMWF ✓' : 'ECMWF —'}`;
  let diagText = '';
 
  if (estSnowCm24 > 0.3 || ((totalPrecip24 > 1.0 || trend <= -1.5) && (dew <= 0.5 || minTemp24 <= 1.0))) {
  topAlert.classList.add('alert-snow');
  topAlert.innerText = `❄️ ΣΥΝΑΓΕΡΜΟΣ ΧΙΟΝΟΠΤΩΣΗΣ (24h)`;
- diagText = `❄️ <b>Ευνοϊκές συνθήκες χιονιού (ISAMAR38):</b> Ο σταθμός μετρά ${temp.toFixed(1)}°C (Σημ. Δρόσου ${dew.toFixed(1)}°C) και ο τοπικός αλγόριθμος εκτιμά ελάχιστη ${minTemp24.toFixed(1)}°C και νέο χιόνι ~${estSnowCm24.toFixed(1)} cm το επόμενο 24ωρο.`;
- } else if (trend <= -1.5 && isSoutherly) {
+ diagText = `❄️ <b>Συνθήκες χιονιού (${modelsStatus}):</b> Ο σταθμός ISAMAR38 μετρά ${temp.toFixed(1)}°C (Σημ. Δρόσου ${dew.toFixed(1)}°C) και η σύνθεση με ICON/ECMWF εκτιμά ελάχιστη ${minTemp24.toFixed(1)}°C και νέο χιόνι ~${estSnowCm24.toFixed(1)} cm το επόμενο 24ωρο.`;
+ } else if (trend <= -1.5 && isSoutherly && totalPrecip24 > 0.3) {
  topAlert.classList.add('alert-storm');
  topAlert.innerText = `🌧️ ΕΡΧΕΤΑΙ ΕΠΙΔΕΙΝΩΣΗ (ΠΤΩΣΗ ΠΙΕΣΗΣ)`;
- diagText = `🌧️ <b>Βαρομετρικό χαμηλό πλησιάζει:</b> Η πίεση στον σταθμό πέφτει (${trend.toFixed(1)} hPa/3h) με υγρό ${degToCompass(dir)} άνεμο.`;
- } else if (spread <= 1.5 && wind < 6) {
+ diagText = `🌧️ <b>Βαρομετρικό χαμηλό & υετός (${modelsStatus}):</b> Πίεση ${press.toFixed(1)} hPa (${trend.toFixed(1)} hPa/3h) με ${degToCompass(dir)} άνεμο και εκτιμώμενο υετό 24ώρου ~${totalPrecip24.toFixed(1)} mm.`;
+ } else if (spread <= 1.5 && wind < 6 && hum >= 90) {
  topAlert.innerText = `🌫️ ΟΜΙΧΛΗ / ΧΑΜΗΛΗ ΝΕΦΩΣΗ`;
- diagText = `🌫️ <b>Κορεσμένη ατμόσφαιρα:</b> Θερμοκρασία (${temp.toFixed(1)}°C) και Σημείο Δρόσου (${dew.toFixed(1)}°C) απέχουν μόλις ${spread.toFixed(1)}°C — αναμένεται ομίχλη ή χαμηλά νέφη.`;
+ diagText = `🌫️ <b>Υψηλή υγρασία κοντά σε κορεσμό (${modelsStatus}):</b> Θερμοκρασία ${temp.toFixed(1)}°C και Σημείο Δρόσου ${dew.toFixed(1)}°C (απόσταση ${spread.toFixed(1)}°C) με υγρασία ${hum}%.`;
  } else {
  topAlert.innerText = `☀️ ΣΤΑΘΕΡΟΣ ΚΑΙΡΟΣ (${press.toFixed(0)} hPa)`;
- diagText = `☀️ <b>Αίθριες συνθήκες (ISAMAR38):</b> Υψηλές πιέσεις (${press.toFixed(1)} hPa) χωρίς αξιόλογο υετό. ${minTemp24 <= 0 || minChill24 <= -1.0 ? 'Προσοχή σε παγετό τη νύχτα/πρωί (ελάχ. ' + minTemp24.toFixed(1) + '°C, αισθητή ' + minChill24.toFixed(1) + '°C).' : 'Ήπιες συνθήκες για το επόμενο 24ωρο.'}`;
+ diagText = `☀️ <b>Αίθριες / ήπιες συνθήκες (${modelsStatus}):</b> Ο σταθμός ISAMAR38 μετρά ${temp.toFixed(1)}°C και πίεση ${press.toFixed(1)} hPa, με περιορισμένο/μηδενικό υετό στη σύνθεση ICON & ECMWF. ${minTemp24 <= 0 || minChill24 <= -1.0 ? 'Προσοχή σε παγετό τη νύχτα/πρωί (ελάχ. ' + minTemp24.toFixed(1) + '°C, αισθητή ' + minChill24.toFixed(1) + '°C).' : 'Ήπιες συνθήκες για το επόμενο 24ωρο.'}`;
  }
 
  document.getElementById('smartDiagnosis').innerHTML = diagText;
@@ -1126,4 +1228,3 @@
  setInterval(loadVerificationStats, 600000);
  </script>
 </body>
-</html>
