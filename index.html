@@ -3,7 +3,7 @@
 <head>
  <meta charset="UTF-8">
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>Καιρός & Χιόνια Σαμαρίνας (1.450μ.) - ISAMAR38</title>
+ <title>Ο καιρός στη Σαμαρίνα (1.450μ.) - ISAMAR38</title>
  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
  <style>
  * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -409,7 +409,7 @@
  <div id="roadStatus" class="alert-box">🛣️ Έλεγχος δρόμου...</div>
  <div id="topAlert" class="alert-box">Έλεγχος συνθηκών...</div>
  <div class="visitor-badge" title="Συνολικές επισκέψεις σελίδας">
- <img src="https://visitor-badge.laobi.icu/badge?page_id=samarinaliveweather&left_color=%230f172a&right_color=%230284c7&left_text=%CE%95%CF%80%CE%B9%CF%83%CE%BA%CE%AD%CF%88%CE%B5%CE%B9%CF%%82" alt="Επισκέψεις">
+ <img src="https://visitor-badge.laobi.icu/badge?page_id=samarinaliveweather&left_color=%230f172a&right_color=%230284c7&left_text=Visits" alt="Επισκέψεις">
  </div>
  </div>
  </div>
@@ -765,10 +765,19 @@
  if (hrs === 0) {
  const p0 = Number((station.rate || 0).toFixed(1));
  const s0 = (station.temp <= 1.2 && p0 > 0) ? Number((p0 * (station.temp <= -4 ? 1.5 : station.temp <= -1.5 ? 1.2 : 0.85)).toFixed(1)) : 0;
+ const cloud0 = Math.round(avgValid([iconH?.cloud, ecmwfH?.cloud], station.hum >= 85 ? 80 : 30));
+ let icon0 = isNight ? '🌙' : '🌤️';
+ if (s0 > 0 || (p0 > 0 && station.temp <= 1.2)) icon0 = '❄️';
+ else if (p0 > 0) icon0 = '🌧️';
+ else if ((station.temp - station.dew) <= 1.5 && station.hum >= 90) icon0 = '🌫️';
+ else if (station.temp <= 0) icon0 = '🥶';
+ else if (cloud0 >= 65 || station.press < 1012) icon0 = '⛅';
+
  return {
  hrs: 0,
  time: targetDate.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' }),
  isNight,
+ icon: icon0,
  temp: Number(station.temp.toFixed(1)),
  chill: Number(station.chill.toFixed(1)),
  dew: Number(station.dew.toFixed(1)),
@@ -780,7 +789,7 @@
  press: Number(station.press.toFixed(1)),
  precip: p0,
  snow: s0,
- cloud: Math.round(avgValid([iconH?.cloud, ecmwfH?.cloud], station.hum >= 85 ? 80 : 30)),
+ cloud: cloud0,
  fl: Math.round(1450 + (station.temp / 6.5) * 1000),
  prob: 100
  };
@@ -863,7 +872,6 @@
 
  let predPr = 0;
  if (modelPrecip !== null) {
- // Αν τα μοντέλα δεν δίνουν υετό (< 0.1 mm), απαιτούμε πολύ ισχυρό τοπικό σήμα (>= 85) και υψηλή υγρασία (>= 88%)
  if (modelPrecip < 0.1) {
  if (precipScore >= 85 && predHum >= 88) {
  predPr = Number((localPrecip * 0.4).toFixed(1));
@@ -1228,3 +1236,4 @@
  setInterval(loadVerificationStats, 600000);
  </script>
 </body>
+</html>
