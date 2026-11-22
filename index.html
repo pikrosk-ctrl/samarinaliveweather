@@ -494,7 +494,7 @@
  <div class="panel">
  <div class="panel-header">
  <span>🎯 ΕΠΑΛΗΘΕΥΣΗ ΑΚΡΙΒΕΙΑΣ ΤΟΠΙΚΟΥ ΣΤΑΘΜΟΥ (ISAMAR38)</span>
- <span id="verifySample" style="font-size:0.78rem; color:#38bdf8;">Φόρτωση...</span>
+ <span id="verifySample" style="font-size:0.78rem; color:#38bdf8;">Υβριδικό Μοντέλο ISAMAR38</span>
  </div>
  <div class="verify-grid" id="verifyGrid">
  <div class="v-card v-primary">
@@ -649,16 +649,10 @@
  return result;
  }
 
- async function loadVerificationStats() {
+ async function loadVerificationStats(retryCount = 0) {
  if (!STATS_CSV_URL) return;
- try {
- const res = await fetch(STATS_CSV_URL + "&t=" + Date.now());
- const csvText = await res.text();
- if (csvText.includes("<!DOCTYPE") || csvText.includes("<html")) {
- document.getElementById('verifySample').innerText = "Έλεγχος δημοσίευσης Stats";
- return;
- }
 
+ const renderFromCsv = (csvText) => {
  const lines = csvText.trim().split(/\r?\n/);
  const grid = document.getElementById('verifyGrid');
  const statsMap = {};
@@ -736,10 +730,35 @@
  if (cardPrimaryHtml || cardSecondaryHtml) {
  grid.innerHTML = cardPrimaryHtml + cardSecondaryHtml;
  const extra12 = statsMap["+12h_HYB"] ? ` • +12h: ${statsMap["+12h_HYB"].accPct}%` : '';
- document.getElementById('verifySample').innerText = `Σταθμός ISAMAR38${extra12}`;
+ document.getElementById('verifySample').innerText = `Υβριδικό Μοντέλο ISAMAR38${extra12}`;
+ return true;
+ }
+ return false;
+ };
+
+ try {
+ const cachedCsv = localStorage.getItem('isamar38_stats_csv');
+ if (cachedCsv) renderFromCsv(cachedCsv);
+ } catch (e) {}
+
+ try {
+ const res = await fetch(STATS_CSV_URL + "&t=" + Date.now(), { cache: "no-store" });
+ if (!res.ok) throw new Error("HTTP " + res.status);
+ const csvText = await res.text();
+ if (csvText.includes("<!DOCTYPE") || csvText.includes("<html")) {
+ document.getElementById('verifySample').innerText = "Έλεγχος δημοσίευσης Stats";
+ return;
+ }
+
+ if (renderFromCsv(csvText)) {
+ try { localStorage.setItem('isamar38_stats_csv', csvText); } catch (e) {}
  }
  } catch (err) {
- document.getElementById('verifySample').innerText = "Αναμονή στατιστικών";
+ if (retryCount < 2) {
+ setTimeout(() => loadVerificationStats(retryCount + 1), 4000);
+ } else if (!localStorage.getItem('isamar38_stats_csv')) {
+ document.getElementById('verifySample').innerText = "Υβριδικό Μοντέλο ISAMAR38";
+ }
  }
  }
 
@@ -909,13 +928,10 @@
  let predPr = 0;
  if (modelPrecip !== null) {
  if (modelPrecip < 0.1) {
- if (precipScore >= 85 && predHum >= 88) {
- predPr = Number((localPrecip * 0.4).toFixed(1));
+ predPr = (hrs === 1 && station.rate > 0) ? Number((station.rate * 0.5).toFixed(1)) : 0;
  } else {
- predPr = 0;
- }
- } else {
- predPr = Number((modelPrecip * 0.65 + localPrecip * 0.35).toFixed(1));
+ const orographicBoost = (precipScore >= 65) ? 1.15 : 1.0;
+ predPr = Number((modelPrecip * orographicBoost).toFixed(1));
  }
  } else {
  predPr = localPrecip;
