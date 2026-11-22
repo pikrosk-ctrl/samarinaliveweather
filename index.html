@@ -3,7 +3,7 @@
 <head>
  <meta charset="UTF-8">
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>Καιρός & Χιόνια Σαμαρίνας (1.450μ.) - ISAMAR38</title>
+ <title>Ο καιρός στη Σαμαρίνα (1.450μ.) - ISAMAR38</title>
  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
  <style>
  * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -395,6 +395,17 @@
  height: 138px;
  vertical-align: top;
  }
+ .ventusky-frame {
+ width: 100%;
+ height: 540px;
+ border: 1px solid #334155;
+ border-radius: 8px;
+ background: #0f172a;
+ display: block;
+ }
+ @media (max-width: 768px) {
+ .ventusky-frame { height: 420px; }
+ }
  .footer-bar {
  text-align: center;
  font-size: 0.8rem;
@@ -406,7 +417,7 @@
 <body>
  <div class="top-bar">
  <div class="title">
- <h1>🏔️ ΣΑΜΑΡΙΝΑ ΓΡΕΒΕΝΩΝ (1.450μ.) — LIVE SNOW & WEATHER</h1>
+ <h1>🏔️ ΣΑΜΑΡΙΝΑ ΓΡΕΒΕΝΩΝ (1.450μ.) — LIVE WEATHER</h1>
  <span>Σταθμός: Bresser 5-in-1 (ISAMAR38) | Κάμερα: Σαμαρίνα Χωριό | Σύνθεση: ISAMAR38 + ICON + ECMWF</span>
  </div>
  <div class="top-badges">
@@ -494,7 +505,7 @@
  <div class="panel">
  <div class="panel-header">
  <span>🎯 ΕΠΑΛΗΘΕΥΣΗ ΑΚΡΙΒΕΙΑΣ ΤΟΠΙΚΟΥ ΣΤΑΘΜΟΥ (ISAMAR38)</span>
- <span id="verifySample" style="font-size:0.78rem; color:#38bdf8;">Υβριδικό Μοντέλο ISAMAR38</span>
+ <span id="verifySample" style="font-size:0.78rem; color:#38bdf8;">ISAMAR38 + ICON + ECMWF</span>
  </div>
  <div class="verify-grid" id="verifyGrid">
  <div class="v-card v-primary">
@@ -548,6 +559,20 @@
  </tbody>
  </table>
  </div>
+ </div>
+
+ <div class="panel">
+ <div class="panel-header">
+ <span>🗺️ ΧΑΡΤΗΣ ΥΕΤΟΥ 3ΩΡΟΥ (VENTUSKY • ECMWF HRES)</span>
+ <a href="https://www.ventusky.com/el/%CF%85%CE%B5%CF%84%CF%8C%CF%82-%CF%87%CE%AC%CF%81%CF%84%CE%B7%CF%82/3-%CF%8E%CF%81%CE%B5%CF%82#p=39.83;20.87;7&m=ecmwf_hres" target="_blank" rel="noopener" class="mg-btn" style="text-decoration:none;">Άνοιγμα σε πλήρη οθόνη ↗</a>
+ </div>
+ <iframe
+ id="ventuskyMap"
+ class="ventusky-frame"
+ src="https://www.ventusky.com/el/%CF%85%CE%B5%CF%84%CF%8C%CF%82-%CF%87%CE%AC%CF%81%CF%84%CE%B7%CF%82/3-%CF%8E%CF%81%CE%B5%CF%82#p=39.83;20.87;7&m=ecmwf_hres"
+ loading="lazy"
+ title="Χάρτης Υετού Ventusky (ECMWF)">
+ </iframe>
  </div>
 
  <div class="footer-bar">
