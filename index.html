@@ -1430,24 +1430,35 @@
  let diagText = '';
 
  if (estSnowCm24 >= 0.5 || (rate > 0 && wetBulbNow <= 0.8)) {
- topAlert.classList.add('alert-snow');
- topAlert.innerText = `❄️ ΣΥΝΑΓΕΡΜΟΣ ΧΙΟΝΟΠΤΩΣΗΣ (24h)`;
- diagText = `❄️ <b>Συνθήκες χιονιού (${modelsStatus}):</b> Ο σταθμός ISAMAR38 μετρά ${temp.toFixed(1)}°C (Υγρό Θερμ. Tw ${wetBulbNow.toFixed(1)}°C) και η σύνθεση με ICON/ECMWF εκτιμά νέο χιόνι ~${estSnowCm24.toFixed(1)} cm το επόμενο 24ωρο (ελάχ. ${minTemp24.toFixed(1)}°C).`;
- } else if (totalPrecip24 >= 1.5 || (trend <= -1.5 && isSoutherly && totalPrecip24 > 0.3)) {
- topAlert.classList.add('alert-storm');
- topAlert.innerText = totalPrecip24 >= 10 ? `🌧️ ΒΡΟΧΟΠΤΩΣΕΙΣ (24h: ~${totalPrecip24.toFixed(0)}mm)` : `🌧️ ΕΡΧΕΤΑΙ ΕΠΙΔΕΙΝΩΣΗ (ΒΡΟΧΕΣ)`;
- diagText = `🌧️ <b>Βαρομετρικό χαμηλό & βροχές (${modelsStatus}):</b> Πίεση ${press.toFixed(1)} hPa (${trend >= 0 ? '+' : ''}${trend.toFixed(1)} hPa/3h) με ${degToCompass(dir)} άνεμο και εκτιμώμενο υετό 24ώρου ~${totalPrecip24.toFixed(1)} mm. ${minTemp24 <= 0.5 ? 'Προσοχή σε παγετό τη νύχτα/πρωί (ελάχ. ' + minTemp24.toFixed(1) + '°C).' : ''}`;
- } else if (totalPrecip24 >= 0.3) {
- topAlert.classList.add('alert-storm');
- topAlert.innerText = `🌦️ ΠΑΡΟΔΙΚΕΣ ΒΡΟΧΕΣ (24h)`;
- diagText = `🌦️ <b>Ασταθής καιρός με τοπικές βροχές (${modelsStatus}):</b> Ο σταθμός ISAMAR38 μετρά ${temp.toFixed(1)}°C και πίεση ${press.toFixed(1)} hPa, με ασθενή/παροδικό υετό ~${totalPrecip24.toFixed(1)} mm στη σύνθεση ICON & ECMWF. ${minTemp24 <= 0.5 ? 'Προσοχή σε παγετό τη νύχτα (ελάχ. ' + minTemp24.toFixed(1) + '°C).' : ''}`;
- } else if (spread <= 1.5 && wind < 6 && hum >= 90) {
- topAlert.innerText = `🌫️ ΟΜΙΧΛΗ / ΧΑΜΗΛΗ ΝΕΦΩΣΗ`;
- diagText = `🌫️ <b>Υψηλή υγρασία κοντά σε κορεσμό (${modelsStatus}):</b> Θερμοκρασία ${temp.toFixed(1)}°C και Σημείο Δρόσου ${dew.toFixed(1)}°C (απόσταση ${spread.toFixed(1)}°C) με υγρασία ${hum}%.`;
- } else {
- topAlert.innerText = `☀️ ΣΤΑΘΕΡΟΣ ΚΑΙΡΟΣ (${press.toFixed(0)} hPa)`;
- diagText = `☀️ <b>Αίθριες / ήπιες συνθήκες (${modelsStatus}):</b> Ο σταθμός ISAMAR38 μετρά ${temp.toFixed(1)}°C και πίεση ${press.toFixed(1)} hPa, με περιορισμένο/μηδενικό υετό στη σύνθεση ICON & ECMWF. ${minTemp24 <= 0 || minChill24 <= -1.0 ? 'Προσοχή σε παγετό τη νύχτα/πρωί (ελάχ. ' + minTemp24.toFixed(1) + '°C, αισθητή ' + minChill24.toFixed(1) + '°C).' : 'Ήπιες συνθήκες για το επόμενο 24ωρο.'}`;
- }
+          topAlert.classList.add('alert-snow');
+          topAlert.innerText = `❄️ ΣΥΝΑΓΕΡΜΟΣ ΧΙΟΝΟΠΤΩΣΗΣ (24h)`;
+          diagText = `❄️ <b>Συνθήκες χιονιού (${modelsStatus}):</b> Ο σταθμός ISAMAR38 μετρά ${temp.toFixed(1)}°C (Υγρό Θερμ. Tw ${wetBulbNow.toFixed(1)}°C) και η σύνθεση με ICON/ECMWF εκτιμά νέο χιόνι ~${estSnowCm24.toFixed(1)} cm το επόμενο 24ωρο (ελάχ. ${minTemp24.toFixed(1)}°C).`;
+        } else if (rate >= 10 || (totalPrecip24 >= 12 && trend <= -2.0)) {
+          topAlert.classList.add('alert-storm');
+          topAlert.innerText = `⛈️ ΙΣΧΥΡΕΣ ΒΡΟΧΕΣ / ΚΑΤΑΙΓΙΔΑ`;
+          diagText = `⛈️ <b>Έντονα φαινόμενα (${modelsStatus}):</b> Ρυθμός υετού ${rate} mm/h, πίεση ${press.toFixed(1)} hPa (${trend >= 0 ? '+' : ''}${trend.toFixed(1)} hPa/3h) και εκτιμώμενος υετός 24ώρου ~${totalPrecip24.toFixed(1)} mm.`;
+        } else if (totalPrecip24 >= 1.5 || (trend <= -1.5 && isSoutherly && totalPrecip24 > 0.3)) {
+          topAlert.classList.add('alert-storm');
+          topAlert.innerText = totalPrecip24 >= 10 ? `🌧️ ΒΡΟΧΟΠΤΩΣΕΙΣ (24h: ~${totalPrecip24.toFixed(0)}mm)` : `🌧️ ΕΡΧΕΤΑΙ ΕΠΙΔΕΙΝΩΣΗ (ΒΡΟΧΕΣ)`;
+          diagText = `🌧️ <b>Βαρομετρικό χαμηλό & βροχές (${modelsStatus}):</b> Πίεση ${press.toFixed(1)} hPa (${trend >= 0 ? '+' : ''}${trend.toFixed(1)} hPa/3h) με ${degToCompass(dir)} άνεμο και εκτιμώμενο υετό 24ώρου ~${totalPrecip24.toFixed(1)} mm. ${minTemp24 <= 0.5 ? 'Προσοχή σε παγετό τη νύχτα/πρωί (ελάχ. ' + minTemp24.toFixed(1) + '°C).' : ''}`;
+        } else if (totalPrecip24 >= 0.3) {
+          topAlert.classList.add('alert-storm');
+          topAlert.innerText = `🌦️ ΠΑΡΟΔΙΚΕΣ ΒΡΟΧΕΣ (24h)`;
+          diagText = `🌦️ <b>Ασταθής καιρός με τοπικές βροχές (${modelsStatus}):</b> Ο σταθμός ISAMAR38 μετρά ${temp.toFixed(1)}°C και πίεση ${press.toFixed(1)} hPa, με ασθενή/παροδικό υετό ~${totalPrecip24.toFixed(1)} mm στη σύνθεση ICON & ECMWF. ${minTemp24 <= 0.5 ? 'Προσοχή σε παγετό τη νύχτα (ελάχ. ' + minTemp24.toFixed(1) + '°C).' : ''}`;
+        } else if (spread <= 1.5 && wind < 6 && hum >= 90) {
+          topAlert.innerText = `🌫️ ΟΜΙΧΛΗ / ΧΑΜΗΛΗ ΝΕΦΩΣΗ`;
+          diagText = `🌫️ <b>Υψηλή υγρασία κοντά σε κορεσμό (${modelsStatus}):</b> Θερμοκρασία ${temp.toFixed(1)}°C και Σημείο Δρόσου ${dew.toFixed(1)}°C (απόσταση ${spread.toFixed(1)}°C) με υγρασία ${hum}%.`;
+        } else if (gust >= 55) {
+          topAlert.classList.add('alert-storm');
+          topAlert.innerText = `💨 ΙΣΧΥΡΟΙ ΑΝΕΜΟΙ (${Math.round(gust)} km/h)`;
+          diagText = `💨 <b>Θυελλώδεις ριπές ανέμου (${modelsStatus}):</b> Διεύθυνση ${degToCompass(dir)} με μέσο άνεμο ${Math.round(wind)} km/h και ριπές έως ${Math.round(gust)} km/h.`;
+        } else if (temp <= 0 || minTemp24 <= -1.0) {
+          topAlert.innerText = `🥶 ΠΑΓΕΤΟΣ (Ελάχ. ${minTemp24.toFixed(1)}°C)`;
+          diagText = `🥶 <b>Συνθήκες παγετού με ξηρό καιρό (${modelsStatus}):</b> Ο σταθμός ISAMAR38 μετρά ${temp.toFixed(1)}°C και πίεση ${press.toFixed(1)} hPa, με ελάχιστη 24ώρου ${minTemp24.toFixed(1)}°C (αισθητή ${minChill24.toFixed(1)}°C).`;
+        } else {
+          topAlert.innerText = `☀️ ΣΤΑΘΕΡΟΣ ΚΑΙΡΟΣ (${press.toFixed(0)} hPa)`;
+          diagText = `☀️ <b>Αίθριες / ήπιες συνθήκες (${modelsStatus}):</b> Ο σταθμός ISAMAR38 μετρά ${temp.toFixed(1)}°C και πίεση ${press.toFixed(1)} hPa, με περιορισμένο/μηδενικό υετό στη σύνθεση ICON & ECMWF. ${minTemp24 <= 0.5 || minChill24 <= -1.0 ? 'Προσοχή σε τοπικό παγετό τη νύχτα/πρωί (ελάχ. ' + minTemp24.toFixed(1) + '°C, αισθητή ' + minChill24.toFixed(1) + '°C).' : 'Ήπιες συνθήκες για το επόμενο 24ωρο.'}`;
+        }
 
  document.getElementById('smartDiagnosis').innerHTML = diagText;
 
