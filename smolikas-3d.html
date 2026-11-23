@@ -296,6 +296,17 @@
         let currentDataSource = 'live';
         let forecastPlayTimer = null;
 
+        let state = {
+            wind: 12,
+            dir: 240,
+            wetBulb: 6.8,
+            rain: 0,
+            snowline: 2419,
+            snowpackFloor: 1945,
+            livePressure: null,
+            livePrecipTotal: 0
+        };
+
         function latLonToSceneXZ(lat, lon) {
             const u = (lon - GEO_BOUNDS.lonMin) / (GEO_BOUNDS.lonMax - GEO_BOUNDS.lonMin);
             const v = (lat - GEO_BOUNDS.latMin) / (GEO_BOUNDS.latMax - GEO_BOUNDS.latMin);
@@ -390,6 +401,7 @@
                 if (demBadge) demBadge.innerText = '🛰️ DEM Fallback';
             }
         }
+
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x070d19);
@@ -411,11 +423,81 @@
         controls.maxDistance = 85;
         controls.target.set(0, 8.0, 0);
 
+        const ambientLight = new THREE.AmbientLight(0x64748b, 0.45);
+        scene.add(ambientLight);
         const hemiLight = new THREE.HemisphereLight(0x93c5fd, 0x1e293b, 0.75);
         scene.add(hemiLight);
         const sunLight = new THREE.DirectionalLight(0xfff7ed, 1.4);
         sunLight.position.set(30, 45, 25);
         scene.add(sunLight);
+
+        const TIME_MODES = ['auto', 'day', 'golden', 'night'];
+        let currentTimeMode = 'auto';
+
+        function applyLightingTheme(mode) {
+            let effective = mode;
+            if (mode === 'auto') {
+                const hr = new Date().getHours();
+                if (hr >= 8 && hr < 16) effective = 'day';
+                else if ((hr >= 6 && hr < 8) || (hr >= 16 && hr < 19)) effective = 'golden';
+                else effective = 'night';
+            }
+
+            if (effective === 'day') {
+                scene.background.setHex(0x3b6ea5);
+                scene.fog.color.setHex(0x6fa3d2);
+                scene.fog.density = 0.0055;
+                ambientLight.color.setHex(0xcbd5e1);
+                ambientLight.intensity = 0.65;
+                hemiLight.color.setHex(0xe0f2fe);
+                hemiLight.groundColor.setHex(0x334155);
+                hemiLight.intensity = 0.95;
+                sunLight.color.setHex(0xffffff);
+                sunLight.intensity = 1.85;
+                sunLight.position.set(35, 55, 25);
+            } else if (effective === 'golden') {
+                scene.background.setHex(0x1f1926);
+                scene.fog.color.setHex(0x3b2636);
+                scene.fog.density = 0.0068;
+                ambientLight.color.setHex(0xfdba74);
+                ambientLight.intensity = 0.5;
+                hemiLight.color.setHex(0xfed7aa);
+                hemiLight.groundColor.setHex(0x1e1b2e);
+                hemiLight.intensity = 0.85;
+                sunLight.color.setHex(0xfb923c);
+                sunLight.intensity = 1.75;
+                sunLight.position.set(-42, 18, 22);
+            } else {
+                scene.background.setHex(0x070d19);
+                scene.fog.color.setHex(0x070d19);
+                scene.fog.density = 0.0072;
+                ambientLight.color.setHex(0x475569);
+                ambientLight.intensity = 0.48;
+                hemiLight.color.setHex(0x93c5fd);
+                hemiLight.groundColor.setHex(0x1e293b);
+                hemiLight.intensity = 0.8;
+                sunLight.color.setHex(0xe2e8f0);
+                sunLight.intensity = 1.35;
+                sunLight.position.set(30, 45, 25);
+            }
+        }
+
+        function cycleTimeMode() {
+            const idx = TIME_MODES.indexOf(currentTimeMode);
+            currentTimeMode = TIME_MODES[(idx + 1) % TIME_MODES.length];
+            const labels = {
+                auto: '☀️ Auto',
+                day: '☀️ Μέρα',
+                golden: '🌅 Χρυσή Ώρα',
+                night: '🌙 Νύχτα'
+            };
+            const btn = document.getElementById('time-mode-btn');
+            if (btn) btn.innerText = labels[currentTimeMode];
+            applyLightingTheme(currentTimeMode);
+            resetIdleTimer();
+        }
+
+        applyLightingTheme('auto');
 
         const terrainGeo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, SEGMENTS, SEGMENTS);
         terrainGeo.rotateX(-Math.PI / 2);
@@ -496,6 +578,10 @@
             const cSnow = new THREE.Color(0xf1f5f9);
             const tmp = new THREE.Color();
 
+            const effectiveSnowFloor = hasPrecip
+                ? Math.min(snowlineMeters, state.snowpackFloor ?? snowlineMeters)
+                : (state.snowpackFloor ?? 9999);
+
             for (let i = 0; i < posAttr.count; i++) {
                 const x = posAttr.getX(i), z = posAttr.getZ(i);
                 const elev = getElevationMeters(x, z);
@@ -523,9 +609,9 @@
                     tmp.lerp(cRock, Math.min(1, (slope - 0.28) / 0.2));
                 }
 
-                if (hasPrecip && elev > snowlineMeters) {
-                    const depth = Math.min(1, (elev - snowlineMeters) / 100);
-                    tmp.lerp(cSnow, depth * 0.9);
+                if (elev > effectiveSnowFloor) {
+                    const depth = Math.min(1, (elev - effectiveSnowFloor) / 110);
+                    tmp.lerp(cSnow, depth * 0.92);
                 }
 
                 colors[i*3] = tmp.r;
@@ -548,7 +634,6 @@
             return calcWetBulb(temp, rh);
         }
 
-        // Αντίστροφος υπολογισμός Σημείου Δρόσου από Θερμοκρασία & Υγρό Θερμόμετρο (δυαδική αναζήτηση)
         function solveDewFromTempWetBulb(temp, targetWb) {
             let low = -35.0;
             let high = temp;
@@ -560,16 +645,6 @@
             }
             return (low + high) * 0.5;
         }
-
-        let state = {
-            wind: 12,
-            dir: 240,
-            wetBulb: 6.8,
-            rain: 0,
-            snowline: 2419,
-            livePressure: null,
-            livePrecipTotal: 0
-        };
 
         function updatePressureAndTotalHud(pressureVal, precipTotalVal) {
             const pEl = document.getElementById('val-pressure');
@@ -597,7 +672,6 @@
             let wb;
 
             if (sourceSlider === 'wb') {
-                // Ο χρήστης κίνησε απευθείας το slider του Υγρού Θερμομέτρου
                 wb = parseFloat(slWb.value);
                 if (wb > baseTemp) {
                     baseTemp = Math.min(25, Math.round(wb * 2) / 2);
@@ -611,10 +685,8 @@
                 baseDew = solveDewFromTempWetBulb(baseTemp, wb);
                 baseDew = Math.max(-18, Math.min(20, Math.round(baseDew * 2) / 2));
                 slDew.value = baseDew;
-                // Επαναϋπολογισμός ακριβούς wb από τις στρογγυλεμένες τιμές
                 wb = calcWetBulbFromTempDew(baseTemp, baseDew);
             } else {
-                // Κινήθηκε η Θερμοκρασία ή το Σημείο Δρόσου (ή ήρθαν live/forecast δεδομένα)
                 if (baseDew > baseTemp) {
                     baseDew = baseTemp;
                     slDew.value = baseDew;
@@ -627,7 +699,6 @@
             const dir = parseFloat(document.getElementById('sl-dir').value);
             const rain = parseFloat(document.getElementById('sl-rain').value);
 
-            // Υψόμετρο χιονόπτωσης (όπου Tw = 0.5°C με υγρή θερμοβαθμίδα 6.5°C/1000μ)
             const snowline = Math.round(1450 + ((wb - 0.5) / 6.5) * 1000);
 
             state.wind = wind;
@@ -635,6 +706,15 @@
             state.wetBulb = wb;
             state.rain = rain;
             state.snowline = snowline;
+
+            if (rain > 0) {
+                state.snowpackFloor = Math.min(state.snowpackFloor, snowline);
+            } else {
+                const meltFloor = snowline - 250;
+                if (meltFloor > state.snowpackFloor) {
+                    state.snowpackFloor = meltFloor;
+                }
+            }
 
             document.getElementById('lbl-temp').innerText = `${baseTemp.toFixed(1)}°C`;
             document.getElementById('lbl-dew').innerText = `${baseDew.toFixed(1)}°C`;
@@ -725,7 +805,6 @@
             document.getElementById('sl-dir').value = data.dir;
             document.getElementById('sl-rain').value = data.precip;
 
-            // Υπολογισμός αθροιστικού υετού + πίεσης για τον ορίζοντα πρόγνωσης
             let stepPressure = (data.pressure !== undefined && data.pressure !== null)
                 ? data.pressure
                 : (hrs === 0 ? state.livePressure : null);
@@ -874,7 +953,6 @@
             windGeo.attributes.position.needsUpdate = true;
             windGeo.attributes.color.needsUpdate = true;
 
-            // Ενημέρωση σωματιδίων υετού (Χιόνι πάνω από snowline, Βροχή κάτω από snowline)
             if (state.rain > 0) {
                 const pPos = precipGeo.attributes.position.array;
                 const pCol = precipGeo.attributes.color.array;
@@ -911,10 +989,8 @@
                     pPos[i * 3 + 2] = pz;
 
                     if (isSnow) {
-                        // Καθαρό λευκό χιονιού
                         pCol[i * 3] = 0.96; pCol[i * 3 + 1] = 0.98; pCol[i * 3 + 2] = 1.0;
                     } else {
-                        // Γαλάζιο σταγόνων βροχής
                         pCol[i * 3] = 0.22; pCol[i * 3 + 1] = 0.74; pCol[i * 3 + 2] = 0.98;
                     }
                 }
@@ -936,4 +1012,3 @@
     </script>
 </body>
 </html>
-
