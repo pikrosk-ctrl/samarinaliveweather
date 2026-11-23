@@ -327,33 +327,69 @@
         function elevToSceneY(elevMeters) { return ((elevMeters - 1150) / 1487) * 29.0; }
 
         async function loadRealSmolikasDEM() {
+            const demBadge = document.getElementById('dem-status-text');
             try {
                 const cached = localStorage.getItem(DEM_CACHE_KEY);
                 if (cached) {
-                    realDemGrid = new Float32Array(JSON.parse(cached));
-                    rebuildTerrainGeometry(2400);
-                    return;
-                }
-            } catch (e) {}
-            try {
-                const lats = [], lons = [];
-                for (let iz = 0; iz < DEM_GRID_N; iz++) {
-                    let lat = GEO_BOUNDS.latMin + (iz / (DEM_GRID_N - 1)) * (GEO_BOUNDS.latMax - GEO_BOUNDS.latMin);
-                    for (let ix = 0; ix < DEM_GRID_N; ix++) {
-                        let lon = GEO_BOUNDS.lonMin + (ix / (DEM_GRID_N - 1)) * (GEO_BOUNDS.lonMax - GEO_BOUNDS.lonMin);
-                        lats.push(lat.toFixed(4)); lons.push(lon.toFixed(4));
+                    const parsed = JSON.parse(cached);
+                    if (Array.isArray(parsed) && parsed.length === DEM_GRID_N * DEM_GRID_N) {
+                        realDemGrid = new Float32Array(parsed);
+                        if (demBadge) demBadge.innerText = '🛰️ DEM 24×24 ✓';
+                        rebuildTerrainGeometry(state.snowline, state.rain > 0);
+                        return;
                     }
                 }
-                const res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lats.slice(0,40).join(',')}&longitude=${lons.slice(0,40).join(',')}`);
-                const resp = await res.json();
-                if (resp && Array.isArray(resp.elevation)) {
-                    realDemGrid = new Float32Array(576).fill(1500);
-                    resp.elevation.forEach((el, idx) => { realDemGrid[idx] = el; });
-                    rebuildTerrainGeometry(2400);
-                }
-            } catch (err) {}
-        }
+            } catch (e) {}
 
+            try {
+                if (demBadge) demBadge.innerText = '🛰️ DEM Φόρτωση...';
+                const lats = [], lons = [];
+                for (let iz = 0; iz < DEM_GRID_N; iz++) {
+                    const lat = GEO_BOUNDS.latMin + (iz / (DEM_GRID_N - 1)) * (GEO_BOUNDS.latMax - GEO_BOUNDS.latMin);
+                    for (let ix = 0; ix < DEM_GRID_N; ix++) {
+                        const lon = GEO_BOUNDS.lonMin + (ix / (DEM_GRID_N - 1)) * (GEO_BOUNDS.lonMax - GEO_BOUNDS.lonMin);
+                        lats.push(lat.toFixed(4));
+                        lons.push(lon.toFixed(4));
+                    }
+                }
+
+                const CHUNK_SIZE = 100;
+                const requests = [];
+                for (let start = 0; start < lats.length; start += CHUNK_SIZE) {
+                    const latChunk = lats.slice(start, start + CHUNK_SIZE).join(',');
+                    const lonChunk = lons.slice(start, start + CHUNK_SIZE).join(',');
+                    requests.push(
+                        fetch(`https://api.open-meteo.com/v1/elevation?latitude=${latChunk}&longitude=${lonChunk}`)
+                            .then(r => r.json())
+                    );
+                }
+
+                const results = await Promise.all(requests);
+                const fullGrid = new Float32Array(DEM_GRID_N * DEM_GRID_N);
+                let cursor = 0;
+
+                for (const resp of results) {
+                    if (resp && Array.isArray(resp.elevation)) {
+                        for (const el of resp.elevation) {
+                            if (cursor < fullGrid.length) {
+                                fullGrid[cursor++] = el;
+                            }
+                        }
+                    }
+                }
+
+                if (cursor === fullGrid.length) {
+                    realDemGrid = fullGrid;
+                    try {
+                        localStorage.setItem(DEM_CACHE_KEY, JSON.stringify(Array.from(fullGrid)));
+                    } catch (e) {}
+                    if (demBadge) demBadge.innerText = '🛰️ DEM 24×24 ✓';
+                    rebuildTerrainGeometry(state.snowline, state.rain > 0);
+                }
+            } catch (err) {
+                if (demBadge) demBadge.innerText = '🛰️ DEM Fallback';
+            }
+        }
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x070d19);
@@ -900,3 +936,4 @@
     </script>
 </body>
 </html>
+
