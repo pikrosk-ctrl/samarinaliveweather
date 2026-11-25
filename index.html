@@ -368,7 +368,7 @@
  }
  .mg-chart-box {
  min-width: 1480px;
- height: 155px;
+ height: 170px;
  padding: 8px 12px 4px 155px;
  background: #0b1324;
  border-bottom: 1px solid #334155;
@@ -381,18 +381,19 @@
  display: inline-block;
  width: 155px;
  margin-left: -155px;
- padding: 8px 10px;
+ padding: 6px 10px;
  background: #131c31;
  border-right: 2px solid #334155;
  height: 100%;
  vertical-align: top;
- font-size: 0.75rem;
+ font-size: 0.74rem;
+ line-height: 1.45;
  color: #94a3b8;
  }
  .mg-chart-canvas-wrap {
  display: inline-block;
  width: calc(100% - 4px);
- height: 138px;
+ height: 152px;
  vertical-align: top;
  }
  .ventusky-frame {
@@ -546,7 +547,8 @@
  <span style="color:#f87171;">━</span> Θερμ. (°C)<br>
  <span style="color:#38bdf8;">┄</span> Αισθητή (°C)<br>
  <span style="color:#34d399;">┄</span> Υγρό Θερμ. (Tw)<br>
- <span style="color:#a78bfa;">┄</span> Σημ. Δρόσου
+ <span style="color:#a78bfa;">┄</span> Σημ. Δρόσου<br>
+ <span style="color:#facc15; font-weight:bold;">━</span> Πίεση (hPa)
  </div>
  <div class="mg-chart-canvas-wrap">
  <canvas id="meteogramLineChart"></canvas>
@@ -588,8 +590,6 @@
  const WU_API_KEY = "5c94ee0c13f240ec94ee0c13f2b0ecd9";
  const STATS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ_y9OVAjf5gRIJN7ZKm_OuR_fP5UFcu2YWX3XNU7PRxSouu3L2-kPh6Rk1u3VP-pdBjOTIo22t3mN/pub?gid=409751746&single=true&output=csv";
 
- // Προαιρετικό endpoint Cloudflare Worker / Server-side cache (π.χ. "https://samarina-api.forecastweather.gr/forecast.json")
- // Όταν μείνει κενό (""), το frontend χρησιμοποιεί αυτόματα το 5-λεπτο localStorage cache + απευθείας APIs.
  const WORKER_CACHE_URL = "";
  const CLIENT_CACHE_TTL_MS = 5 * 60 * 1000;
 
@@ -601,7 +601,6 @@
  let latestHourlySeries = [];
  let meteogramStepHours = 1;
 
- // Δυναμική κατάσταση MOS (Model Output Statistics) από τα ιστορικά στατιστικά επαλήθευσης
  let mosState = {
  ready: false,
  sampleHours: 0,
@@ -610,8 +609,8 @@
  acc3h: null,
  acc6h: null,
  precipSkillPct: null,
- stationWeightBias: 0, // Προσαρμογή βάρους σταθμού βάσει πραγματικής επίδοσης
- orographicScale: 1.15 // Δυναμικός συντελεστής ορογραφικής ενίσχυσης
+ stationWeightBias: 0,
+ orographicScale: 1.15
  };
 
  function syncScrollButtons(containerId, prevBtnId, nextBtnId) {
@@ -664,7 +663,6 @@
  }
  }
 
- // 1. Υπολογισμός Αίσθησης Ψύχους (Wind Chill)
  function calcWindChill(tempC, windKmh) {
  if (tempC <= 10 && windKmh > 4.8) {
  const wc = 13.12 + 0.6215 * tempC - 11.37 * Math.pow(windKmh, 0.16) + 0.3965 * tempC * Math.pow(windKmh, 0.16);
@@ -673,14 +671,13 @@
  return Number(tempC.toFixed(1));
  }
 
- // 2. Υπολογισμός Θερμοκρασίας Υγρού Θερμομέτρου (Wet-Bulb Temperature - τύπος Stull)
  function calcWetBulb(tempC, rh) {
  const safeRh = Math.max(1, Math.min(100, rh));
  const tw = tempC * Math.atan(0.151977 * Math.pow(safeRh + 8.313659, 0.5))
  + Math.atan(tempC + safeRh)
-- Math.atan(safeRh - 1.676331)
+ - Math.atan(safeRh - 1.676331)
  + 0.00391838 * Math.pow(safeRh, 1.5) * Math.atan(0.023101 * safeRh)
-- 4.686035;
+ - 4.686035;
  return Number(tw.toFixed(1));
  }
 
@@ -709,7 +706,6 @@
  return result;
  }
 
- // Ενημέρωση παραμέτρων Dynamic Bias Correction (MOS) από τα πραγματικά στατιστικά επαλήθευσης
  function updateDynamicMOS(statsMap) {
  const s3 = statsMap["+3h_HYB"] || statsMap["+3h"];
  const s6 = statsMap["+6h_HYB"] || statsMap["+6h"];
@@ -720,8 +716,6 @@
  mosState.mae3h = s3.mae;
  mosState.acc3h = s3.accPct;
 
- // Αν το MAE του +3h είναι πολύ χαμηλό (< 1.2°C), αυξάνουμε το βάρος nowcasting του σταθμού.
- // Αν είναι υψηλό (> 2.2°C), δίνουμε μεγαλύτερη βαρύτητα στα αριθμητικά μοντέλα ICON/ECMWF.
  if (s3.mae <= 1.2) mosState.stationWeightBias = 0.06;
  else if (s3.mae >= 2.2) mosState.stationWeightBias = -0.08;
  else mosState.stationWeightBias = 0;
@@ -732,7 +726,6 @@
  mosState.acc6h = s6.accPct;
  }
 
- // Προσαρμογή ορογραφικής ενίσχυσης υετού βάσει ιστορικής επαλήθευσης υετού
  const precipPct = s3?.precipPct ?? s6?.precipPct;
  if (!isNaN(precipPct) && precipPct > 0) {
  mosState.precipSkillPct = precipPct;
@@ -860,7 +853,6 @@
  }
  }
 
- // Client + Worker Caching Wrapper για τα αριθμητικά μοντέλα
  async function fetchModelsWithCache() {
  const cacheKey = "isamar38_models_cache_v2";
  try {
@@ -873,7 +865,6 @@
  }
  } catch (e) {}
 
- // Αν έχει ρυθμιστεί server-side Worker cache endpoint, το προτιμάμε
  if (WORKER_CACHE_URL) {
  try {
  const wRes = await fetch(WORKER_CACHE_URL);
@@ -995,7 +986,6 @@
  };
  }
 
- // Δυναμική στάθμιση με ενσωμάτωση του MOS bias correction
  const baseStationW = Math.max(0.15, 0.75 - hrs * 0.03);
  const mosAdjust = mosState.ready ? mosState.stationWeightBias * Math.max(0, 1 - hrs / 18) : 0;
  const stationWeight = Math.max(0.12, Math.min(0.85, baseStationW + mosAdjust));
@@ -1024,7 +1014,6 @@
  const modelHum = avgValid([iconH?.hum, ecmwfH?.hum], localHum);
  const predHum = Math.max(25, Math.min(100, Math.round(localHum * stationWeight + modelHum * modelWeight)));
 
- // Θερμοκρασία Υγρού Θερμομέτρου (Wet-Bulb) για την προβλεπόμενη ώρα
  const predTw = calcWetBulb(predT, predHum);
 
  const localPress = station.press + (station.trend / 3) * Math.min(hrs, 12) * 0.65;
@@ -1088,7 +1077,6 @@
  predPr = localPrecip;
  }
 
- // Υπολογισμός χιονόπτωσης με βάση τη Θερμοκρασία Υγρού Θερμομέτρου (predTw <= 0.8°C)
  let stepSnowCm = 0;
  const modelSnowVals = [iconH?.snowfall, ecmwfH?.snowfall].filter(v => typeof v === 'number' && !isNaN(v));
  const modelSnow = modelSnowVals.length > 0 ? modelSnowVals.reduce((a, b) => a + b, 0) / modelSnowVals.length : null;
@@ -1172,7 +1160,7 @@
  const rowHum = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:#93c5fd;">${d.hum}%</td>`).join('');
  const rowWind = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}"><span class="wind-arrow" style="transform:rotate(${(d.dir + 180) % 360}deg);">↑</span> ${d.dirText}</td>`).join('');
  const rowWindSpd = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}"><span class="${getWindClass(d.wind)}">${d.wind} / ${d.gust}</span></td>`).join('');
- const rowPress = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:#cbd5e1;">${d.press.toFixed(1)}</td>`).join('');
+ const rowPress = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:#facc15; font-weight:600;">${d.press.toFixed(1)}</td>`).join('');
  const rowPrecip = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:${d.precip > 0 ? '#38bdf8' : '#64748b'}; font-weight:${d.precip > 0 ? '700' : '400'};">${d.precip > 0 ? d.precip.toFixed(1) : '-'}</td>`).join('');
  const rowSnow = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:${d.snow > 0 ? '#e0f2fe' : '#64748b'}; font-weight:${d.snow > 0 ? '700' : '400'};">${d.snow > 0 ? d.snow.toFixed(1) + ' cm' : '-'}</td>`).join('');
  const rowFl = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:#94a3b8;">${d.fl} μ.</td>`).join('');
@@ -1187,12 +1175,16 @@
  <tr><td class="mg-sticky-col">💦 Υγρασία (%)</td>${rowHum}</tr>
  <tr><td class="mg-sticky-col">🧭 Διεύθυνση Ανέμου</td>${rowWind}</tr>
  <tr><td class="mg-sticky-col">💨 Άνεμος / Ριπή (km/h)</td>${rowWindSpd}</tr>
- <tr><td class="mg-sticky-col">⏲️ Πίεση (hPa)</td>${rowPress}</tr>
+ <tr><td class="mg-sticky-col" style="color:#fde047;">⏲️ Πίεση (hPa)</td>${rowPress}</tr>
  <tr><td class="mg-sticky-col">🌧️ Υετός (mm/h)</td>${rowPrecip}</tr>
  <tr><td class="mg-sticky-col">❄️ Νέο Χιόνι (cm)</td>${rowSnow}</tr>
  <tr><td class="mg-sticky-col">🏔️ Επίπεδο Παγοποίησης</td>${rowFl}</tr>
  <tr><td class="mg-sticky-col">🎯 Βεβαιότητα Σύνθ.</td>${rowProb}</tr>
  `;
+
+ const pressValues = filtered.map(d => d.press);
+ const pMin = Math.floor(Math.min(...pressValues) - 1);
+ const pMax = Math.ceil(Math.max(...pressValues) + 1);
 
  const mgCtx = document.getElementById('meteogramLineChart').getContext('2d');
  if (meteogramChartInstance) meteogramChartInstance.destroy();
@@ -1204,6 +1196,7 @@
  {
  label: 'Θερμοκρασία (°C)',
  data: filtered.map(d => d.temp),
+ yAxisID: 'y',
  borderColor: '#f87171',
  backgroundColor: 'rgba(248, 113, 113, 0.12)',
  borderWidth: 2.5,
@@ -1213,6 +1206,7 @@
  {
  label: 'Αίσθηση Ψύχους (°C)',
  data: filtered.map(d => d.chill),
+ yAxisID: 'y',
  borderColor: '#38bdf8',
  borderDash: [4, 3],
  borderWidth: 2,
@@ -1222,6 +1216,7 @@
  {
  label: 'Υγρό Θερμόμετρο Tw (°C)',
  data: filtered.map(d => d.wetBulb),
+ yAxisID: 'y',
  borderColor: '#34d399',
  borderDash: [3, 3],
  borderWidth: 1.8,
@@ -1231,6 +1226,7 @@
  {
  label: 'Σημείο Δρόσου (°C)',
  data: filtered.map(d => d.dew),
+ yAxisID: 'y',
  borderColor: '#a78bfa',
  borderDash: [2, 2],
  borderWidth: 1.8,
@@ -1238,8 +1234,22 @@
  pointRadius: 2
  },
  {
+ label: 'Πίεση (hPa)',
+ data: pressValues,
+ yAxisID: 'yPressure',
+ borderColor: '#facc15',
+ backgroundColor: 'rgba(250, 204, 21, 0.12)',
+ borderWidth: 2.6,
+ tension: 0.35,
+ pointRadius: 3,
+ pointBackgroundColor: '#facc15',
+ pointBorderColor: '#0b1324',
+ pointBorderWidth: 1
+ },
+ {
  label: '0°C',
  data: filtered.map(() => 0),
+ yAxisID: 'y',
  borderColor: 'rgba(239, 68, 68, 0.5)',
  borderWidth: 1,
  borderDash: [5, 5],
@@ -1251,12 +1261,45 @@
  responsive: true,
  maintainAspectRatio: false,
  interaction: { mode: 'index', intersect: false },
- plugins: { legend: { display: false } },
+ plugins: {
+ legend: { display: false },
+ tooltip: {
+ callbacks: {
+ label: function(ctx) {
+ if (ctx.dataset.label === '0°C') return null;
+ const val = ctx.parsed.y;
+ if (ctx.dataset.yAxisID === 'yPressure') {
+ return ` ${ctx.dataset.label}: ${val.toFixed(1)} hPa`;
+ }
+ return ` ${ctx.dataset.label}: ${val.toFixed(1)}°C`;
+ }
+ }
+ }
+ },
  scales: {
  x: { display: false },
  y: {
- ticks: { color: '#94a3b8', font: { size: 10 } },
+ type: 'linear',
+ position: 'left',
+ ticks: {
+ color: '#94a3b8',
+ font: { size: 10 },
+ callback: (v) => v + '°'
+ },
  grid: { color: 'rgba(51, 65, 85, 0.35)' }
+ },
+ yPressure: {
+ type: 'linear',
+ position: 'right',
+ min: pMin,
+ max: pMax,
+ ticks: {
+ color: '#facc15',
+ font: { size: 10, weight: 'bold' },
+ maxTicksLimit: 5,
+ callback: (v) => Math.round(v) + ' hPa'
+ },
+ grid: { drawOnChartArea: false }
  }
  }
  }
@@ -1475,7 +1518,6 @@
  setupScrollHelpers('mgScrollContainer', 'btnMgPrev', 'btnMgNext');
  window.addEventListener('resize', updateAllScrollButtons);
 
- // Φορτώνουμε πρώτα τα ιστορικά στατιστικά για να ενεργοποιηθεί το Dynamic MOS πριν τον 1ο υπολογισμό
  loadVerificationStats().finally(() => {
  updateDashboard();
  });
@@ -1484,4 +1526,3 @@
  </script>
 </body>
 </html>
-
