@@ -397,6 +397,147 @@
  height: 168px;
  overflow: hidden;
  }
+ .three-day-grid {
+ display: grid;
+ grid-template-columns: repeat(3, 1fr);
+ gap: 12px;
+ }
+ @media (max-width: 760px) {
+ .three-day-grid { grid-template-columns: 1fr; }
+ }
+ .d-card {
+ background: #0f172a;
+ border: 1px solid #334155;
+ border-radius: 9px;
+ padding: 12px 14px;
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ text-align: center;
+ gap: 5px;
+ cursor: pointer;
+ transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+ user-select: none;
+ }
+ .d-card:hover {
+ border-color: #38bdf8;
+ transform: translateY(-2px);
+ }
+ .d-card.d-snow {
+ background: linear-gradient(180deg, rgba(2, 132, 199, 0.22) 0%, #0f172a 100%);
+ border: 1px solid rgba(56, 189, 248, 0.65);
+ box-shadow: 0 0 14px rgba(2, 132, 199, 0.18);
+ }
+ .d-card.d-selected {
+ border: 2px solid #38bdf8;
+ box-shadow: 0 0 18px rgba(56, 189, 248, 0.35);
+ }
+ .d-head {
+ width: 100%;
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ font-size: 0.88rem;
+ font-weight: 700;
+ color: #e2e8f0;
+ border-bottom: 1px solid #1e293b;
+ padding-bottom: 5px;
+ }
+ .d-date { font-size: 0.78rem; color: #94a3b8; font-weight: 500; }
+ .d-icon { font-size: 2rem; margin: 3px 0; }
+ .d-desc { font-size: 0.84rem; color: #cbd5e1; font-weight: 600; }
+ .d-temps {
+ display: flex;
+ align-items: center;
+ gap: 10px;
+ font-size: 1.05rem;
+ font-weight: 700;
+ margin: 2px 0;
+ }
+ .d-min { color: #7dd3fc; }
+ .d-max { color: #fca5a5; }
+ .d-snow-badge {
+ background: rgba(2, 132, 199, 0.28);
+ color: #e0f2fe;
+ border: 1px solid rgba(56, 189, 248, 0.55);
+ padding: 4px 10px;
+ border-radius: 6px;
+ font-size: 0.82rem;
+ font-weight: 700;
+ width: 100%;
+ }
+ .d-rain-badge {
+ background: rgba(51, 65, 85, 0.45);
+ color: #cbd5e1;
+ padding: 4px 10px;
+ border-radius: 6px;
+ font-size: 0.78rem;
+ width: 100%;
+ }
+ .d-meta {
+ font-size: 0.76rem;
+ color: #94a3b8;
+ line-height: 1.4;
+ margin-top: 2px;
+ }
+ .d-toggle-hint {
+ margin-top: 4px;
+ font-size: 0.72rem;
+ font-weight: 600;
+ color: #38bdf8;
+ background: rgba(56, 189, 248, 0.1);
+ border: 1px solid rgba(56, 189, 248, 0.28);
+ padding: 2px 9px;
+ border-radius: 12px;
+ }
+ .day-detail-box {
+ display: none;
+ margin-top: 12px;
+ background: #0f172a;
+ border: 1px solid #38bdf8;
+ border-radius: 9px;
+ padding: 10px 12px;
+ }
+ .day-detail-box.open {
+ display: block;
+ }
+ .day-detail-header {
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ margin-bottom: 8px;
+ padding-bottom: 6px;
+ border-bottom: 1px solid #1e293b;
+ font-size: 0.85rem;
+ font-weight: 700;
+ color: #7dd3fc;
+ gap: 8px;
+ flex-wrap: wrap;
+ }
+ .day-detail-scroll {
+ width: 100%;
+ overflow-x: auto;
+ scrollbar-width: thin;
+ scrollbar-color: #38bdf8 #0f172a;
+ }
+ .day-detail-table {
+ width: 100%;
+ min-width: 980px;
+ border-collapse: collapse;
+ text-align: center;
+ font-size: 0.76rem;
+ }
+ .day-detail-table th, .day-detail-table td {
+ padding: 5px 4px;
+ border-bottom: 1px solid #1e293b;
+ border-right: 1px solid rgba(51, 65, 85, 0.35);
+ white-space: nowrap;
+ }
+ .day-detail-table th {
+ background: #162036;
+ color: #94a3b8;
+ font-weight: 700;
+ }
  .ventusky-frame {
  width: 100%;
  height: 540px;
@@ -572,6 +713,23 @@
 
  <div class="panel">
  <div class="panel-header">
+ <span>🗓️ 3ΗΜΕΡΗ ΠΡΟΓΝΩΣΗ ΣΑΜΑΡΙΝΑΣ (ICON + ECMWF + MOS)</span>
+ <span id="threeDaySummary" style="font-size:0.78rem; color:#38bdf8;">Υπολογισμός 3ημέρου...</span>
+ </div>
+ <div class="three-day-grid" id="threeDayGrid">
+ <div class="d-card"><div class="d-desc">Φόρτωση 3ήμερης πρόγνωσης...</div></div>
+ </div>
+ <div class="day-detail-box" id="dayDetailBox">
+ <div class="day-detail-header">
+ <span id="dayDetailTitle">Ωριαία ανάλυση</span>
+ <button type="button" class="mg-btn" onclick="closeDayDetail()">✕ Κλείσιμο</button>
+ </div>
+ <div class="day-detail-scroll" id="dayDetailContent"></div>
+ </div>
+ </div>
+
+ <div class="panel">
+ <div class="panel-header">
  <span>🗺️ ΧΑΡΤΗΣ ΥΕΤΟΥ 3ΩΡΟΥ (VENTUSKY • ECMWF HRES)</span>
  <a href="https://www.ventusky.com/el/%CF%85%CE%B5%CF%84%CF%8C%CF%82-%CF%87%CE%AC%CF%81%CF%84%CE%B7%CF%82/3-%CF%8E%CF%81%CE%B5%CF%82#p=40.10;21.02;8&m=ecmwf_hres" target="_blank" rel="noopener" class="mg-btn" style="text-decoration:none;">Άνοιγμα σε πλήρη οθόνη ↗</a>
  </div>
@@ -603,6 +761,8 @@
  let meteogramChartInstance = null;
  let latestHourlySeries = [];
  let meteogramStepHours = 1;
+ let threeDayDataStore = [];
+ let selectedDayIdx = null;
 
  let mosState = {
  ready: false,
@@ -857,7 +1017,7 @@
  }
 
  async function fetchModelsWithCache() {
- const cacheKey = "isamar38_models_cache_v2";
+ const cacheKey = "isamar38_models_cache_v3";
  try {
  const rawCache = localStorage.getItem(cacheKey);
  if (rawCache) {
@@ -908,7 +1068,7 @@
  hourly: "temperature_2m,dew_point_2m,relative_humidity_2m,precipitation,snowfall,cloud_cover,wind_speed_10m,wind_gusts_10m,wind_direction_10m,pressure_msl",
  wind_speed_unit: "kmh",
  timezone: "Europe/Athens",
- forecast_days: "2"
+ forecast_days: "4"
  });
  const url = `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
  const res = await fetch(url);
@@ -989,9 +1149,9 @@
  };
  }
 
- const baseStationW = Math.max(0.15, 0.75 - hrs * 0.03);
+ const baseStationW = Math.max(0.05, 0.75 - hrs * 0.03);
  const mosAdjust = mosState.ready ? mosState.stationWeightBias * Math.max(0, 1 - hrs / 18) : 0;
- const stationWeight = Math.max(0.12, Math.min(0.85, baseStationW + mosAdjust));
+ const stationWeight = hrs > 24 ? 0.05 : Math.max(0.12, Math.min(0.85, baseStationW + mosAdjust));
  const modelWeight = 1 - stationWeight;
 
  const spread = station.temp - station.dew;
@@ -1092,8 +1252,8 @@
  }
 
  const modelsAgree = (iconH && ecmwfH) ? (Math.abs(iconH.temp - ecmwfH.temp) < 2.5) : false;
- let prob = (modelsAgree ? 94 : 88) - (hrs * 1.1);
- if (Math.abs(station.trend) >= 1.8) prob -= 5;
+ let prob = (modelsAgree ? 94 : 88) - (hrs * 0.55);
+ if (Math.abs(station.trend) >= 1.8 && hrs <= 24) prob -= 5;
  else if (predPress >= 1018 && Math.abs(station.trend) < 0.8) prob += 3;
  if (mosState.ready && mosState.mae3h !== null && mosState.mae3h <= 1.3) prob += 2;
  prob = Math.max(55, Math.min(97, Math.round(prob)));
@@ -1126,6 +1286,158 @@
  fl: Math.round(1450 + (predT / 6.5) * 1000),
  prob
  };
+ }
+
+ function toggleDayDetail(idx) {
+ const box = document.getElementById('dayDetailBox');
+ if (selectedDayIdx === idx && box.classList.contains('open')) {
+ closeDayDetail();
+ return;
+ }
+
+ selectedDayIdx = idx;
+ document.querySelectorAll('.d-card').forEach((card, i) => {
+ card.classList.toggle('d-selected', i === idx);
+ });
+
+ const dayObj = threeDayDataStore[idx];
+ if (!dayObj) return;
+
+ document.getElementById('dayDetailTitle').innerText = `⏱️ Ωριαία ανάλυση: ${dayObj.dayName} (${dayObj.dateStr})`;
+
+ const hours = dayObj.hours;
+ const headHtml = `<th>Ώρα</th>` + hours.map(h => `<th>${String(h.hour).padStart(2, '0')}:00</th>`).join('');
+ const iconHtml = `<td><b>Κατάσταση</b></td>` + hours.map(h => `<td style="font-size:1.1rem;">${h.icon}</td>`).join('');
+ const tempHtml = `<td><b>Θερμ.</b></td>` + hours.map(h => `<td style="color:${h.temp <= 0 ? '#7dd3fc' : '#f87171'}; font-weight:700;">${h.temp.toFixed(1)}°</td>`).join('');
+ const twHtml = `<td><b>Υγρό Θερμ. (Tw)</b></td>` + hours.map(h => `<td style="color:${h.wetBulb <= 0.8 ? '#38bdf8' : '#34d399'};">${h.wetBulb.toFixed(1)}°</td>`).join('');
+ const precipHtml = `<td><b>Υετός (mm)</b></td>` + hours.map(h => `<td style="color:${h.precip > 0 ? '#38bdf8' : '#64748b'};">${h.precip > 0 ? h.precip.toFixed(1) : '-'}</td>`).join('');
+ const snowHtml = `<td><b>Χιόνι (cm)</b></td>` + hours.map(h => `<td style="color:${h.snow > 0 ? '#e0f2fe' : '#64748b'}; font-weight:${h.snow > 0 ? '700' : '400'};">${h.snow > 0 ? h.snow.toFixed(1) : '-'}</td>`).join('');
+ const windHtml = `<td><b>Άνεμος / Ριπή</b></td>` + hours.map(h => `<td style="color:#cbd5e1;">${h.wind}/${h.gust} <span style="font-size:0.68rem; color:#94a3b8;">${h.dirText}</span></td>`).join('');
+
+ document.getElementById('dayDetailContent').innerHTML = `
+ <table class="day-detail-table">
+ <thead><tr>${headHtml}</tr></thead>
+ <tbody>
+ <tr>${iconHtml}</tr>
+ <tr>${tempHtml}</tr>
+ <tr>${twHtml}</tr>
+ <tr>${precipHtml}</tr>
+ <tr>${snowHtml}</tr>
+ <tr>${windHtml}</tr>
+ </tbody>
+ </table>
+ `;
+
+ box.classList.add('open');
+ }
+
+ function closeDayDetail() {
+ selectedDayIdx = null;
+ document.querySelectorAll('.d-card').forEach(c => c.classList.remove('d-selected'));
+ document.getElementById('dayDetailBox').classList.remove('open');
+ }
+
+ function renderThreeDayForecast(stationState, iconHourly, ecmwfHourly) {
+ const grid = document.getElementById('threeDayGrid');
+ const summaryEl = document.getElementById('threeDaySummary');
+ const dayNames = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
+
+ const now = new Date();
+ const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+
+ let cardsHtml = '';
+ let totalSnow3d = 0;
+ threeDayDataStore = [];
+
+ for (let dayOffset = 1; dayOffset <= 3; dayOffset++) {
+ const dayDate = new Date(startOfToday.getTime() + dayOffset * 24 * 3600 * 1000);
+ const dayName = dayOffset === 1 ? "Αύριο • " + dayNames[dayDate.getDay()] : dayNames[dayDate.getDay()];
+ const dateStr = `${String(dayDate.getDate()).padStart(2, '0')}/${String(dayDate.getMonth() + 1).padStart(2, '0')}`;
+
+ let minT = Infinity;
+ let maxT = -Infinity;
+ let sumPrecip = 0;
+ let sumSnow = 0;
+ let maxGust = 0;
+ let maxCloud = 0;
+ let snowHours = [];
+ let dayHoursList = [];
+
+ for (let h = 0; h < 24; h++) {
+ const slotDate = new Date(dayDate.getTime() + h * 3600 * 1000);
+ const hrsFromNow = Math.max(1, Math.round((slotDate.getTime() - now.getTime()) / 3600000));
+ const iconH = getModelHourAt(iconHourly, slotDate);
+ const ecmwfH = getModelHourAt(ecmwfHourly, slotDate);
+
+ const pred = combineHourForecast(hrsFromNow, slotDate, stationState, iconH, ecmwfH);
+ pred.hour = h;
+ dayHoursList.push(pred);
+
+ if (pred.temp < minT) minT = pred.temp;
+ if (pred.temp > maxT) maxT = pred.temp;
+ sumPrecip += pred.precip;
+ sumSnow += pred.snow;
+ if (pred.gust > maxGust) maxGust = pred.gust;
+ if (pred.cloud > maxCloud) maxCloud = pred.cloud;
+ if (pred.snow >= 0.1) snowHours.push(String(h).padStart(2, '0') + ':00');
+ }
+
+ const idx = dayOffset - 1;
+ threeDayDataStore.push({ dayName, dateStr, hours: dayHoursList });
+
+ totalSnow3d += sumSnow;
+ const hasSnow = sumSnow >= 0.3;
+
+ let icon = '☀️';
+ let desc = 'Αίθριος καιρός';
+ if (sumSnow >= 3.0) { icon = '❄️'; desc = 'Πυκνή χιονόπτωση'; }
+ else if (hasSnow) { icon = '🌨️'; desc = 'Χιονόπτωση / Χιονόνερο'; }
+ else if (sumPrecip >= 10) { icon = '⛈️'; desc = 'Ισχυρές βροχές'; }
+ else if (sumPrecip >= 1.5) { icon = '🌧️'; desc = 'Βροχοπτώσεις'; }
+ else if (sumPrecip >= 0.3) { icon = '🌦️'; desc = 'Τοπικές βροχές'; }
+ else if (maxCloud >= 65) { icon = '⛅'; desc = 'Νεφώσεις'; }
+
+ const snowPeakText = snowHours.length > 0
+ ? `Ώρες χιονιού: ${snowHours[0]}–${snowHours[snowHours.length - 1]}`
+ : (sumPrecip >= 0.3 ? `Συνολικός υετός: ${sumPrecip.toFixed(1)} mm` : 'Χωρίς φαινόμενα');
+
+ const badgeHtml = hasSnow
+ ? `<div class="d-snow-badge">❄️ Χιόνι: ~${sumSnow.toFixed(1)} cm</div>`
+ : `<div class="d-rain-badge">${sumPrecip >= 0.3 ? '🌧️ Βροχή: ' + sumPrecip.toFixed(1) + ' mm' : '☀️ Ξηρό'}</div>`;
+
+ cardsHtml += `
+ <div class="d-card ${hasSnow ? 'd-snow' : ''} ${selectedDayIdx === idx ? 'd-selected' : ''}" onclick="toggleDayDetail(${idx})">
+ <div class="d-head">
+ <span>${dayName}</span>
+ <span class="d-date">${dateStr}</span>
+ </div>
+ <div class="d-icon">${icon}</div>
+ <div class="d-desc">${desc}</div>
+ <div class="d-temps">
+ <span class="d-min">↓ ${minT.toFixed(1)}°</span>
+ <span style="color:#475569;">/</span>
+ <span class="d-max">↑ ${maxT.toFixed(1)}°</span>
+ </div>
+ ${badgeHtml}
+ <div class="d-meta">
+ ${snowPeakText}<br>
+ 💨 Ριπές έως ${maxGust} km/h
+ </div>
+ <div class="d-toggle-hint">▼ Ωριαία ανάλυση</div>
+ </div>
+ `;
+ }
+
+ grid.innerHTML = cardsHtml;
+ summaryEl.innerText = totalSnow3d >= 0.5
+ ? `❄️ Σύνολο 3ημέρου: ~${totalSnow3d.toFixed(1)} cm χιόνι (Κλικ για ώρες)`
+ : `ICON + ECMWF (Κλικ για ώρες)`;
+
+ if (selectedDayIdx !== null && document.getElementById('dayDetailBox').classList.contains('open')) {
+ const keptIdx = selectedDayIdx;
+ selectedDayIdx = null;
+ toggleDayDetail(keptIdx);
+ }
  }
 
  function renderMeteogram(series, step) {
@@ -1463,6 +1775,7 @@
 
  latestHourlySeries = hourlySeries;
  renderMeteogram(latestHourlySeries, meteogramStepHours);
+ renderThreeDayForecast(stationState, iconHourly, ecmwfHourly);
 
  document.getElementById('dailyExtremes').innerHTML = `
  <span>📉 Ελάχ. Ημέρας: <b>${minDayT.toFixed(1)}°C</b>${minDayTime}</span>
