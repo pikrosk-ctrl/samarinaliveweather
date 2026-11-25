@@ -1,1832 +1,1857 @@
 <!DOCTYPE html>
 <html lang="el">
 <head>
- <meta charset="UTF-8">
- <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>Ο καιρός στη Σαμαρίνα (1.450μ.) - ISAMAR38</title>
- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
- <style>
- * { box-sizing: border-box; margin: 0; padding: 0; }
- body {
- background-color: #0b1120;
- color: #f1f5f9;
- font-family: 'Segoe UI', system-ui, sans-serif;
- min-height: 100vh;
- display: flex;
- flex-direction: column;
- padding: 12px;
- gap: 12px;
- }
- .top-bar {
- display: flex;
- flex-wrap: wrap;
- justify-content: space-between;
- align-items: center;
- gap: 10px;
- background: #1e293b;
- padding: 12px 18px;
- border-radius: 10px;
- border-left: 5px solid #38bdf8;
- }
- .title h1 { font-size: 1.25rem; color: #38bdf8; }
- .title span { font-size: 0.85rem; color: #94a3b8; }
- .top-badges {
- display: flex;
- flex-wrap: wrap;
- align-items: center;
- gap: 8px;
- }
- .alert-box {
- padding: 8px 14px;
- border-radius: 8px;
- font-weight: bold;
- font-size: 0.9rem;
- background: #334155;
- color: #e2e8f0;
- }
- .alert-snow { background: #0284c7; color: #ffffff; box-shadow: 0 0 15px rgba(2,132,199,0.6); }
- .alert-storm { background: #d97706; color: #ffffff; }
- .road-ok { background: #065f46; color: #d1fae5; border: 1px solid #10b981; }
- .road-warn { background: #78350f; color: #fef3c7; border: 1px solid #f59e0b; }
- .road-danger { background: #7f1d1d; color: #fee2e2; border: 1px solid #ef4444; }
- .visitor-badge {
- display: inline-flex;
- align-items: center;
- background: #0f172a;
- border: 1px solid #334155;
- padding: 5px 8px;
- border-radius: 8px;
- height: 36px;
- }
- .visitor-badge img {
- height: 22px;
- display: block;
- border-radius: 4px;
- }
- .main-grid {
- display: grid;
- grid-template-columns: 1.4fr 1fr;
- gap: 12px;
- }
- @media (max-width: 980px) {
- .main-grid { grid-template-columns: 1fr; }
- .cam-wrapper { min-height: 260px; }
- }
- .panel {
- background: #1e293b;
- border-radius: 10px;
- padding: 12px;
- display: flex;
- flex-direction: column;
- }
- .panel-header {
- font-size: 0.9rem;
- font-weight: 600;
- color: #cbd5e1;
- margin-bottom: 10px;
- display: flex;
- justify-content: space-between;
- align-items: center;
- border-bottom: 1px solid #334155;
- padding-bottom: 6px;
- gap: 8px;
- flex-wrap: wrap;
- }
- .live-badge { color: #ef4444; font-weight: bold; }
- .cam-wrapper {
- flex: 1;
- position: relative;
- width: 100%;
- min-height: 450px;
- overflow: hidden;
- border-radius: 6px;
- background: #0f172a;
- display: flex;
- align-items: center;
- justify-content: center;
- }
- .cam-img {
- width: 100%;
- height: 100%;
- object-fit: contain;
- display: block;
- }
- .right-col {
- display: flex;
- flex-direction: column;
- gap: 12px;
- min-width: 0;
- }
- .station-grid {
- display: flex;
- flex-wrap: nowrap;
- overflow-x: auto;
- overflow-y: hidden;
- gap: 8px;
- padding-bottom: 6px;
- scrollbar-width: thin;
- scrollbar-color: #38bdf8 #0f172a;
- -webkit-overflow-scrolling: touch;
- }
- .station-grid::-webkit-scrollbar { height: 7px; }
- .station-grid::-webkit-scrollbar-track { background: #0f172a; border-radius: 4px; }
- .station-grid::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
- .station-grid::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
- .s-tile {
- flex: 0 0 132px;
- min-width: 132px;
- background: #0f172a;
- padding: 10px 8px;
- border-radius: 8px;
- text-align: center;
- border: 1px solid #334155;
- }
- .s-label { font-size: 0.78rem; color: #94a3b8; }
- .s-val { font-size: 1.25rem; font-weight: bold; color: #38bdf8; margin-top: 3px; }
- .s-sub { font-size: 0.75rem; color: #cbd5e1; margin-top: 2px; }
- .extremes-bar {
- display: flex;
- flex-wrap: wrap;
- justify-content: space-between;
- gap: 8px;
- margin-top: 8px;
- padding: 8px 12px;
- background: #0f172a;
- border-radius: 8px;
- border: 1px solid #334155;
- font-size: 0.8rem;
- color: #cbd5e1;
- }
- .extremes-bar b { color: #38bdf8; }
- .smart-box {
- margin-top: 8px;
- padding: 10px 12px;
- background: #0f172a;
- border-radius: 8px;
- border-left: 4px solid #38bdf8;
- font-size: 0.9rem;
- line-height: 1.4;
- color: #e0f2fe;
- }
- .forecast-cards {
- display: flex;
- flex-wrap: nowrap;
- overflow-x: auto;
- overflow-y: hidden;
- gap: 8px;
- margin-top: 4px;
- padding-bottom: 6px;
- scrollbar-width: thin;
- scrollbar-color: #38bdf8 #0f172a;
- -webkit-overflow-scrolling: touch;
- }
- .forecast-cards::-webkit-scrollbar { height: 7px; }
- .forecast-cards::-webkit-scrollbar-track { background: #0f172a; border-radius: 4px; }
- .forecast-cards::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
- .forecast-cards::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
- .f-card {
- flex: 0 0 118px;
- min-width: 118px;
- background: #0f172a;
- padding: 8px 6px;
- border-radius: 8px;
- text-align: center;
- border: 1px solid #334155;
- }
- .f-time { font-size: 0.82rem; color: #94a3b8; font-weight: 600; }
- .f-icon { font-size: 1.35rem; margin: 2px 0; }
- .f-temp { font-size: 1.05rem; font-weight: bold; color: #38bdf8; }
- .f-snow { font-size: 0.74rem; color: #bae6fd; margin-top: 2px; }
- .f-prob {
- display: inline-block;
- margin-top: 4px;
- padding: 2px 6px;
- border-radius: 4px;
- font-size: 0.68rem;
- font-weight: 600;
- background: #1e293b;
- }
- .prob-high { color: #34d399; border: 1px solid rgba(52, 211, 153, 0.35); }
- .prob-med { color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); }
- .prob-low { color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.35); }
- .verify-grid {
- display: grid;
- grid-template-columns: 1.45fr 1fr;
- gap: 10px;
- align-items: stretch;
- }
- @media (max-width: 600px) {
- .verify-grid { grid-template-columns: 1fr; }
- }
- .v-card {
- background: #0f172a;
- padding: 10px 12px;
- border-radius: 8px;
- border: 1px solid #334155;
- border-left: 3px solid #64748b;
- display: flex;
- flex-direction: column;
- justify-content: center;
- }
- .v-card.v-primary {
- background: linear-gradient(135deg, #0f172a 0%, #102a38 100%);
- border: 1px solid rgba(16, 185, 129, 0.55);
- border-left: 5px solid #10b981;
- box-shadow: 0 0 14px rgba(16, 185, 129, 0.14);
- padding: 12px 14px;
- }
- .v-card.v-secondary {
- opacity: 0.88;
- }
- .v-top-row {
- display: flex;
- justify-content: space-between;
- align-items: center;
- gap: 6px;
- flex-wrap: wrap;
- }
- .v-badge-main {
- background: rgba(16, 185, 129, 0.18);
- color: #34d399;
- border: 1px solid rgba(52, 211, 153, 0.4);
- font-size: 0.65rem;
- font-weight: 700;
- padding: 2px 6px;
- border-radius: 4px;
- letter-spacing: 0.3px;
- }
- .v-horizon { font-size: 0.8rem; color: #cbd5e1; font-weight: 600; }
- .v-card.v-primary .v-horizon { color: #f1f5f9; font-size: 0.85rem; }
- .v-acc { font-size: 1.05rem; font-weight: bold; color: #94a3b8; margin: 4px 0; }
- .v-card.v-primary .v-acc { font-size: 1.45rem; color: #34d399; margin: 5px 0; }
- .v-mae { font-size: 0.76rem; color: #cbd5e1; }
- .v-card.v-primary .v-mae { font-size: 0.82rem; color: #e2e8f0; }
- .meteogram-controls {
- display: flex;
- align-items: center;
- gap: 6px;
- flex-wrap: wrap;
- }
- .mg-btn {
- background: #0f172a;
- color: #cbd5e1;
- border: 1px solid #334155;
- padding: 4px 10px;
- border-radius: 6px;
- font-size: 0.76rem;
- font-weight: 600;
- cursor: pointer;
- transition: all 0.15s ease;
- }
- .mg-btn:hover:not(:disabled) { background: #334155; color: #fff; }
- .mg-btn:disabled {
- opacity: 0.35;
- cursor: default;
- }
- .mg-btn.active {
- background: #0284c7;
- color: #ffffff;
- border-color: #38bdf8;
- }
- .mg-scroll-wrapper {
- width: 100%;
- overflow-x: auto;
- overflow-y: hidden;
- background: #0f172a;
- border-radius: 8px;
- border: 1px solid #334155;
- scrollbar-width: thin;
- scrollbar-color: #38bdf8 #0f172a;
- -webkit-overflow-scrolling: touch;
- }
- .mg-scroll-wrapper::-webkit-scrollbar { height: 8px; }
- .mg-scroll-wrapper::-webkit-scrollbar-track { background: #0f172a; border-radius: 4px; }
- .mg-scroll-wrapper::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
- .mg-scroll-wrapper::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
- .mg-table {
- border-collapse: collapse;
- min-width: 1480px;
- width: 100%;
- text-align: center;
- font-size: 0.78rem;
- }
- .mg-table th, .mg-table td {
- padding: 6px 5px;
- border-bottom: 1px solid #1e293b;
- border-right: 1px solid rgba(51, 65, 85, 0.45);
- white-space: nowrap;
- min-width: 56px;
- }
- .mg-sticky-col {
- position: sticky;
- left: 0;
- z-index: 3;
- background: #131c31 !important;
- text-align: left !important;
- padding: 6px 10px !important;
- font-weight: 600;
- color: #cbd5e1;
- border-right: 2px solid #334155 !important;
- min-width: 155px !important;
- max-width: 155px !important;
- box-shadow: 4px 0 8px rgba(0, 0, 0, 0.35);
- }
- .mg-head-row th {
- background: #162036;
- color: #94a3b8;
- font-weight: 700;
- font-size: 0.76rem;
- padding: 7px 5px;
- }
- .mg-head-row th.mg-now {
- background: rgba(2, 132, 199, 0.28);
- color: #38bdf8;
- border-bottom: 2px solid #38bdf8;
- }
- .mg-night { background: rgba(15, 23, 42, 0.65); }
- .mg-day { background: rgba(30, 41, 59, 0.25); }
- .mg-pill {
- display: inline-block;
- padding: 2px 6px;
- border-radius: 4px;
- font-weight: 700;
- font-size: 0.76rem;
- min-width: 42px;
- }
- .t-freeze { background: rgba(56, 189, 248, 0.22); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.45); }
- .t-cold { background: rgba(16, 185, 129, 0.18); color: #6ee7b7; }
- .t-mild { background: rgba(250, 204, 21, 0.18); color: #fde047; }
- .t-warm { background: rgba(249, 115, 22, 0.22); color: #fdba74; }
- .w-calm { color: #cbd5e1; }
- .w-mod { background: rgba(250, 204, 21, 0.2); color: #fde047; font-weight: 700; border-radius: 4px; padding: 2px 5px; }
- .w-strong { background: rgba(239, 68, 68, 0.25); color: #fca5a5; font-weight: 700; border-radius: 4px; padding: 2px 5px; }
- .wind-arrow {
- display: inline-block;
- font-size: 0.85rem;
- color: #38bdf8;
- margin-right: 2px;
- }
- .mg-chart-box {
- min-width: 1480px;
- height: 185px;
- padding: 8px 12px 6px 155px;
- background: #0b1324;
- border-bottom: 2px solid #334155;
- position: relative;
- overflow: hidden;
- display: block;
- }
- .mg-chart-label {
- position: sticky;
- left: 0;
- z-index: 4;
- float: left;
- width: 155px;
- margin-left: -155px;
- padding: 6px 10px;
- background: #131c31;
- border-right: 2px solid #334155;
- height: 170px;
- font-size: 0.72rem;
- line-height: 1.38;
- color: #94a3b8;
- }
- .mg-chart-canvas-wrap {
- position: relative;
- width: 100%;
- height: 168px;
- overflow: hidden;
- }
- .three-day-grid {
- display: grid;
- grid-template-columns: repeat(3, 1fr);
- gap: 12px;
- }
- @media (max-width: 760px) {
- .three-day-grid { grid-template-columns: 1fr; }
- }
- .d-card {
- background: #0f172a;
- border: 1px solid #334155;
- border-radius: 9px;
- padding: 12px 14px;
- display: flex;
- flex-direction: column;
- align-items: center;
- text-align: center;
- gap: 5px;
- cursor: pointer;
- transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
- user-select: none;
- }
- .d-card:hover {
- border-color: #38bdf8;
- transform: translateY(-2px);
- }
- .d-card.d-snow {
- background: linear-gradient(180deg, rgba(2, 132, 199, 0.22) 0%, #0f172a 100%);
- border: 1px solid rgba(56, 189, 248, 0.65);
- box-shadow: 0 0 14px rgba(2, 132, 199, 0.18);
- }
- .d-card.d-selected {
- border: 2px solid #38bdf8;
- box-shadow: 0 0 18px rgba(56, 189, 248, 0.35);
- }
- .d-head {
- width: 100%;
- display: flex;
- justify-content: space-between;
- align-items: center;
- font-size: 0.88rem;
- font-weight: 700;
- color: #e2e8f0;
- border-bottom: 1px solid #1e293b;
- padding-bottom: 5px;
- }
- .d-date { font-size: 0.78rem; color: #94a3b8; font-weight: 500; }
- .d-icon { font-size: 2rem; margin: 3px 0; }
- .d-desc { font-size: 0.84rem; color: #cbd5e1; font-weight: 600; }
- .d-temps {
- display: flex;
- align-items: center;
- gap: 10px;
- font-size: 1.05rem;
- font-weight: 700;
- margin: 2px 0;
- }
- .d-min { color: #7dd3fc; }
- .d-max { color: #fca5a5; }
- .d-snow-badge {
- background: rgba(2, 132, 199, 0.28);
- color: #e0f2fe;
- border: 1px solid rgba(56, 189, 248, 0.55);
- padding: 4px 10px;
- border-radius: 6px;
- font-size: 0.82rem;
- font-weight: 700;
- width: 100%;
- }
- .d-rain-badge {
- background: rgba(51, 65, 85, 0.45);
- color: #cbd5e1;
- padding: 4px 10px;
- border-radius: 6px;
- font-size: 0.78rem;
- width: 100%;
- }
- .d-meta {
- font-size: 0.76rem;
- color: #94a3b8;
- line-height: 1.4;
- margin-top: 2px;
- }
- .d-toggle-hint {
- margin-top: 4px;
- font-size: 0.72rem;
- font-weight: 600;
- color: #38bdf8;
- background: rgba(56, 189, 248, 0.1);
- border: 1px solid rgba(56, 189, 248, 0.28);
- padding: 2px 9px;
- border-radius: 12px;
- }
- .day-detail-box {
- display: none;
- margin-top: 12px;
- background: #0f172a;
- border: 1px solid #38bdf8;
- border-radius: 9px;
- padding: 10px 12px;
- }
- .day-detail-box.open {
- display: block;
- }
- .day-detail-header {
- display: flex;
- justify-content: space-between;
- align-items: center;
- margin-bottom: 8px;
- padding-bottom: 6px;
- border-bottom: 1px solid #1e293b;
- font-size: 0.85rem;
- font-weight: 700;
- color: #7dd3fc;
- gap: 8px;
- flex-wrap: wrap;
- }
- .day-detail-scroll {
- width: 100%;
- overflow-x: auto;
- scrollbar-width: thin;
- scrollbar-color: #38bdf8 #0f172a;
- }
- .day-detail-table {
- width: 100%;
- min-width: 980px;
- border-collapse: collapse;
- text-align: center;
- font-size: 0.76rem;
- }
- .day-detail-table th, .day-detail-table td {
- padding: 5px 4px;
- border-bottom: 1px solid #1e293b;
- border-right: 1px solid rgba(51, 65, 85, 0.35);
- white-space: nowrap;
- }
- .day-detail-table th {
- background: #162036;
- color: #94a3b8;
- font-weight: 700;
- }
- .ventusky-frame {
- width: 100%;
- height: 540px;
- border: 1px solid #334155;
- border-radius: 8px;
- background: #0f172a;
- display: block;
- }
- @media (max-width: 768px) {
- .ventusky-frame { height: 420px; }
- }
- .footer-bar {
- text-align: center;
- font-size: 0.8rem;
- color: #64748b;
- padding: 4px 0 8px 0;
- }
- </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ο καιρός στη Σαμαρίνα (1.450μ.) - ISAMAR38</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #0b1120;
+      color: #f1f5f9;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      gap: 12px;
+    }
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      background: #1e293b;
+      padding: 12px 18px;
+      border-radius: 10px;
+      border-left: 5px solid #38bdf8;
+    }
+    .title h1 { font-size: 1.25rem; color: #38bdf8; }
+    .title span { font-size: 0.85rem; color: #94a3b8; }
+    .top-badges {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+    .alert-box {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 0.9rem;
+      background: #334155;
+      color: #e2e8f0;
+    }
+    .alert-snow { background: #0284c7; color: #ffffff; box-shadow: 0 0 15px rgba(2,132,199,0.6); }
+    .alert-storm { background: #d97706; color: #ffffff; }
+    .road-ok { background: #065f46; color: #d1fae5; border: 1px solid #10b981; }
+    .road-warn { background: #78350f; color: #fef3c7; border: 1px solid #f59e0b; }
+    .road-danger { background: #7f1d1d; color: #fee2e2; border: 1px solid #ef4444; }
+    .visitor-badge {
+      display: inline-flex;
+      align-items: center;
+      background: #0f172a;
+      border: 1px solid #334155;
+      padding: 5px 8px;
+      border-radius: 8px;
+      height: 36px;
+    }
+    .visitor-badge img {
+      height: 22px;
+      display: block;
+      border-radius: 4px;
+    }
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 980px) {
+      .main-grid { grid-template-columns: 1fr; }
+      .cam-wrapper { min-height: 260px; }
+    }
+    .panel {
+      background: #1e293b;
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-header {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 6px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .live-badge { color: #ef4444; font-weight: bold; }
+    .cam-wrapper {
+      flex: 1;
+      position: relative;
+      width: 100%;
+      min-height: 450px;
+      overflow: hidden;
+      border-radius: 6px;
+      background: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cam-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+    }
+    .station-grid {
+      display: flex;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overflow-y: hidden;
+      gap: 8px;
+      padding-bottom: 6px;
+      scrollbar-width: thin;
+      scrollbar-color: #38bdf8 #0f172a;
+      -webkit-overflow-scrolling: touch;
+    }
+    .station-grid::-webkit-scrollbar { height: 7px; }
+    .station-grid::-webkit-scrollbar-track { background: #0f172a; border-radius: 4px; }
+    .station-grid::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    .station-grid::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
+    .s-tile {
+      flex: 0 0 132px;
+      min-width: 132px;
+      background: #0f172a;
+      padding: 10px 8px;
+      border-radius: 8px;
+      text-align: center;
+      border: 1px solid #334155;
+    }
+    .s-label { font-size: 0.78rem; color: #94a3b8; }
+    .s-val { font-size: 1.25rem; font-weight: bold; color: #38bdf8; margin-top: 3px; }
+    .s-sub { font-size: 0.75rem; color: #cbd5e1; margin-top: 2px; }
+    .extremes-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 8px;
+      padding: 8px 12px;
+      background: #0f172a;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      font-size: 0.8rem;
+      color: #cbd5e1;
+    }
+    .extremes-bar b { color: #38bdf8; }
+    .smart-box {
+      margin-top: 8px;
+      padding: 10px 12px;
+      background: #0f172a;
+      border-radius: 8px;
+      border-left: 4px solid #38bdf8;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      color: #e0f2fe;
+    }
+    .forecast-cards {
+      display: flex;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overflow-y: hidden;
+      gap: 8px;
+      margin-top: 4px;
+      padding-bottom: 6px;
+      scrollbar-width: thin;
+      scrollbar-color: #38bdf8 #0f172a;
+      -webkit-overflow-scrolling: touch;
+    }
+    .forecast-cards::-webkit-scrollbar { height: 7px; }
+    .forecast-cards::-webkit-scrollbar-track { background: #0f172a; border-radius: 4px; }
+    .forecast-cards::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    .forecast-cards::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
+    .f-card {
+      flex: 0 0 118px;
+      min-width: 118px;
+      background: #0f172a;
+      padding: 8px 6px;
+      border-radius: 8px;
+      text-align: center;
+      border: 1px solid #334155;
+    }
+    .f-time { font-size: 0.82rem; color: #94a3b8; font-weight: 600; }
+    .f-icon { font-size: 1.35rem; margin: 2px 0; }
+    .f-temp { font-size: 1.05rem; font-weight: bold; color: #38bdf8; }
+    .f-snow { font-size: 0.74rem; color: #bae6fd; margin-top: 2px; }
+    .f-prob {
+      display: inline-block;
+      margin-top: 4px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      background: #1e293b;
+    }
+    .prob-high { color: #34d399; border: 1px solid rgba(52, 211, 153, 0.35); }
+    .prob-med { color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); }
+    .prob-low { color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.35); }
+    .verify-grid {
+      display: grid;
+      grid-template-columns: 1.45fr 1fr;
+      gap: 10px;
+      align-items: stretch;
+    }
+    @media (max-width: 600px) {
+      .verify-grid { grid-template-columns: 1fr; }
+    }
+    .v-card {
+      background: #0f172a;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      border-left: 3px solid #64748b;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .v-card.v-primary {
+      background: linear-gradient(135deg, #0f172a 0%, #102a38 100%);
+      border: 1px solid rgba(16, 185, 129, 0.55);
+      border-left: 5px solid #10b981;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.14);
+      padding: 12px 14px;
+    }
+    .v-card.v-secondary {
+      opacity: 0.88;
+    }
+    .v-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .v-badge-main {
+      background: rgba(16, 185, 129, 0.18);
+      color: #34d399;
+      border: 1px solid rgba(52, 211, 153, 0.4);
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      letter-spacing: 0.3px;
+    }
+    .v-horizon { font-size: 0.8rem; color: #cbd5e1; font-weight: 600; }
+    .v-card.v-primary .v-horizon { color: #f1f5f9; font-size: 0.85rem; }
+    .v-acc { font-size: 1.05rem; font-weight: bold; color: #94a3b8; margin: 4px 0; }
+    .v-card.v-primary .v-acc { font-size: 1.45rem; color: #34d399; margin: 5px 0; }
+    .v-mae { font-size: 0.76rem; color: #cbd5e1; }
+    .v-card.v-primary .v-mae { font-size: 0.82rem; color: #e2e8f0; }
+    .meteogram-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .mg-btn {
+      background: #0f172a;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .mg-btn:hover:not(:disabled) { background: #334155; color: #fff; }
+    .mg-btn:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+    .mg-btn.active {
+      background: #0284c7;
+      color: #ffffff;
+      border-color: #38bdf8;
+    }
+    .mg-scroll-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      background: #0f172a;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      scrollbar-width: thin;
+      scrollbar-color: #38bdf8 #0f172a;
+      -webkit-overflow-scrolling: touch;
+    }
+    .mg-scroll-wrapper::-webkit-scrollbar { height: 8px; }
+    .mg-scroll-wrapper::-webkit-scrollbar-track { background: #0f172a; border-radius: 4px; }
+    .mg-scroll-wrapper::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    .mg-scroll-wrapper::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
+    .mg-table {
+      border-collapse: collapse;
+      min-width: 1480px;
+      width: 100%;
+      text-align: center;
+      font-size: 0.78rem;
+    }
+    .mg-table th, .mg-table td {
+      padding: 6px 5px;
+      border-bottom: 1px solid #1e293b;
+      border-right: 1px solid rgba(51, 65, 85, 0.45);
+      white-space: nowrap;
+      min-width: 56px;
+    }
+    .mg-sticky-col {
+      position: sticky;
+      left: 0;
+      z-index: 3;
+      background: #131c31 !important;
+      text-align: left !important;
+      padding: 6px 10px !important;
+      font-weight: 600;
+      color: #cbd5e1;
+      border-right: 2px solid #334155 !important;
+      min-width: 155px !important;
+      max-width: 155px !important;
+      box-shadow: 4px 0 8px rgba(0, 0, 0, 0.35);
+    }
+    .mg-head-row th {
+      background: #162036;
+      color: #94a3b8;
+      font-weight: 700;
+      font-size: 0.76rem;
+      padding: 7px 5px;
+    }
+    .mg-head-row th.mg-now {
+      background: rgba(2, 132, 199, 0.28);
+      color: #38bdf8;
+      border-bottom: 2px solid #38bdf8;
+    }
+    .mg-night { background: rgba(15, 23, 42, 0.65); }
+    .mg-day { background: rgba(30, 41, 59, 0.25); }
+    .mg-pill {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 0.76rem;
+      min-width: 42px;
+    }
+    .t-freeze { background: rgba(56, 189, 248, 0.22); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.45); }
+    .t-cold { background: rgba(16, 185, 129, 0.18); color: #6ee7b7; }
+    .t-mild { background: rgba(250, 204, 21, 0.18); color: #fde047; }
+    .t-warm { background: rgba(249, 115, 22, 0.22); color: #fdba74; }
+    .w-calm { color: #cbd5e1; }
+    .w-mod { background: rgba(250, 204, 21, 0.2); color: #fde047; font-weight: 700; border-radius: 4px; padding: 2px 5px; }
+    .w-strong { background: rgba(239, 68, 68, 0.25); color: #fca5a5; font-weight: 700; border-radius: 4px; padding: 2px 5px; }
+    .wind-arrow {
+      display: inline-block;
+      font-size: 0.85rem;
+      color: #38bdf8;
+      margin-right: 2px;
+    }
+    .mg-chart-box {
+      min-width: 1480px;
+      height: 185px;
+      padding: 8px 12px 6px 155px;
+      background: #0b1324;
+      border-bottom: 2px solid #334155;
+      position: relative;
+      overflow: hidden;
+      display: block;
+    }
+    .mg-chart-label {
+      position: sticky;
+      left: 0;
+      z-index: 4;
+      float: left;
+      width: 155px;
+      margin-left: -155px;
+      padding: 6px 10px;
+      background: #131c31;
+      border-right: 2px solid #334155;
+      height: 170px;
+      font-size: 0.72rem;
+      line-height: 1.38;
+      color: #94a3b8;
+    }
+    .mg-chart-canvas-wrap {
+      position: relative;
+      width: 100%;
+      height: 168px;
+      overflow: hidden;
+    }
+    .three-day-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 760px) {
+      .three-day-grid { grid-template-columns: 1fr; }
+    }
+    .d-card {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 9px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 5px;
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+      user-select: none;
+    }
+    .d-card:hover {
+      border-color: #38bdf8;
+      transform: translateY(-2px);
+    }
+    .d-card.d-snow {
+      background: linear-gradient(180deg, rgba(2, 132, 199, 0.22) 0%, #0f172a 100%);
+      border: 1px solid rgba(56, 189, 248, 0.65);
+      box-shadow: 0 0 14px rgba(2, 132, 199, 0.18);
+    }
+    .d-card.d-selected {
+      border: 2px solid #38bdf8;
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.35);
+    }
+    .d-head {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 5px;
+    }
+    .d-date { font-size: 0.78rem; color: #94a3b8; font-weight: 500; }
+    .d-icon { font-size: 2rem; margin: 3px 0; }
+    .d-desc { font-size: 0.84rem; color: #cbd5e1; font-weight: 600; }
+    .d-temps {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin: 2px 0;
+    }
+    .d-min { color: #7dd3fc; }
+    .d-max { color: #fca5a5; }
+    .d-snow-badge {
+      background: rgba(2, 132, 199, 0.28);
+      color: #e0f2fe;
+      border: 1px solid rgba(56, 189, 248, 0.55);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      width: 100%;
+    }
+    .d-rain-badge {
+      background: rgba(51, 65, 85, 0.45);
+      color: #cbd5e1;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      width: 100%;
+    }
+    .d-meta {
+      font-size: 0.76rem;
+      color: #94a3b8;
+      line-height: 1.4;
+      margin-top: 2px;
+    }
+    .d-toggle-hint {
+      margin-top: 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      padding: 2px 9px;
+      border-radius: 12px;
+    }
+    .day-detail-box {
+      display: none;
+      margin-top: 12px;
+      background: #0f172a;
+      border: 1px solid #38bdf8;
+      border-radius: 9px;
+      padding: 10px 12px;
+    }
+    .day-detail-box.open {
+      display: block;
+    }
+    .day-detail-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #1e293b;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #7dd3fc;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .day-detail-scroll {
+      width: 100%;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #38bdf8 #0f172a;
+    }
+    .day-detail-table {
+      width: 100%;
+      min-width: 980px;
+      border-collapse: collapse;
+      text-align: center;
+      font-size: 0.76rem;
+    }
+    .day-detail-table th, .day-detail-table td {
+      padding: 5px 4px;
+      border-bottom: 1px solid #1e293b;
+      border-right: 1px solid rgba(51, 65, 85, 0.35);
+      white-space: nowrap;
+    }
+    .day-detail-table th {
+      background: #162036;
+      color: #94a3b8;
+      font-weight: 700;
+    }
+    .ventusky-frame {
+      width: 100%;
+      height: 540px;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      background: #0f172a;
+      display: block;
+    }
+    @media (max-width: 768px) {
+      .ventusky-frame { height: 420px; }
+    }
+    .footer-bar {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #64748b;
+      padding: 4px 0 8px 0;
+    }
+  </style>
 </head>
 <body>
- <div class="top-bar">
- <div class="title">
- <h1>🏔️ ΣΑΜΑΡΙΝΑ ΓΡΕΒΕΝΩΝ (1.450μ.) — LIVE WEATHER</h1>
- <span>Σταθμός: Bresser 5-in-1 (ISAMAR38) | Κάμερα: Σαμαρίνα Χωριό | Σύνθεση: ISAMAR38 + ICON + ECMWF (MOS & Wet-Bulb)</span>
- </div>
- <div class="top-badges">
- <div id="roadStatus" class="alert-box">🛣️ Έλεγχος δρόμου...</div>
- <div id="topAlert" class="alert-box">Έλεγχος συνθηκών...</div>
- <div class="visitor-badge" title="Συνολικές επισκέψεις σελίδας">
- <img src="https://visitor-badge.laobi.icu/badge?page_id=samarinaliveweather&left_color=%230f172a&right_color=%230284c7&left_text=Visits" alt="Επισκέψεις">
- </div>
- </div>
- </div>
+  <div class="top-bar">
+    <div class="title">
+      <h1>🏔️ ΣΑΜΑΡΙΝΑ ΓΡΕΒΕΝΩΝ (1.450μ.) — LIVE WEATHER</h1>
+      <span>Σταθμός: Bresser 5-in-1 (ISAMAR38) | Κάμερα: Σαμαρίνα Χωριό | Σύνθεση: ISAMAR38 + ICON + ECMWF (MOS & Wet-Bulb)</span>
+    </div>
+    <div class="top-badges">
+      <div id="roadStatus" class="alert-box">🛣️ Έλεγχος δρόμου...</div>
+      <div id="topAlert" class="alert-box">Έλεγχος συνθηκών...</div>
+      <div class="visitor-badge" title="Συνολικές επισκέψεις σελίδας">
+        <img src="https://visitor-badge.laobi.icu/badge?page_id=samarinaliveweather&left_color=%230f172a&right_color=%230284c7&left_text=Visits" alt="Επισκέψεις">
+      </div>
+    </div>
+  </div>
 
- <div class="main-grid">
+  <div class="main-grid">
+    <div class="panel">
+      <div class="panel-header">
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <span><span class="live-badge">● LIVE</span> ΚΑΜΕΡΑ ΣΑΜΑΡΙΝΑ ΧΩΡΙΟ</span>
+          <a href="smolikas-3d.html" target="_blank" style="display:inline-flex; align-items:center; gap:5px; padding:2px 9px; background:rgba(56,189,248,0.16); border:1px solid rgba(56,189,248,0.45); color:#7dd3fc; border-radius:6px; text-decoration:none; font-size:0.74rem; font-weight:700;">🏔️ 3D ΣΜΟΛΙΚΑΣ</a>
+        </div>
+        <span id="clock" style="font-size:0.82rem; color:#94a3b8;"></span>
+      </div>
+      <div class="cam-wrapper">
+        <img id="liveCamImg" class="cam-img" src="https://www.forecastweather.gr/images/photo_camera/photo_41.jpg" alt="Κάμερα Σαμαρίνα Χωριό">
+      </div>
+    </div>
+
+    <div class="right-col">
+      <div class="panel">
+        <div class="panel-header">
+          <span>❄️ 24ΩΡΗ ΠΡΟΓΝΩΣΗ ISAMAR38 + ICON + ECMWF</span>
+          <div class="meteogram-controls">
+            <button type="button" class="mg-btn" id="btnForecastPrev" onclick="scrollEl('forecastGrid', -240)" title="Προηγούμενες ώρες">◀</button>
+            <button type="button" class="mg-btn" id="btnForecastNext" onclick="scrollEl('forecastGrid', 240)" title="Επόμενες ώρες">▶</button>
+          </div>
+        </div>
+        <div class="forecast-cards" id="forecastGrid"></div>
+        <div class="smart-box" id="smartDiagnosis">Σύνδεση με σταθμό ISAMAR38, ICON & ECMWF...</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span>📡 LIVE ΔΕΔΟΜΕΝΑ ΣΤΑΘΜΟΥ (ISAMAR38)</span>
+          <div class="meteogram-controls">
+            <span id="lastUpdate" style="font-size:0.78rem; color:#94a3b8;">--:--</span>
+            <button type="button" class="mg-btn" id="btnStationPrev" onclick="scrollEl('stationScroll', -220)" title="Αριστερά">◀</button>
+            <button type="button" class="mg-btn" id="btnStationNext" onclick="scrollEl('stationScroll', 220)" title="Δεξιά">▶</button>
+          </div>
+        </div>
+        <div class="station-grid" id="stationScroll">
+          <div class="s-tile">
+            <div class="s-label">Θερμοκρασία</div>
+            <div class="s-val" id="stTemp">--°C</div>
+            <div class="s-sub" id="stDew">Σημ. Δρόσου: --°C</div>
+          </div>
+          <div class="s-tile">
+            <div class="s-label">Πίεση</div>
+            <div class="s-val" id="stPress">-- hPa</div>
+            <div class="s-sub" id="stTrend">Τάση: --</div>
+          </div>
+          <div class="s-tile">
+            <div class="s-label">Υγρασία</div>
+            <div class="s-val" id="stHum">--%</div>
+            <div class="s-sub" id="stSpread">Απόσταση: --°C</div>
+          </div>
+          <div class="s-tile">
+            <div class="s-label">Άνεμος</div>
+            <div class="s-val" id="stWind">-- km/h</div>
+            <div class="s-sub" id="stDir">Διεύθυνση: --</div>
+          </div>
+          <div class="s-tile">
+            <div class="s-label">Υετός Ημέρας</div>
+            <div class="s-val" id="stRain">-- mm</div>
+            <div class="s-sub" id="stRate">Ρυθμός: -- mm/h</div>
+          </div>
+          <div class="s-tile">
+            <div class="s-label">Αίσθηση Ψύχους</div>
+            <div class="s-val" id="stChill">--°C</div>
+            <div class="s-sub" id="stFl">Υγρό Θερμ.: --°C</div>
+          </div>
+        </div>
+        <div class="extremes-bar" id="dailyExtremes">
+          <span>📉 Ελάχ. Ημέρας: <b>--°C</b></span>
+          <span>📈 Μέγ. Ημέρας: <b>--°C</b></span>
+          <span>💨 Μέγ. Ριπή: <b>-- km/h</b></span>
+          <span>❄️ Νέο Χιόνι 24h: <b>0.0 cm</b></span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span>🎯 ΕΠΑΛΗΘΕΥΣΗ ΑΚΡΙΒΕΙΑΣ (ISAMAR38 & ΥΒΡΙΔΙΚΟ ΜΟΝΤΕΛΟ)</span>
+          <span id="verifySample" style="font-size:0.78rem; color:#38bdf8;">ISAMAR38 + ICON + ECMWF</span>
+        </div>
+        <div class="verify-grid" id="verifyGrid">
+          <div class="v-card v-primary">
+            <div class="v-top-row">
+              <div class="v-horizon">📡 Τοπικός Σταθμός ISAMAR38 (+3h)</div>
+              <span class="v-badge-main">⭐ ΚΥΡΙΟΣ ΔΕΙΚΤΗΣ</span>
+            </div>
+            <div class="v-acc" style="color:#38bdf8; font-size:1.05rem;">Συλλογή δεδομένων...</div>
+            <div class="v-mae">Άμεση πρόγνωση (Nowcasting ISAMAR38)</div>
+          </div>
+          <div class="v-card v-secondary">
+            <div class="v-horizon">🌐 Υβριδικό Μοντέλο (+6h)</div>
+            <div class="v-acc" style="color:#94a3b8; font-size:0.9rem;">Συλλογή δεδομένων...</div>
+            <div class="v-mae">Σύνθεση ISAMAR38 + ICON + ECMWF</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="panel">
-  <div class="panel-header">
-  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-  <span><span class="live-badge">● LIVE</span> ΚΑΜΕΡΑ ΣΑΜΑΡΙΝΑ ΧΩΡΙΟ</span>
-  <a href="smolikas-3d.html" target="_blank" style="display:inline-flex; align-items:center; gap:5px; padding:2px 9px; background:rgba(56,189,248,0.16); border:1px solid rgba(56,189,248,0.45); color:#7dd3fc; border-radius:6px; text-decoration:none; font-size:0.74rem; font-weight:700;">🏔️ 3D ΣΜΟΛΙΚΑΣ</a>
+    <div class="panel-header">
+      <span>📊 ΔΥΝΑΜΙΚΟ 24ΩΡΟ ΜΕΤΕΩΓΡΑΜΜΑ (ISAMAR38 + ICON + ECMWF)</span>
+      <div class="meteogram-controls">
+        <button type="button" class="mg-btn active" id="btnStep1h" onclick="setMeteogramStep(1)">Ανά 1 ώρα (24h)</button>
+        <button type="button" class="mg-btn" id="btnStep3h" onclick="setMeteogramStep(3)">Ανά 3 ώρες</button>
+        <button type="button" class="mg-btn" id="btnMgPrev" onclick="scrollMeteogram(-320)" title="Πίσω">◀ Πίσω</button>
+        <button type="button" class="mg-btn" id="btnMgNext" onclick="scrollMeteogram(320)" title="Μπροστά">Μπροστά ▶</button>
+      </div>
+    </div>
+    <div class="mg-scroll-wrapper" id="mgScrollContainer">
+      <div class="mg-chart-box" id="mgChartBox">
+        <div class="mg-chart-label">
+          <b style="color:#38bdf8;">Καμπύλες 24ώρου</b><br>
+          <span style="color:#f87171;">━</span> Θερμ. (°C)<br>
+          <span style="color:#38bdf8;">┄</span> Αισθητή (°C)<br>
+          <span style="color:#34d399;">┄</span> Υγρό Θερμ. (Tw)<br>
+          <span style="color:#a78bfa;">┄</span> Σημ. Δρόσου<br>
+          <span style="color:#ef4444; font-weight:bold;">┄</span> Όριο 0°C<br>
+          <span style="color:#e0f2fe;">▮</span> Χιόνι (cm)<br>
+          <span style="color:#facc15; font-weight:bold;">━</span> Πίεση (hPa)
+        </div>
+        <div class="mg-chart-canvas-wrap">
+          <canvas id="meteogramLineChart"></canvas>
+        </div>
+      </div>
+      <table class="mg-table" id="meteogramTable">
+        <thead>
+          <tr class="mg-head-row" id="mgHeadRow">
+            <th class="mg-sticky-col">Ώρα (Σύνθεση)</th>
+          </tr>
+        </thead>
+        <tbody id="mgBody">
+          <tr><td class="mg-sticky-col">Φόρτωση δεδομένων...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
-  <span id="clock" style="font-size:0.82rem; color:#94a3b8;"></span>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span>🗓️ 3ΗΜΕΡΗ ΠΡΟΓΝΩΣΗ ΣΑΜΑΡΙΝΑΣ (ICON + ECMWF + MOS)</span>
+      <span id="threeDaySummary" style="font-size:0.78rem; color:#38bdf8;">Υπολογισμός 3ημέρου...</span>
+    </div>
+    <div class="three-day-grid" id="threeDayGrid">
+      <div class="d-card"><div class="d-desc">Φόρτωση 3ήμερης πρόγνωσης...</div></div>
+    </div>
+    <div class="day-detail-box" id="dayDetailBox">
+      <div class="day-detail-header">
+        <span id="dayDetailTitle">Ωριαία ανάλυση</span>
+        <button type="button" class="mg-btn" onclick="closeDayDetail()">✕ Κλείσιμο</button>
+      </div>
+      <div class="day-detail-scroll" id="dayDetailContent"></div>
+    </div>
   </div>
-  <div class="cam-wrapper">
-  <img id="liveCamImg" class="cam-img" src="https://www.forecastweather.gr/images/photo_camera/photo_41.jpg" alt="Κάμερα Σαμαρίνα Χωριό">
+
+  <div class="panel">
+    <div class="panel-header">
+      <span>🗺️ ΧΑΡΤΗΣ ΥΕΤΟΥ 3ΩΡΟΥ (VENTUSKY • ECMWF HRES)</span>
+      <a href="https://www.ventusky.com/el/%CF%85%CE%B5%CF%84%CF%8C%CF%82-%CF%87%CE%AC%CF%81%CF%84%CE%B7%82/3-%CF%8E%CF%81%CE%B5%CF%82#p=40.10;21.02;8&m=ecmwf_hres" target="_blank" rel="noopener" class="mg-btn" style="text-decoration:none;">Άνοιγμα σε πλήρη οθόνη ↗</a>
+    </div>
+    <iframe
+      id="ventuskyMap"
+      class="ventusky-frame"
+      src="https://www.ventusky.com/el/%CF%85%CE%B5%CF%84%CF%8C%CF%82-%CF%87%CE%AC%CF%81%CF%84%CE%B7%82/3-%CF%8E%CF%81%CE%B5%CF%82#p=40.10;21.02;8&m=ecmwf_hres"
+      loading="lazy"
+      title="Χάρτης Υετού Ventusky (ECMWF)">
+    </iframe>
   </div>
+
+  <div class="footer-bar">
+    Σαμαρίνα Live Weather Dashboard (1.450μ.) • Σταθμός Bresser 5-in-1 (ISAMAR38) + ICON + ECMWF (Wet-Bulb & Dynamic MOS)
   </div>
 
- <div class="right-col">
- <div class="panel">
- <div class="panel-header">
- <span>❄️ 24ΩΡΗ ΠΡΟΓΝΩΣΗ ISAMAR38 + ICON + ECMWF</span>
- <div class="meteogram-controls">
- <button type="button" class="mg-btn" id="btnForecastPrev" onclick="scrollEl('forecastGrid', -240)" title="Προηγούμενες ώρες">◀</button>
- <button type="button" class="mg-btn" id="btnForecastNext" onclick="scrollEl('forecastGrid', 240)" title="Επόμενες ώρες">▶</button>
- </div>
- </div>
- <div class="forecast-cards" id="forecastGrid"></div>
- <div class="smart-box" id="smartDiagnosis">Σύνδεση με σταθμό ISAMAR38, ICON & ECMWF...</div>
- </div>
-
- <div class="panel">
- <div class="panel-header">
- <span>📡 LIVE ΔΕΔΟΜΕΝΑ ΣΤΑΘΜΟΥ (ISAMAR38)</span>
- <div class="meteogram-controls">
- <span id="lastUpdate" style="font-size:0.78rem; color:#94a3b8;">--:--</span>
- <button type="button" class="mg-btn" id="btnStationPrev" onclick="scrollEl('stationScroll', -220)" title="Αριστερά">◀</button>
- <button type="button" class="mg-btn" id="btnStationNext" onclick="scrollEl('stationScroll', 220)" title="Δεξιά">▶</button>
- </div>
- </div>
- <div class="station-grid" id="stationScroll">
- <div class="s-tile">
- <div class="s-label">Θερμοκρασία</div>
- <div class="s-val" id="stTemp">--°C</div>
- <div class="s-sub" id="stDew">Σημ. Δρόσου: --°C</div>
- </div>
- <div class="s-tile">
- <div class="s-label">Πίεση</div>
- <div class="s-val" id="stPress">-- hPa</div>
- <div class="s-sub" id="stTrend">Τάση: --</div>
- </div>
- <div class="s-tile">
- <div class="s-label">Υγρασία</div>
- <div class="s-val" id="stHum">--%</div>
- <div class="s-sub" id="stSpread">Απόσταση: --°C</div>
- </div>
- <div class="s-tile">
- <div class="s-label">Άνεμος</div>
- <div class="s-val" id="stWind">-- km/h</div>
- <div class="s-sub" id="stDir">Διεύθυνση: --</div>
- </div>
- <div class="s-tile">
- <div class="s-label">Υετός Ημέρας</div>
- <div class="s-val" id="stRain">-- mm</div>
- <div class="s-sub" id="stRate">Ρυθμός: -- mm/h</div>
- </div>
- <div class="s-tile">
- <div class="s-label">Αίσθηση Ψύχους</div>
- <div class="s-val" id="stChill">--°C</div>
- <div class="s-sub" id="stFl">Υγρό Θερμ.: --°C</div>
- </div>
- </div>
- <div class="extremes-bar" id="dailyExtremes">
- <span>📉 Ελάχ. Ημέρας: <b>--°C</b></span>
- <span>📈 Μέγ. Ημέρας: <b>--°C</b></span>
- <span>💨 Μέγ. Ριπή: <b>-- km/h</b></span>
- <span>❄️ Νέο Χιόνι 24h: <b>0.0 cm</b></span>
- </div>
- </div>
-
- <div class="panel">
- <div class="panel-header">
- <span>🎯 ΕΠΑΛΗΘΕΥΣΗ ΑΚΡΙΒΕΙΑΣ (ISAMAR38 & ΥΒΡΙΔΙΚΟ ΜΟΝΤΕΛΟ)</span>
- <span id="verifySample" style="font-size:0.78rem; color:#38bdf8;">ISAMAR38 + ICON + ECMWF</span>
- </div>
- <div class="verify-grid" id="verifyGrid">
- <div class="v-card v-primary">
- <div class="v-top-row">
- <div class="v-horizon">📡 Τοπικός Σταθμός ISAMAR38 (+3h)</div>
- <span class="v-badge-main">⭐ ΚΥΡΙΟΣ ΔΕΙΚΤΗΣ</span>
- </div>
- <div class="v-acc" style="color:#38bdf8; font-size:1.05rem;">Συλλογή δεδομένων...</div>
- <div class="v-mae">Άμεση πρόγνωση (Nowcasting ISAMAR38)</div>
- </div>
- <div class="v-card v-secondary">
- <div class="v-horizon">🌐 Υβριδικό Μοντέλο (+6h)</div>
- <div class="v-acc" style="color:#94a3b8; font-size:0.9rem;">Συλλογή δεδομένων...</div>
- <div class="v-mae">Σύνθεση ISAMAR38 + ICON + ECMWF</div>
- </div>
- </div>
- </div>
- </div>
- </div>
-
- <div class="panel">
- <div class="panel-header">
- <span>📊 ΔΥΝΑΜΙΚΟ 24ΩΡΟ ΜΕΤΕΩΓΡΑΜΜΑ (ISAMAR38 + ICON + ECMWF)</span>
- <div class="meteogram-controls">
- <button type="button" class="mg-btn active" id="btnStep1h" onclick="setMeteogramStep(1)">Ανά 1 ώρα (24h)</button>
- <button type="button" class="mg-btn" id="btnStep3h" onclick="setMeteogramStep(3)">Ανά 3 ώρες</button>
- <button type="button" class="mg-btn" id="btnMgPrev" onclick="scrollMeteogram(-320)" title="Πίσω">◀ Πίσω</button>
- <button type="button" class="mg-btn" id="btnMgNext" onclick="scrollMeteogram(320)" title="Μπροστά">Μπροστά ▶</button>
- </div>
- </div>
- <div class="mg-scroll-wrapper" id="mgScrollContainer">
- <div class="mg-chart-box" id="mgChartBox">
- <div class="mg-chart-label">
- <b style="color:#38bdf8;">Καμπύλες 24ώρου</b><br>
- <span style="color:#f87171;">━</span> Θερμ. (°C)<br>
- <span style="color:#38bdf8;">┄</span> Αισθητή (°C)<br>
- <span style="color:#34d399;">┄</span> Υγρό Θερμ. (Tw)<br>
- <span style="color:#a78bfa;">┄</span> Σημ. Δρόσου<br>
- <span style="color:#ef4444; font-weight:bold;">┄</span> Όριο 0°C<br>
- <span style="color:#e0f2fe;">▮</span> Χιόνι (cm)<br>
- <span style="color:#facc15; font-weight:bold;">━</span> Πίεση (hPa)
- </div>
- <div class="mg-chart-canvas-wrap">
- <canvas id="meteogramLineChart"></canvas>
- </div>
- </div>
- <table class="mg-table" id="meteogramTable">
- <thead>
- <tr class="mg-head-row" id="mgHeadRow">
- <th class="mg-sticky-col">Ώρα (Σύνθεση)</th>
- </tr>
- </thead>
- <tbody id="mgBody">
- <tr><td class="mg-sticky-col">Φόρτωση δεδομένων...</td></tr>
- </tbody>
- </table>
- </div>
- </div>
-
- <div class="panel">
- <div class="panel-header">
- <span>🗓️ 3ΗΜΕΡΗ ΠΡΟΓΝΩΣΗ ΣΑΜΑΡΙΝΑΣ (ICON + ECMWF + MOS)</span>
- <span id="threeDaySummary" style="font-size:0.78rem; color:#38bdf8;">Υπολογισμός 3ημέρου...</span>
- </div>
- <div class="three-day-grid" id="threeDayGrid">
- <div class="d-card"><div class="d-desc">Φόρτωση 3ήμερης πρόγνωσης...</div></div>
- </div>
- <div class="day-detail-box" id="dayDetailBox">
- <div class="day-detail-header">
- <span id="dayDetailTitle">Ωριαία ανάλυση</span>
- <button type="button" class="mg-btn" onclick="closeDayDetail()">✕ Κλείσιμο</button>
- </div>
- <div class="day-detail-scroll" id="dayDetailContent"></div>
- </div>
- </div>
-
- <div class="panel">
- <div class="panel-header">
- <span>🗺️ ΧΑΡΤΗΣ ΥΕΤΟΥ 3ΩΡΟΥ (VENTUSKY • ECMWF HRES)</span>
- <a href="https://www.ventusky.com/el/%CF%85%CE%B5%CF%84%CF%8C%CF%82-%CF%87%CE%AC%CF%81%CF%84%CE%B7%CF%82/3-%CF%8E%CF%81%CE%B5%CF%82#p=40.10;21.02;8&m=ecmwf_hres" target="_blank" rel="noopener" class="mg-btn" style="text-decoration:none;">Άνοιγμα σε πλήρη οθόνη ↗</a>
- </div>
- <iframe
- id="ventuskyMap"
- class="ventusky-frame"
- src="https://www.ventusky.com/el/%CF%85%CE%B5%CF%84%CF%8C%CF%82-%CF%87%CE%AC%CF%81%CF%84%CE%B7%CF%82/3-%CF%8E%CF%81%CE%B5%CF%82#p=40.10;21.02;8&m=ecmwf_hres"
- loading="lazy"
- title="Χάρτης Υετού Ventusky (ECMWF)">
- </iframe>
- </div>
-
- <div class="footer-bar">
- Σαμαρίνα Live Weather Dashboard (1.450μ.) • Σταθμός Bresser 5-in-1 (ISAMAR38) + ICON + ECMWF (Wet-Bulb & Dynamic MOS)
- </div>
-
- <script>
- const WU_STATION_ID = "ISAMAR38";
- const WU_API_KEY = "5c94ee0c13f240ec94ee0c13f2b0ecd9";
- const STATS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ_y9OVAjf5gRIJN7ZKm_OuR_fP5UFcu2YWX3XNU7PRxSouu3L2-kPh6Rk1u3VP-pdBjOTIo22t3mN/pub?gid=409751746&single=true&output=csv";
-
- const WORKER_CACHE_URL = "";
- const CLIENT_CACHE_TTL_MS = 5 * 60 * 1000;
-
- const LAT = 40.1;
- const LON = 21.02;
- const ELEV = 1450;
-
- let meteogramChartInstance = null;
- let latestHourlySeries = [];
- let meteogramStepHours = 1;
- let threeDayDataStore = [];
- let selectedDayIdx = null;
-
- let mosState = {
- ready: false,
- sampleHours: 0,
- mae3h: null,
- mae6h: null,
- acc3h: null,
- acc6h: null,
- precipSkillPct: null,
- stationWeightBias: 0,
- orographicScale: 1.15
- };
-
- function syncScrollButtons(containerId, prevBtnId, nextBtnId) {
- const el = document.getElementById(containerId);
- const prevBtn = document.getElementById(prevBtnId);
- const nextBtn = document.getElementById(nextBtnId);
- if (!el || !prevBtn || !nextBtn) return;
-
- const maxScroll = Math.max(0, el.scrollWidth - el.clientWidth);
- const hasOverflow = maxScroll > 2;
- prevBtn.disabled = !hasOverflow || el.scrollLeft <= 2;
- nextBtn.disabled = !hasOverflow || el.scrollLeft >= maxScroll - 2;
- }
-
- function updateAllScrollButtons() {
- syncScrollButtons('forecastGrid', 'btnForecastPrev', 'btnForecastNext');
- syncScrollButtons('stationScroll', 'btnStationPrev', 'btnStationNext');
- syncScrollButtons('mgScrollContainer', 'btnMgPrev', 'btnMgNext');
- }
-
- function setupScrollHelpers(containerId, prevBtnId, nextBtnId) {
- const el = document.getElementById(containerId);
- if (!el) return;
- el.addEventListener('scroll', () => syncScrollButtons(containerId, prevBtnId, nextBtnId), { passive: true });
- el.addEventListener('wheel', (e) => {
- if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
- e.preventDefault();
- el.scrollLeft += e.deltaY;
- }
- }, { passive: false });
- }
-
- function scrollEl(id, deltaPx) {
- const el = document.getElementById(id);
- if (!el) return;
- el.scrollBy({ left: deltaPx, behavior: 'smooth' });
- setTimeout(updateAllScrollButtons, 280);
- }
-
- function scrollMeteogram(deltaPx) {
- scrollEl('mgScrollContainer', deltaPx);
- }
-
- function setMeteogramStep(step) {
- meteogramStepHours = step;
- document.getElementById('btnStep1h').classList.toggle('active', step === 1);
- document.getElementById('btnStep3h').classList.toggle('active', step === 3);
- if (latestHourlySeries.length > 0) {
- renderMeteogram(latestHourlySeries, step);
- }
- }
-
- function calcWindChill(tempC, windKmh) {
- if (tempC <= 10 && windKmh > 4.8) {
- const wc = 13.12 + 0.6215 * tempC - 11.37 * Math.pow(windKmh, 0.16) + 0.3965 * tempC * Math.pow(windKmh, 0.16);
- return Number(wc.toFixed(1));
- }
- return Number(tempC.toFixed(1));
- }
-
- function calcWetBulb(tempC, rh) {
- const safeRh = Math.max(1, Math.min(100, rh));
- const tw = tempC * Math.atan(0.151977 * Math.pow(safeRh + 8.313659, 0.5))
- + Math.atan(tempC + safeRh)
- - Math.atan(safeRh - 1.676331)
- + 0.00391838 * Math.pow(safeRh, 1.5) * Math.atan(0.023101 * safeRh)
- - 4.686035;
- return Number(tw.toFixed(1));
- }
-
- function degToCompass(num) {
- const val = Math.floor((num / 22.5) + 0.5);
- const arr = ["Β", "ΒΒΑ", "ΒΑ", "ΑΒΑ", "Α", "ΑΝΑ", "ΝΑ", "ΝΝΑ", "Ν", "ΝΝΔ", "ΝΔ", "ΔΝΔ", "Δ", "ΔΒΔ", "ΒΔ", "ΒΒΔ"];
- return arr[(val % 16)];
- }
-
- function parseCSVLine(line) {
- const result = [];
- let current = '';
- let inQuotes = false;
- for (let i = 0; i < line.length; i++) {
- const ch = line[i];
- if (ch === '"') {
- inQuotes = !inQuotes;
- } else if (ch === ',' && !inQuotes) {
- result.push(current.trim());
- current = '';
- } else {
- current += ch;
- }
- }
- result.push(current.trim());
- return result;
- }
-
- function updateDynamicMOS(statsMap) {
- const s3 = statsMap["+3h_HYB"] || statsMap["+3h"];
- const s6 = statsMap["+6h_HYB"] || statsMap["+6h"];
-
- if (s3 && s3.count >= 5 && !isNaN(s3.mae)) {
- mosState.ready = true;
- mosState.sampleHours = s3.count;
- mosState.mae3h = s3.mae;
- mosState.acc3h = s3.accPct;
-
- if (s3.mae <= 1.2) mosState.stationWeightBias = 0.06;
- else if (s3.mae >= 2.2) mosState.stationWeightBias = -0.08;
- else mosState.stationWeightBias = 0;
- }
-
- if (s6 && s6.count >= 5 && !isNaN(s6.mae)) {
- mosState.mae6h = s6.mae;
- mosState.acc6h = s6.accPct;
- }
-
- const precipPct = s3?.precipPct ?? s6?.precipPct;
- if (!isNaN(precipPct) && precipPct > 0) {
- mosState.precipSkillPct = precipPct;
- if (precipPct >= 85) mosState.orographicScale = 1.15;
- else if (precipPct >= 70) mosState.orographicScale = 1.10;
- else mosState.orographicScale = 1.04;
- }
- }
-
- async function loadVerificationStats(retryCount = 0) {
- if (!STATS_CSV_URL) return;
-
- const renderFromCsv = (csvText) => {
- const lines = csvText.trim().split(/\r?\n/);
- const grid = document.getElementById('verifyGrid');
- const statsMap = {};
-
- for (let r = 1; r < lines.length; r++) {
- const cols = parseCSVLine(lines[r]);
- const horizon = cols[0]?.replace(/"/g, '').trim();
- if (!horizon) continue;
- statsMap[horizon] = {
- count: parseInt(cols[1]) || 0,
- mae: parseFloat((cols[2] || '').replace(',', '.')),
- accPct: parseInt(cols[3]),
- precipPct: parseInt(cols[4])
- };
- }
-
- updateDynamicMOS(statsMap);
-
- const primaryKey = statsMap["+3h_HYB"] ? "+3h_HYB" : (statsMap["+3h"] ? "+3h" : "+12h");
- const secondaryKey = statsMap["+6h_HYB"] ? "+6h_HYB" : (statsMap["+6h"] ? "+6h" : "+24h");
- const primaryLabel = "📡 Τοπικός Σταθμός ISAMAR38 (+3h)";
- const secondaryLabel = secondaryKey.includes("+6h")
- ? "🌐 Υβριδικό Μοντέλο (+6h)"
- : "🌐 Υβριδικό Μοντέλο (+24h)";
-
- let cardPrimaryHtml = '';
- let cardSecondaryHtml = '';
-
- const pData = statsMap[primaryKey];
- if (pData) {
- if (pData.count < 1 || isNaN(pData.mae)) {
- cardPrimaryHtml = `
- <div class="v-card v-primary">
- <div class="v-top-row">
- <div class="v-horizon">${primaryLabel}</div>
- <span class="v-badge-main">⭐ ΚΥΡΙΟΣ ΔΕΙΚΤΗΣ</span>
- </div>
- <div class="v-acc" style="color:#38bdf8; font-size:1.05rem;">Συλλογή (${pData.count} δείγμ.)</div>
- <div class="v-mae">Άμεση πρόγνωση (Nowcasting ISAMAR38)</div>
- </div>
- `;
- } else {
- const precipLine = !isNaN(pData.precipPct) ? ` • Υετός: <b>${pData.precipPct}%</b>` : '';
- cardPrimaryHtml = `
- <div class="v-card v-primary">
- <div class="v-top-row">
- <div class="v-horizon">${primaryLabel} (${pData.count} ώρες)</div>
- <span class="v-badge-main">⭐ ΚΥΡΙΟΣ ΔΕΙΚΤΗΣ</span>
- </div>
- <div class="v-acc">${pData.accPct}% Ακρίβεια</div>
- <div class="v-mae">Απόκλιση Θερμ.: <b>±${pData.mae.toFixed(2)}°C</b>${precipLine}</div>
- </div>
- `;
- }
- }
-
- const sData = statsMap[secondaryKey];
- if (sData) {
- if (sData.count < 1 || isNaN(sData.mae)) {
- cardSecondaryHtml = `
- <div class="v-card v-secondary">
- <div class="v-horizon">${secondaryLabel}</div>
- <div class="v-acc" style="color:#94a3b8; font-size:0.92rem;">Συλλογή (${sData.count} δείγμ.)</div>
- <div class="v-mae">Σύνθεση ISAMAR38 + ICON + ECMWF</div>
- </div>
- `;
- } else {
- const precipLine = !isNaN(sData.precipPct) ? ` • Υετός: <b>${sData.precipPct}%</b>` : '';
- cardSecondaryHtml = `
- <div class="v-card v-secondary">
- <div class="v-horizon">${secondaryLabel} (${sData.count} ώρες)</div>
- <div class="v-acc" style="color:#cbd5e1;">${sData.accPct}% Ακρίβεια</div>
- <div class="v-mae">Απόκλιση: <b>±${sData.mae.toFixed(2)}°C</b>${precipLine}</div>
- </div>
- `;
- }
- }
-
- if (cardPrimaryHtml || cardSecondaryHtml) {
- grid.innerHTML = cardPrimaryHtml + cardSecondaryHtml;
- const extra12 = statsMap["+12h_HYB"] ? ` • Υβριδικό +12h: ${statsMap["+12h_HYB"].accPct}%` : '';
- const mosBadge = mosState.ready ? ' • MOS ✓' : '';
- document.getElementById('verifySample').innerText = `ISAMAR38 + ICON + ECMWF${extra12}${mosBadge}`;
- return true;
- }
- return false;
- };
-
- try {
- const cachedCsv = localStorage.getItem('isamar38_stats_csv');
- if (cachedCsv) renderFromCsv(cachedCsv);
- } catch (e) {}
-
- try {
- const res = await fetch(STATS_CSV_URL + "&t=" + Date.now(), { cache: "no-store" });
- if (!res.ok) throw new Error("HTTP " + res.status);
- const csvText = await res.text();
- if (csvText.includes("<!DOCTYPE") || csvText.includes("<html")) {
- document.getElementById('verifySample').innerText = "Έλεγχος δημοσίευσης Stats";
- return;
- }
-
- if (renderFromCsv(csvText)) {
- try { localStorage.setItem('isamar38_stats_csv', csvText); } catch (e) {}
- }
- } catch (err) {
- if (retryCount < 2) {
- setTimeout(() => loadVerificationStats(retryCount + 1), 4000);
- } else if (!localStorage.getItem('isamar38_stats_csv')) {
- document.getElementById('verifySample').innerText = "ISAMAR38 + ICON + ECMWF";
- }
- }
- }
-
- async function fetchModelsWithCache() {
- const cacheKey = "isamar38_models_cache_v3";
- try {
- const rawCache = localStorage.getItem(cacheKey);
- if (rawCache) {
- const parsed = JSON.parse(rawCache);
- if (Date.now() - parsed.ts < CLIENT_CACHE_TTL_MS && (parsed.icon || parsed.ecmwf)) {
- return { iconHourly: parsed.icon, ecmwfHourly: parsed.ecmwf, source: "client-cache" };
- }
- }
- } catch (e) {}
-
- if (WORKER_CACHE_URL) {
- try {
- const wRes = await fetch(WORKER_CACHE_URL);
- if (wRes.ok) {
- const wData = await wRes.json();
- if (wData.icon || wData.ecmwf) {
- try {
- localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), icon: wData.icon, ecmwf: wData.ecmwf }));
- } catch (e) {}
- return { iconHourly: wData.icon, ecmwfHourly: wData.ecmwf, source: "worker-cache" };
- }
- }
- } catch (e) {}
- }
-
- const [iconRes, ecmwfRes] = await Promise.allSettled([
- fetchModelHourly("icon_seamless"),
- fetchModelHourly("ecmwf_ifs025")
- ]);
- const iconHourly = iconRes.status === 'fulfilled' ? iconRes.value : null;
- const ecmwfHourly = ecmwfRes.status === 'fulfilled' ? ecmwfRes.value : null;
-
- if (iconHourly || ecmwfHourly) {
- try {
- localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), icon: iconHourly, ecmwf: ecmwfHourly }));
- } catch (e) {}
- }
-
- return { iconHourly, ecmwfHourly, source: "live-api" };
- }
-
- async function fetchModelHourly(modelName) {
- const params = new URLSearchParams({
- latitude: LAT,
- longitude: LON,
- elevation: ELEV,
- models: modelName,
- hourly: "temperature_2m,dew_point_2m,relative_humidity_2m,precipitation,snowfall,cloud_cover,wind_speed_10m,wind_gusts_10m,wind_direction_10m,pressure_msl",
- wind_speed_unit: "kmh",
- timezone: "Europe/Athens",
- forecast_days: "4"
- });
- const url = `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
- const res = await fetch(url);
- if (!res.ok) throw new Error(`${modelName} HTTP ${res.status}`);
- const data = await res.json();
- if (!data.hourly || !Array.isArray(data.hourly.time)) throw new Error(`${modelName} missing hourly`);
- return data.hourly;
- }
-
- function getModelHourAt(hourly, targetDate) {
- if (!hourly || !hourly.time) return null;
- const y = targetDate.getFullYear();
- const m = String(targetDate.getMonth() + 1).padStart(2, '0');
- const d = String(targetDate.getDate()).padStart(2, '0');
- const h = String(targetDate.getHours()).padStart(2, '0');
- const key = `${y}-${m}-${d}T${h}:00`;
- const idx = hourly.time.indexOf(key);
- if (idx === -1) return null;
-
- return {
- temp: hourly.temperature_2m?.[idx],
- dew: hourly.dew_point_2m?.[idx],
- hum: hourly.relative_humidity_2m?.[idx],
- precip: hourly.precipitation?.[idx] ?? 0,
- snowfall: hourly.snowfall?.[idx] ?? 0,
- cloud: hourly.cloud_cover?.[idx] ?? 0,
- wind: hourly.wind_speed_10m?.[idx],
- gust: hourly.wind_gusts_10m?.[idx],
- dir: hourly.wind_direction_10m?.[idx],
- press: hourly.pressure_msl?.[idx]
- };
- }
-
- function avgValid(vals, fallback) {
- const valid = vals.filter(v => typeof v === 'number' && !isNaN(v));
- if (valid.length === 0) return fallback;
- return valid.reduce((a, b) => a + b, 0) / valid.length;
- }
-
- function combineHourForecast(hrs, targetDate, station, iconH, ecmwfH) {
- const now = new Date();
- const currentHour = now.getHours() + (now.getMinutes() / 60);
- const targetHour = targetDate.getHours();
- const isNight = (targetHour >= 20 || targetHour < 7);
-
- if (hrs === 0) {
- const tw0 = calcWetBulb(station.temp, station.hum);
- const p0 = Number((station.rate || 0).toFixed(1));
- const s0 = (tw0 <= 0.8 && p0 > 0) ? Number((p0 * (tw0 <= -4 ? 1.5 : tw0 <= -1.5 ? 1.2 : 0.85)).toFixed(1)) : 0;
- const cloud0 = Math.round(avgValid([iconH?.cloud, ecmwfH?.cloud], station.hum >= 85 ? 80 : 30));
- let icon0 = isNight ? '🌙' : '🌤️';
- if (s0 > 0 || (p0 > 0 && tw0 <= 0.8)) icon0 = '❄️';
- else if (p0 > 0) icon0 = '🌧️';
- else if ((station.temp - station.dew) <= 1.5 && station.hum >= 90) icon0 = '🌫️';
- else if (station.temp <= 0) icon0 = '🥶';
- else if (cloud0 >= 65 || station.press < 1012) icon0 = '⛅';
-
- return {
- hrs: 0,
- time: targetDate.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' }),
- isNight,
- icon: icon0,
- temp: Number(station.temp.toFixed(1)),
- chill: Number(station.chill.toFixed(1)),
- wetBulb: tw0,
- dew: Number(station.dew.toFixed(1)),
- hum: Math.round(station.hum),
- dir: station.dir,
- dirText: degToCompass(station.dir),
- wind: Math.round(station.wind),
- gust: Math.round(station.gust),
- press: Number(station.press.toFixed(1)),
- precip: p0,
- snow: s0,
- cloud: cloud0,
- fl: Math.round(1450 + (station.temp / 6.5) * 1000),
- prob: 100
- };
- }
-
- const baseStationW = Math.max(0.05, 0.75 - hrs * 0.03);
- const mosAdjust = mosState.ready ? mosState.stationWeightBias * Math.max(0, 1 - hrs / 18) : 0;
- const stationWeight = hrs > 24 ? 0.05 : Math.max(0.12, Math.min(0.85, baseStationW + mosAdjust));
- const modelWeight = 1 - stationWeight;
-
- const spread = station.temp - station.dew;
- const diurnalFactor = (h) => -Math.cos(((h - 4) / 24) * 2 * Math.PI);
- const baseSwing = (spread > 4 && station.wind < 12) ? 3.8 : 2.2;
- const diurnalDelta = (diurnalFactor(targetHour) - diurnalFactor(currentHour)) * baseSwing;
- const isNortherly = (station.dir >= 315 || station.dir <= 65);
- const isSoutherly = (station.dir >= 135 && station.dir <= 250);
- let advectionDelta = 0;
- if (isNortherly && station.wind > 5) advectionDelta = -0.12 * Math.min(station.wind, 35) * (hrs / 12);
- else if (isSoutherly && station.wind > 5) advectionDelta = 0.08 * Math.min(station.wind, 35) * (hrs / 12);
- const pressTempDelta = station.trend * 0.25 * (hrs / 12);
- const localT = station.temp + diurnalDelta + advectionDelta + pressTempDelta;
-
- const modelT = avgValid([iconH?.temp, ecmwfH?.temp], localT);
- const predT = Number((localT * stationWeight + modelT * modelWeight).toFixed(1));
-
- const localDew = Math.min(predT - 0.2, station.dew + (diurnalDelta * 0.45) + (station.trend < -1 ? 0.6 : 0));
- const modelDew = avgValid([iconH?.dew, ecmwfH?.dew], localDew);
- const predDew = Number(Math.min(predT - 0.2, localDew * stationWeight + modelDew * modelWeight).toFixed(1));
-
- const localHum = Math.max(25, Math.min(100, Math.round(station.hum - (predT - station.temp) * 3.2 + (station.trend < -1 ? 6 : 0))));
- const modelHum = avgValid([iconH?.hum, ecmwfH?.hum], localHum);
- const predHum = Math.max(25, Math.min(100, Math.round(localHum * stationWeight + modelHum * modelWeight)));
-
- const predTw = calcWetBulb(predT, predHum);
-
- const localPress = station.press + (station.trend / 3) * Math.min(hrs, 12) * 0.65;
- const modelPress = avgValid([iconH?.press, ecmwfH?.press], localPress);
- const predPress = Number((localPress * stationWeight + modelPress * modelWeight).toFixed(1));
-
- const windDiurnal = Math.sin(((targetHour - 6) / 24) * 2 * Math.PI) * 3.5;
- const localWind = Math.max(0, station.wind + windDiurnal + (station.trend <= -1.5 ? 4 : 0));
- const modelWind = avgValid([iconH?.wind, ecmwfH?.wind], localWind);
- const predWind = Math.max(0, Math.round(localWind * stationWeight + modelWind * modelWeight));
-
- const gustRatio = station.wind > 0 ? Math.max(1.3, (station.gust || station.wind * 1.4) / station.wind) : 1.4;
- const localGust = Math.max(predWind, Math.round(predWind * gustRatio));
- const modelGust = avgValid([iconH?.gust, ecmwfH?.gust], localGust);
- const predGust = Math.max(predWind, Math.round(localGust * stationWeight + modelGust * modelWeight));
-
- const localDir = (station.dir + Math.round(hrs * 1.5)) % 360;
- const modelDir = avgValid([iconH?.dir, ecmwfH?.dir], localDir);
- const predDir = Math.round(localDir * stationWeight + modelDir * modelWeight) % 360;
-
- const modelPrecipVals = [iconH?.precip, ecmwfH?.precip].filter(v => typeof v === 'number' && !isNaN(v));
- const modelPrecip = modelPrecipVals.length > 0 ? modelPrecipVals.reduce((a, b) => a + b, 0) / modelPrecipVals.length : null;
- const modelCloudVals = [iconH?.cloud, ecmwfH?.cloud].filter(v => typeof v === 'number' && !isNaN(v));
- const modelCloud = modelCloudVals.length > 0 ? modelCloudVals.reduce((a, b) => a + b, 0) / modelCloudVals.length : 50;
-
- let precipScore = 0;
- if (predPress <= 1004) precipScore += 45;
- else if (predPress <= 1010) precipScore += 30;
- else if (predPress <= 1015) precipScore += 15;
- else if (predPress >= 1022) precipScore -= 25;
-
- if (station.trend <= -2.5) precipScore += 40;
- else if (station.trend <= -1.2) precipScore += 25;
- else if (station.trend <= -0.5) precipScore += 10;
- else if (station.trend >= 1.2) precipScore -= 25;
-
- const currentSpread = predT - predDew;
- if (currentSpread <= 1.5) precipScore += 25;
- else if (currentSpread <= 3.0) precipScore += 12;
- else if (currentSpread > 6.5) precipScore -= 20;
-
- if (isSoutherly || (predDir >= 250 && predDir <= 300)) precipScore += 12;
-
- const timeDecay = Math.max(0.75, 1 - (hrs / 120));
- precipScore = Math.round(precipScore * timeDecay);
-
- let localPrecip = 0;
- if (precipScore >= 65) {
- localPrecip = Number(((precipScore - 55) * 0.07).toFixed(1));
- }
-
- let predPr = 0;
- if (modelPrecip !== null) {
- if (modelPrecip < 0.1) {
- predPr = (hrs === 1 && station.rate > 0) ? Number((station.rate * 0.5).toFixed(1)) : 0;
- } else {
- const orographicBoost = (precipScore >= 65) ? mosState.orographicScale : 1.0;
- predPr = Number((modelPrecip * orographicBoost).toFixed(1));
- }
- } else {
- predPr = localPrecip;
- }
-
- let stepSnowCm = 0;
- const modelSnowVals = [iconH?.snowfall, ecmwfH?.snowfall].filter(v => typeof v === 'number' && !isNaN(v));
- const modelSnow = modelSnowVals.length > 0 ? modelSnowVals.reduce((a, b) => a + b, 0) / modelSnowVals.length : null;
- if (predTw <= 0.8 && predPr > 0) {
- let ratio = 0.85;
- if (predTw <= -4.0) ratio = 1.5;
- else if (predTw <= -1.5) ratio = 1.2;
- const localSnow = Number((predPr * ratio).toFixed(1));
- stepSnowCm = modelSnow !== null ? Number((modelSnow * 0.65 + localSnow * 0.35).toFixed(1)) : localSnow;
- }
-
- const modelsAgree = (iconH && ecmwfH) ? (Math.abs(iconH.temp - ecmwfH.temp) < 2.5) : false;
- let prob = (modelsAgree ? 94 : 88) - (hrs * 0.55);
- if (Math.abs(station.trend) >= 1.8 && hrs <= 24) prob -= 5;
- else if (predPress >= 1018 && Math.abs(station.trend) < 0.8) prob += 3;
- if (mosState.ready && mosState.mae3h !== null && mosState.mae3h <= 1.3) prob += 2;
- prob = Math.max(55, Math.min(97, Math.round(prob)));
-
- let icon = isNight ? '🌙' : '🌤️';
- if (stepSnowCm > 0 || (predPr > 0 && predTw <= 0.8)) icon = '❄️';
- else if (predPr > 0) icon = '🌧️';
- else if (currentSpread <= 1.5 && predHum >= 90) icon = '🌫️';
- else if (predT <= 0) icon = '🥶';
- else if (modelCloud >= 65 || predPress < 1012) icon = '⛅';
-
- return {
- hrs,
- time: targetDate.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' }),
- isNight,
- icon,
- temp: predT,
- chill: calcWindChill(predT, predWind),
- wetBulb: predTw,
- dew: predDew,
- hum: predHum,
- dir: predDir,
- dirText: degToCompass(predDir),
- wind: predWind,
- gust: predGust,
- press: predPress,
- precip: predPr,
- snow: stepSnowCm,
- cloud: Math.round(modelCloud),
- fl: Math.round(1450 + (predT / 6.5) * 1000),
- prob
- };
- }
-
- function toggleDayDetail(idx) {
- const box = document.getElementById('dayDetailBox');
- if (selectedDayIdx === idx && box.classList.contains('open')) {
- closeDayDetail();
- return;
- }
-
- selectedDayIdx = idx;
- document.querySelectorAll('.d-card').forEach((card, i) => {
- card.classList.toggle('d-selected', i === idx);
- });
-
- const dayObj = threeDayDataStore[idx];
- if (!dayObj) return;
-
- document.getElementById('dayDetailTitle').innerText = `⏱️ Ωριαία ανάλυση: ${dayObj.dayName} (${dayObj.dateStr})`;
-
- const hours = dayObj.hours;
- const headHtml = `<th>Ώρα</th>` + hours.map(h => `<th>${String(h.hour).padStart(2, '0')}:00</th>`).join('');
- const iconHtml = `<td><b>Κατάσταση</b></td>` + hours.map(h => `<td style="font-size:1.1rem;">${h.icon}</td>`).join('');
- const tempHtml = `<td><b>Θερμ.</b></td>` + hours.map(h => `<td style="color:${h.temp <= 0 ? '#7dd3fc' : '#f87171'}; font-weight:700;">${h.temp.toFixed(1)}°</td>`).join('');
- const twHtml = `<td><b>Υγρό Θερμ. (Tw)</b></td>` + hours.map(h => `<td style="color:${h.wetBulb <= 0.8 ? '#38bdf8' : '#34d399'};">${h.wetBulb.toFixed(1)}°</td>`).join('');
- const precipHtml = `<td><b>Υετός (mm)</b></td>` + hours.map(h => `<td style="color:${h.precip > 0 ? '#38bdf8' : '#64748b'};">${h.precip > 0 ? h.precip.toFixed(1) : '-'}</td>`).join('');
- const snowHtml = `<td><b>Χιόνι (cm)</b></td>` + hours.map(h => `<td style="color:${h.snow > 0 ? '#e0f2fe' : '#64748b'}; font-weight:${h.snow > 0 ? '700' : '400'};">${h.snow > 0 ? h.snow.toFixed(1) : '-'}</td>`).join('');
- const windHtml = `<td><b>Άνεμος / Ριπή</b></td>` + hours.map(h => `<td style="color:#cbd5e1;">${h.wind}/${h.gust} <span style="font-size:0.68rem; color:#94a3b8;">${h.dirText}</span></td>`).join('');
-
- document.getElementById('dayDetailContent').innerHTML = `
- <table class="day-detail-table">
- <thead><tr>${headHtml}</tr></thead>
- <tbody>
- <tr>${iconHtml}</tr>
- <tr>${tempHtml}</tr>
- <tr>${twHtml}</tr>
- <tr>${precipHtml}</tr>
- <tr>${snowHtml}</tr>
- <tr>${windHtml}</tr>
- </tbody>
- </table>
- `;
-
- box.classList.add('open');
- }
-
- function closeDayDetail() {
- selectedDayIdx = null;
- document.querySelectorAll('.d-card').forEach(c => c.classList.remove('d-selected'));
- document.getElementById('dayDetailBox').classList.remove('open');
- }
-
- function renderThreeDayForecast(stationState, iconHourly, ecmwfHourly) {
- const grid = document.getElementById('threeDayGrid');
- const summaryEl = document.getElementById('threeDaySummary');
- const dayNames = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
-
- const now = new Date();
- const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-
- let cardsHtml = '';
- let totalSnow3d = 0;
- threeDayDataStore = [];
-
- for (let dayOffset = 1; dayOffset <= 3; dayOffset++) {
- const dayDate = new Date(startOfToday.getTime() + dayOffset * 24 * 3600 * 1000);
- const dayName = dayOffset === 1 ? "Αύριο • " + dayNames[dayDate.getDay()] : dayNames[dayDate.getDay()];
- const dateStr = `${String(dayDate.getDate()).padStart(2, '0')}/${String(dayDate.getMonth() + 1).padStart(2, '0')}`;
-
- let minT = Infinity;
- let maxT = -Infinity;
- let sumPrecip = 0;
- let sumSnow = 0;
- let maxGust = 0;
- let maxCloud = 0;
- let snowHours = [];
- let dayHoursList = [];
-
- for (let h = 0; h < 24; h++) {
- const slotDate = new Date(dayDate.getTime() + h * 3600 * 1000);
- const hrsFromNow = Math.max(1, Math.round((slotDate.getTime() - now.getTime()) / 3600000));
- const iconH = getModelHourAt(iconHourly, slotDate);
- const ecmwfH = getModelHourAt(ecmwfHourly, slotDate);
-
- const pred = combineHourForecast(hrsFromNow, slotDate, stationState, iconH, ecmwfH);
- pred.hour = h;
- dayHoursList.push(pred);
-
- if (pred.temp < minT) minT = pred.temp;
- if (pred.temp > maxT) maxT = pred.temp;
- sumPrecip += pred.precip;
- sumSnow += pred.snow;
- if (pred.gust > maxGust) maxGust = pred.gust;
- if (pred.cloud > maxCloud) maxCloud = pred.cloud;
- if (pred.snow >= 0.1) snowHours.push(String(h).padStart(2, '0') + ':00');
- }
-
- const idx = dayOffset - 1;
- threeDayDataStore.push({ dayName, dateStr, hours: dayHoursList });
-
- totalSnow3d += sumSnow;
- const hasSnow = sumSnow >= 0.3;
-
- let icon = '☀️';
- let desc = 'Αίθριος καιρός';
- if (sumSnow >= 3.0) { icon = '❄️'; desc = 'Πυκνή χιονόπτωση'; }
- else if (hasSnow) { icon = '🌨️'; desc = 'Χιονόπτωση / Χιονόνερο'; }
- else if (sumPrecip >= 10) { icon = '⛈️'; desc = 'Ισχυρές βροχές'; }
- else if (sumPrecip >= 1.5) { icon = '🌧️'; desc = 'Βροχοπτώσεις'; }
- else if (sumPrecip >= 0.3) { icon = '🌦️'; desc = 'Τοπικές βροχές'; }
- else if (maxCloud >= 65) { icon = '⛅'; desc = 'Νεφώσεις'; }
-
- const snowPeakText = snowHours.length > 0
- ? `Ώρες χιονιού: ${snowHours[0]}–${snowHours[snowHours.length - 1]}`
- : (sumPrecip >= 0.3 ? `Συνολικός υετός: ${sumPrecip.toFixed(1)} mm` : 'Χωρίς φαινόμενα');
-
- const badgeHtml = hasSnow
- ? `<div class="d-snow-badge">❄️ Χιόνι: ~${sumSnow.toFixed(1)} cm</div>`
- : `<div class="d-rain-badge">${sumPrecip >= 0.3 ? '🌧️ Βροχή: ' + sumPrecip.toFixed(1) + ' mm' : '☀️ Ξηρό'}</div>`;
-
- cardsHtml += `
- <div class="d-card ${hasSnow ? 'd-snow' : ''} ${selectedDayIdx === idx ? 'd-selected' : ''}" onclick="toggleDayDetail(${idx})">
- <div class="d-head">
- <span>${dayName}</span>
- <span class="d-date">${dateStr}</span>
- </div>
- <div class="d-icon">${icon}</div>
- <div class="d-desc">${desc}</div>
- <div class="d-temps">
- <span class="d-min">↓ ${minT.toFixed(1)}°</span>
- <span style="color:#475569;">/</span>
- <span class="d-max">↑ ${maxT.toFixed(1)}°</span>
- </div>
- ${badgeHtml}
- <div class="d-meta">
- ${snowPeakText}<br>
- 💨 Ριπές έως ${maxGust} km/h
- </div>
- <div class="d-toggle-hint">▼ Ωριαία ανάλυση</div>
- </div>
- `;
- }
-
- grid.innerHTML = cardsHtml;
- summaryEl.innerText = totalSnow3d >= 0.5
- ? `❄️ Σύνολο 3ημέρου: ~${totalSnow3d.toFixed(1)} cm χιόνι (Κλικ για ώρες)`
- : `ICON + ECMWF (Κλικ για ώρες)`;
-
- if (selectedDayIdx !== null && document.getElementById('dayDetailBox').classList.contains('open')) {
- const keptIdx = selectedDayIdx;
- selectedDayIdx = null;
- toggleDayDetail(keptIdx);
- }
- }
-
- function renderMeteogram(series, step) {
- const filtered = series.filter((_, idx) => idx % step === 0);
- const colWidth = step === 1 ? 62 : 120;
- const totalWidth = Math.max(920, 155 + filtered.length * colWidth);
-
- document.getElementById('mgChartBox').style.minWidth = totalWidth + 'px';
- document.getElementById('meteogramTable').style.minWidth = totalWidth + 'px';
-
- const headRow = document.getElementById('mgHeadRow');
- headRow.innerHTML = `<th class="mg-sticky-col">Ώρα (Σύνθεση)</th>` + filtered.map((d, i) => {
- const isNow = i === 0;
- return `<th class="${isNow ? 'mg-now' : ''}">${isNow ? 'ΤΩΡΑ (' + d.time + ')' : d.time}<br><span style="font-weight:400; font-size:0.68rem; color:#64748b;">+${d.hrs}h</span></th>`;
- }).join('');
-
- const getTempClass = (t) => {
- if (t <= 0) return 't-freeze';
- if (t <= 5) return 't-cold';
- if (t <= 12) return 't-mild';
- return 't-warm';
- };
-
- const getWindClass = (w) => {
- if (w >= 35) return 'w-strong';
- if (w >= 18) return 'w-mod';
- return 'w-calm';
- };
-
- const rowIcons = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="font-size:1.25rem;">${d.icon}</td>`).join('');
- const rowTemp = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}"><span class="mg-pill ${getTempClass(d.temp)}">${d.temp.toFixed(1)}°</span></td>`).join('');
- const rowChill = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}"><span class="mg-pill ${getTempClass(d.chill)}">${d.chill.toFixed(1)}°</span></td>`).join('');
- const rowWetBulb = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:${d.wetBulb <= 0.8 ? '#38bdf8' : '#34d399'}; font-weight:${d.wetBulb <= 0.8 ? '700' : '400'};">${d.wetBulb.toFixed(1)}°</td>`).join('');
- const rowDew = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:#c4b5fd;">${d.dew.toFixed(1)}°</td>`).join('');
- const rowHum = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:#93c5fd;">${d.hum}%</td>`).join('');
- const rowWind = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}"><span class="wind-arrow" style="transform:rotate(${(d.dir + 180) % 360}deg);">↑</span> ${d.dirText}</td>`).join('');
- const rowWindSpd = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}"><span class="${getWindClass(d.wind)}">${d.wind} / ${d.gust}</span></td>`).join('');
- const rowPress = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:#facc15; font-weight:600;">${d.press.toFixed(1)}</td>`).join('');
- const rowPrecip = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:${d.precip > 0 ? '#38bdf8' : '#64748b'}; font-weight:${d.precip > 0 ? '700' : '400'};">${d.precip > 0 ? d.precip.toFixed(1) : '-'}</td>`).join('');
- const rowSnow = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:${d.snow > 0 ? '#e0f2fe' : '#64748b'}; font-weight:${d.snow > 0 ? '700' : '400'};">${d.snow > 0 ? d.snow.toFixed(1) + ' cm' : '-'}</td>`).join('');
- const rowFl = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:#94a3b8;">${d.fl} μ.</td>`).join('');
- const rowProb = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:${d.prob >= 80 ? '#34d399' : '#fbbf24'};">${d.prob}%</td>`).join('');
-
- document.getElementById('mgBody').innerHTML = `
- <tr><td class="mg-sticky-col">☁️ Κατάσταση</td>${rowIcons}</tr>
- <tr><td class="mg-sticky-col">🌡️ Θερμοκρασία (°C)</td>${rowTemp}</tr>
- <tr><td class="mg-sticky-col">🥶 Αίσθηση Ψύχους (°C)</td>${rowChill}</tr>
- <tr><td class="mg-sticky-col">🌡️ Υγρό Θερμ. Tw (°C)</td>${rowWetBulb}</tr>
- <tr><td class="mg-sticky-col">💧 Σημείο Δρόσου (°C)</td>${rowDew}</tr>
- <tr><td class="mg-sticky-col">💦 Υγρασία (%)</td>${rowHum}</tr>
- <tr><td class="mg-sticky-col">🧭 Διεύθυνση Ανέμου</td>${rowWind}</tr>
- <tr><td class="mg-sticky-col">💨 Άνεμος / Ριπή (km/h)</td>${rowWindSpd}</tr>
- <tr><td class="mg-sticky-col" style="color:#fde047;">⏲️ Πίεση (hPa)</td>${rowPress}</tr>
- <tr><td class="mg-sticky-col">🌧️ Υετός (mm/h)</td>${rowPrecip}</tr>
- <tr><td class="mg-sticky-col">❄️ Νέο Χιόνι (cm)</td>${rowSnow}</tr>
- <tr><td class="mg-sticky-col">🏔️ Επίπεδο Παγοποίησης</td>${rowFl}</tr>
- <tr><td class="mg-sticky-col">🎯 Βεβαιότητα Σύνθ.</td>${rowProb}</tr>
- `;
-
- const pressValues = filtered.map(d => d.press);
- const pMin = Math.floor(Math.min(...pressValues) - 1);
- const pMax = Math.ceil(Math.max(...pressValues) + 1);
- const snowValues = filtered.map(d => d.snow);
- const maxSnow = Math.max(3, Math.ceil(Math.max(...snowValues) + 1));
-
- const mgCtx = document.getElementById('meteogramLineChart').getContext('2d');
- if (meteogramChartInstance) meteogramChartInstance.destroy();
- meteogramChartInstance = new Chart(mgCtx, {
- type: 'line',
- data: {
- labels: filtered.map(d => d.time),
- datasets: [
- {
- label: 'Θερμοκρασία (°C)',
- data: filtered.map(d => d.temp),
- yAxisID: 'y',
- borderColor: '#f87171',
- backgroundColor: 'rgba(248, 113, 113, 0.12)',
- borderWidth: 2.5,
- tension: 0.35,
- pointRadius: 3,
- order: 1
- },
- {
- label: 'Αίσθηση Ψύχους (°C)',
- data: filtered.map(d => d.chill),
- yAxisID: 'y',
- borderColor: '#38bdf8',
- borderDash: [4, 3],
- borderWidth: 2,
- tension: 0.35,
- pointRadius: 2,
- order: 2
- },
- {
- label: 'Υγρό Θερμόμετρο Tw (°C)',
- data: filtered.map(d => d.wetBulb),
- yAxisID: 'y',
- borderColor: '#34d399',
- borderDash: [3, 3],
- borderWidth: 1.8,
- tension: 0.35,
- pointRadius: 2,
- order: 3
- },
- {
- label: 'Σημείο Δρόσου (°C)',
- data: filtered.map(d => d.dew),
- yAxisID: 'y',
- borderColor: '#a78bfa',
- borderDash: [2, 2],
- borderWidth: 1.8,
- tension: 0.35,
- pointRadius: 2,
- order: 4
- },
- {
- label: 'Πίεση (hPa)',
- data: pressValues,
- yAxisID: 'yPressure',
- borderColor: '#facc15',
- backgroundColor: 'rgba(250, 204, 21, 0.12)',
- borderWidth: 2.6,
- tension: 0.35,
- pointRadius: 3,
- pointBackgroundColor: '#facc15',
- pointBorderColor: '#0b1324',
- pointBorderWidth: 1,
- order: 5
- },
- {
- label: '0°C',
- data: filtered.map(() => 0),
- yAxisID: 'y',
- borderColor: '#ef4444',
- borderWidth: 1.6,
- borderDash: [6, 4],
- pointRadius: 0,
- order: 0
- },
- {
- type: 'bar',
- label: 'Νέο Χιόνι (cm)',
- data: snowValues,
- yAxisID: 'ySnow',
- backgroundColor: 'rgba(224, 242, 254, 0.42)',
- borderColor: '#7dd3fc',
- borderWidth: 1,
- borderRadius: 3,
- barPercentage: 0.55,
- order: 6
- }
- ]
- },
- options: {
- responsive: true,
- maintainAspectRatio: false,
- interaction: { mode: 'index', intersect: false },
- plugins: {
- legend: { display: false },
- tooltip: {
- callbacks: {
- label: function(ctx) {
- if (ctx.dataset.label === '0°C') return null;
- const val = ctx.parsed.y;
- if (ctx.dataset.yAxisID === 'yPressure') {
- return ` ${ctx.dataset.label}: ${val.toFixed(1)} hPa`;
- }
- if (ctx.dataset.yAxisID === 'ySnow') {
- return val > 0 ? ` ❄️ Νέο Χιόνι: ${val.toFixed(1)} cm` : null;
- }
- return ` ${ctx.dataset.label}: ${val.toFixed(1)}°C`;
- }
- }
- }
- },
- scales: {
- x: { display: false },
- y: {
- type: 'linear',
- position: 'left',
- min: Math.min(-2, Math.floor(Math.min(...filtered.map(d => d.chill)) - 1)),
- ticks: {
- color: '#94a3b8',
- font: { size: 10 },
- callback: (v) => v + '°'
- },
- grid: {
- color: (ctx) => ctx.tick && ctx.tick.value === 0 ? 'rgba(239, 68, 68, 0.75)' : 'rgba(51, 65, 85, 0.35)',
- lineWidth: (ctx) => ctx.tick && ctx.tick.value === 0 ? 1.8 : 1
- }
- },
- ySnow: {
- type: 'linear',
- position: 'right',
- display: false,
- min: 0,
- max: maxSnow,
- grid: { drawOnChartArea: false }
- },
- yPressure: {
- type: 'linear',
- position: 'right',
- min: pMin,
- max: pMax,
- ticks: {
- color: '#facc15',
- font: { size: 10, weight: 'bold' },
- maxTicksLimit: 5,
- callback: (v) => Math.round(v) + ' hPa'
- },
- grid: { drawOnChartArea: false }
- }
- }
- }
- });
-
- requestAnimationFrame(updateAllScrollButtons);
- }
-
- setInterval(() => {
- const now = new Date();
- document.getElementById('clock').innerText = now.toLocaleDateString('el-GR') + ' ' + now.toLocaleTimeString('el-GR');
- }, 1000);
-
- setInterval(() => {
- const img = document.getElementById('liveCamImg');
- img.src = 'https://www.forecastweather.gr/images/photo_camera/photo_41.jpg?v=' + Date.now();
- }, 15000);
-
- async function updateDashboard() {
- try {
- const wuUrl = `https://api.weather.com/v2/pws/observations/current?stationId=${WU_STATION_ID}&format=json&units=m&numericPrecision=decimal&apiKey=${WU_API_KEY}`;
- const wuRes = await fetch(wuUrl);
- const wuData = await wuRes.json();
- const obs = wuData.observations[0];
-
- const temp = obs.metric.temp;
- const dew = obs.metric.dewpt;
- const press = obs.metric.pressure;
- const hum = obs.humidity;
- const wind = obs.metric.windSpeed;
- const gust = obs.metric.windGust || wind;
- const dir = obs.winddir;
- const rain = obs.metric.precipTotal;
- const rate = obs.metric.precipRate;
- const chill = obs.metric.windChill;
- const wetBulbNow = calcWetBulb(temp, hum);
- const spread = temp - dew;
-
- let trend = 0;
- let trendLabel = "--";
- try {
- let hist = JSON.parse(localStorage.getItem('isamar38_p') || '[]');
- const nowTs = Date.now();
- hist.push({ t: nowTs, p: press });
- hist = hist.filter(x => (nowTs - x.t) <= 3 * 3600 * 1000);
- localStorage.setItem('isamar38_p', JSON.stringify(hist));
- const elapsedHrs = (nowTs - hist[0].t) / (3600 * 1000);
- if (elapsedHrs >= 0.25) {
- trend = ((press - hist[0].p) / elapsedHrs) * 3;
- trendLabel = `${trend >= 0 ? '+' : ''}${trend.toFixed(1)} hPa`;
- } else {
- trend = 0;
- trendLabel = "σταθερή";
- }
- } catch (err) {
- trend = 0;
- trendLabel = "--";
- }
-
- document.getElementById('stTemp').innerText = `${temp.toFixed(1)}°C`;
- document.getElementById('stDew').innerText = `Σημ. Δρόσου: ${dew.toFixed(1)}°C`;
- document.getElementById('stPress').innerText = `${press.toFixed(1)} hPa`;
- document.getElementById('stTrend').innerText = `Τάση 3ωρου: ${trendLabel}`;
- document.getElementById('stHum').innerText = `${hum}%`;
- document.getElementById('stSpread').innerText = `Απόσταση: ${spread.toFixed(1)}°C`;
- document.getElementById('stWind').innerText = `${wind} km/h`;
- document.getElementById('stDir').innerText = `Διεύθ.: ${degToCompass(dir)} (${dir}°)`;
- document.getElementById('stRain').innerText = `${rain} mm`;
- document.getElementById('stRate').innerText = `Ρυθμός: ${rate} mm/h`;
- document.getElementById('stChill').innerText = `${chill.toFixed(1)}°C`;
- document.getElementById('stFl').innerText = `Υγρό Θερμ.: ${wetBulbNow.toFixed(1)}°C`;
- document.getElementById('lastUpdate').innerText = `Ενημ.: ${new Date().toLocaleTimeString('el-GR', {hour:'2-digit', minute:'2-digit'})}`;
-
- let minDayT = temp, maxDayT = temp, maxDayGust = gust;
- let minDayTime = "", maxDayTime = "";
- try {
- const dayUrl = `https://api.weather.com/v2/pws/observations/all/1day?stationId=${WU_STATION_ID}&format=json&units=m&numericPrecision=decimal&apiKey=${WU_API_KEY}`;
- const dayRes = await fetch(dayUrl);
- const dayData = await dayRes.json();
- if (dayData.observations && dayData.observations.length > 0) {
- minDayT = Infinity; maxDayT = -Infinity; maxDayGust = 0;
- dayData.observations.forEach(o => {
- const tVal = o.metric.tempLow !== undefined ? o.metric.tempLow : o.metric.tempAvg;
- const tHigh = o.metric.tempHigh !== undefined ? o.metric.tempHigh : o.metric.tempAvg;
- const gVal = o.metric.windgustHigh || o.metric.windspeedHigh || 0;
- const timeLabel = o.obsTimeLocal ? o.obsTimeLocal.slice(11, 16) : "";
- if (tVal < minDayT) { minDayT = tVal; minDayTime = timeLabel ? ` (${timeLabel})` : ""; }
- if (tHigh > maxDayT) { maxDayT = tHigh; maxDayTime = timeLabel ? ` (${timeLabel})` : ""; }
- if (gVal > maxDayGust) { maxDayGust = gVal; }
- });
- }
- } catch (err) {}
-
- const { iconHourly, ecmwfHourly } = await fetchModelsWithCache();
-
- const stationState = { temp, dew, press, hum, wind, gust, dir, rain, rate, chill, trend };
- const hourlySeries = [];
-
- let totalPrecip24 = 0;
- let estSnowCm24 = 0;
- let minTemp24 = temp;
- let minChill24 = chill;
-
- const baseDate = new Date();
- baseDate.setMinutes(0, 0, 0);
-
- for (let hrs = 0; hrs <= 24; hrs++) {
- const futureDate = new Date(baseDate.getTime() + hrs * 3600 * 1000);
- const iconH = getModelHourAt(iconHourly, futureDate);
- const ecmwfH = getModelHourAt(ecmwfHourly, futureDate);
-
- const item = combineHourForecast(hrs, futureDate, stationState, iconH, ecmwfH);
-
- if (hrs > 0) {
- totalPrecip24 += item.precip;
- estSnowCm24 += item.snow;
- }
- if (item.temp < minTemp24) minTemp24 = item.temp;
- if (item.chill < minChill24) minChill24 = item.chill;
-
- hourlySeries.push(item);
- }
-
- latestHourlySeries = hourlySeries;
- renderMeteogram(latestHourlySeries, meteogramStepHours);
- renderThreeDayForecast(stationState, iconHourly, ecmwfHourly);
-
- document.getElementById('dailyExtremes').innerHTML = `
- <span>📉 Ελάχ. Ημέρας: <b>${minDayT.toFixed(1)}°C</b>${minDayTime}</span>
- <span>📈 Μέγ. Ημέρας: <b>${maxDayT.toFixed(1)}°C</b>${maxDayTime}</span>
- <span>💨 Μέγ. Ριπή: <b>${maxDayGust} km/h</b></span>
- <span>❄️ Εκτιμ. Νέο Χιόνι (24h): <b>${estSnowCm24.toFixed(1)} cm</b></span>
- `;
-
- const grid = document.getElementById('forecastGrid');
- grid.innerHTML = '';
-
- for (let hrs = 3; hrs <= 24; hrs += 3) {
- const item = hourlySeries[hrs];
- const probClass = item.prob >= 85 ? 'prob-high' : (item.prob >= 72 ? 'prob-med' : 'prob-low');
-
- grid.innerHTML += `
- <div class="f-card">
- <div class="f-time">${item.time} (+${hrs}h)</div>
- <div class="f-icon">${item.icon}</div>
- <div class="f-temp">${item.temp.toFixed(1)}°C</div>
- <div class="f-snow">${item.snow > 0 ? 'Χιόνι: ' + item.snow + 'cm' : (item.precip > 0 ? 'Υετός: ' + item.precip + 'mm' : 'Ξηρό')}</div>
- <div class="f-prob ${probClass}" title="Βεβαιότητα σύνθεσης ISAMAR38 + ICON + ECMWF">Βεβαιότ.: ${item.prob}%</div>
- </div>
- `;
- }
-
- requestAnimationFrame(updateAllScrollButtons);
-
- const roadEl = document.getElementById('roadStatus');
- roadEl.className = 'alert-box';
- if (estSnowCm24 >= 2.0 || (rate > 0 && wetBulbNow <= 0.8)) {
- roadEl.classList.add('road-danger');
- roadEl.innerText = '⛓️ Δρόμος: Απαραίτητες αλυσίδες';
- } else if (temp <= 0.5 && (hum >= 80 || rain > 0 || totalPrecip24 > 0.5)) {
- roadEl.classList.add('road-danger');
- roadEl.innerText = '🧊 Δρόμος: Υψηλός κίνδυνος πάγου';
- } else if (temp <= 2.5 || minTemp24 <= 0.5 || minChill24 <= -1.0) {
- roadEl.classList.add('road-warn');
- roadEl.innerText = '⚠️ Δρόμος: Πιθανός παγετός τη νύχτα';
- } else {
- roadEl.classList.add('road-ok');
- roadEl.innerText = '🛣️ Δρόμος: Καθαρό οδόστρωμα';
- }
-
- const isSoutherly = (dir >= 135 && dir <= 250);
- const topAlert = document.getElementById('topAlert');
- topAlert.className = 'alert-box';
- const modelsStatus = `${iconHourly ? 'ICON ✓' : 'ICON —'} / ${ecmwfHourly ? 'ECMWF ✓' : 'ECMWF —'}`;
- let diagText = '';
-
- if (estSnowCm24 >= 0.5 || (rate > 0 && wetBulbNow <= 0.8)) {
+  <script>
+    const WU_STATION_ID = "ISAMAR38";
+    const WU_API_KEY = "5c94ee0c13f240ec94ee0c13f2b0ecd9";
+    const STATS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ_y9OVAjf5gRIJN7ZKm_OuR_fP5UFcu2YWX3XNU7PRxSouu3L2-kPh6Rk1u3VP-pdBjOTIo22t3mN/pub?gid=409751746&single=true&output=csv";
+
+    const WORKER_CACHE_URL = "";
+    const CLIENT_CACHE_TTL_MS = 5 * 60 * 1000;
+
+    const LAT = 40.1;
+    const LON = 21.02;
+    const ELEV = 1450;
+
+    let meteogramChartInstance = null;
+    let latestHourlySeries = [];
+    let meteogramStepHours = 1;
+    let threeDayDataStore = [];
+    let selectedDayIdx = null;
+
+    let mosState = {
+      ready: false,
+      sampleHours: 0,
+      mae3h: null,
+      mae6h: null,
+      acc3h: null,
+      acc6h: null,
+      precipSkillPct: null,
+      stationWeightBias: 0,
+      orographicScale: 1.15
+    };
+
+    function syncScrollButtons(containerId, prevBtnId, nextBtnId) {
+      const el = document.getElementById(containerId);
+      const prevBtn = document.getElementById(prevBtnId);
+      const nextBtn = document.getElementById(nextBtnId);
+      if (!el || !prevBtn || !nextBtn) return;
+
+      const maxScroll = Math.max(0, el.scrollWidth - el.clientWidth);
+      const hasOverflow = maxScroll > 2;
+      prevBtn.disabled = !hasOverflow || el.scrollLeft <= 2;
+      nextBtn.disabled = !hasOverflow || el.scrollLeft >= maxScroll - 2;
+    }
+
+    function updateAllScrollButtons() {
+      syncScrollButtons('forecastGrid', 'btnForecastPrev', 'btnForecastNext');
+      syncScrollButtons('stationScroll', 'btnStationPrev', 'btnStationNext');
+      syncScrollButtons('mgScrollContainer', 'btnMgPrev', 'btnMgNext');
+    }
+
+    function setupScrollHelpers(containerId, prevBtnId, nextBtnId) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      el.addEventListener('scroll', () => syncScrollButtons(containerId, prevBtnId, nextBtnId), { passive: true });
+      el.addEventListener('wheel', (e) => {
+        if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+          e.preventDefault();
+          el.scrollLeft += e.deltaY;
+        }
+      }, { passive: false });
+    }
+
+    function scrollEl(id, deltaPx) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.scrollBy({ left: deltaPx, behavior: 'smooth' });
+      setTimeout(updateAllScrollButtons, 280);
+    }
+
+    function scrollMeteogram(deltaPx) {
+      scrollEl('mgScrollContainer', deltaPx);
+    }
+
+    function setMeteogramStep(step) {
+      meteogramStepHours = step;
+      document.getElementById('btnStep1h').classList.toggle('active', step === 1);
+      document.getElementById('btnStep3h').classList.toggle('active', step === 3);
+      if (latestHourlySeries.length > 0) {
+        renderMeteogram(latestHourlySeries, step);
+      }
+    }
+
+    function calcWindChill(tempC, windKmh) {
+      if (tempC <= 10 && windKmh > 4.8) {
+        const wc = 13.12 + 0.6215 * tempC - 11.37 * Math.pow(windKmh, 0.16) + 0.3965 * tempC * Math.pow(windKmh, 0.16);
+        return Number(wc.toFixed(1));
+      }
+      return Number(tempC.toFixed(1));
+    }
+
+    function calcWetBulb(tempC, rh) {
+      const safeRh = Math.max(1, Math.min(100, rh));
+      const tw = tempC * Math.atan(0.151977 * Math.pow(safeRh + 8.313659, 0.5))
+        + Math.atan(tempC + safeRh)
+        - Math.atan(safeRh - 1.676331)
+        + 0.00391838 * Math.pow(safeRh, 1.5) * Math.atan(0.023101 * safeRh)
+        - 4.686035;
+      return Number(tw.toFixed(1));
+    }
+
+    function degToCompass(num) {
+      if (num === null || num === undefined || isNaN(num)) return "--";
+      const val = Math.floor((num / 22.5) + 0.5);
+      const arr = ["Β", "ΒΒΑ", "ΒΑ", "ΑΒΑ", "Α", "ΑΝΑ", "ΝΑ", "ΝΝΑ", "Ν", "ΝΝΔ", "ΝΔ", "ΔΝΔ", "Δ", "ΔΒΔ", "ΒΔ", "ΒΒΔ"];
+      return arr[(val % 16)];
+    }
+
+    function avgAngles(angles, fallback) {
+      const valid = angles.filter(a => typeof a === 'number' && !isNaN(a));
+      if (valid.length === 0) return fallback;
+      let sinSum = 0, cosSum = 0;
+      for (const deg of valid) {
+        const rad = (deg * Math.PI) / 180;
+        sinSum += Math.sin(rad);
+        cosSum += Math.cos(rad);
+      }
+      const avgRad = Math.atan2(sinSum / valid.length, cosSum / valid.length);
+      return (Math.round((avgRad * 180) / Math.PI) + 360) % 360;
+    }
+
+    function parseCSVLine(line) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          inQuotes = !inQuotes;
+        } else if (ch === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += ch;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    }
+
+    function updateDynamicMOS(statsMap) {
+      const s3 = statsMap["+3h_HYB"] || statsMap["+3h"];
+      const s6 = statsMap["+6h_HYB"] || statsMap["+6h"];
+
+      if (s3 && s3.count >= 5 && !isNaN(s3.mae)) {
+        mosState.ready = true;
+        mosState.sampleHours = s3.count;
+        mosState.mae3h = s3.mae;
+        mosState.acc3h = s3.accPct;
+
+        if (s3.mae <= 1.2) mosState.stationWeightBias = 0.06;
+        else if (s3.mae >= 2.2) mosState.stationWeightBias = -0.08;
+        else mosState.stationWeightBias = 0;
+      }
+
+      if (s6 && s6.count >= 5 && !isNaN(s6.mae)) {
+        mosState.mae6h = s6.mae;
+        mosState.acc6h = s6.accPct;
+      }
+
+      const precipPct = s3?.precipPct ?? s6?.precipPct;
+      if (!isNaN(precipPct) && precipPct > 0) {
+        mosState.precipSkillPct = precipPct;
+        if (precipPct >= 85) mosState.orographicScale = 1.15;
+        else if (precipPct >= 70) mosState.orographicScale = 1.10;
+        else mosState.orographicScale = 1.04;
+      }
+    }
+
+    async function loadVerificationStats(retryCount = 0) {
+      if (!STATS_CSV_URL) return;
+
+      const renderFromCsv = (csvText) => {
+        const lines = csvText.trim().split(/\r?\n/);
+        const grid = document.getElementById('verifyGrid');
+        const statsMap = {};
+
+        for (let r = 1; r < lines.length; r++) {
+          const cols = parseCSVLine(lines[r]);
+          const horizon = cols[0]?.replace(/"/g, '').trim();
+          if (!horizon) continue;
+          statsMap[horizon] = {
+            count: parseInt(cols[1]) || 0,
+            mae: parseFloat((cols[2] || '').replace(',', '.')),
+            accPct: parseInt(cols[3]),
+            precipPct: parseInt(cols[4])
+          };
+        }
+
+        updateDynamicMOS(statsMap);
+
+        const primaryKey = statsMap["+3h_HYB"] ? "+3h_HYB" : (statsMap["+3h"] ? "+3h" : "+12h");
+        const secondaryKey = statsMap["+6h_HYB"] ? "+6h_HYB" : (statsMap["+6h"] ? "+6h" : "+24h");
+        const primaryLabel = "📡 Τοπικός Σταθμός ISAMAR38 (+3h)";
+        const secondaryLabel = secondaryKey.includes("+6h")
+          ? "🌐 Υβριδικό Μοντέλο (+6h)"
+          : "🌐 Υβριδικό Μοντέλο (+24h)";
+
+        let cardPrimaryHtml = '';
+        let cardSecondaryHtml = '';
+
+        const pData = statsMap[primaryKey];
+        if (pData) {
+          if (pData.count < 1 || isNaN(pData.mae)) {
+            cardPrimaryHtml = `
+              <div class="v-card v-primary">
+                <div class="v-top-row">
+                  <div class="v-horizon">${primaryLabel}</div>
+                  <span class="v-badge-main">⭐ ΚΥΡΙΟΣ ΔΕΙΚΤΗΣ</span>
+                </div>
+                <div class="v-acc" style="color:#38bdf8; font-size:1.05rem;">Συλλογή (${pData.count} δείγμ.)</div>
+                <div class="v-mae">Άμεση πρόγνωση (Nowcasting ISAMAR38)</div>
+              </div>
+            `;
+          } else {
+            const precipLine = !isNaN(pData.precipPct) ? ` • Υετός: <b>${pData.precipPct}%</b>` : '';
+            cardPrimaryHtml = `
+              <div class="v-card v-primary">
+                <div class="v-top-row">
+                  <div class="v-horizon">${primaryLabel} (${pData.count} ώρες)</div>
+                  <span class="v-badge-main">⭐ ΚΥΡΙΟΣ ΔΕΙΚΤΗΣ</span>
+                </div>
+                <div class="v-acc">${pData.accPct}% Ακρίβεια</div>
+                <div class="v-mae">Απόκλιση Θερμ.: <b>±${pData.mae.toFixed(2)}°C</b>${precipLine}</div>
+              </div>
+            `;
+          }
+        }
+
+        const sData = statsMap[secondaryKey];
+        if (sData) {
+          if (sData.count < 1 || isNaN(sData.mae)) {
+            cardSecondaryHtml = `
+              <div class="v-card v-secondary">
+                <div class="v-horizon">${secondaryLabel}</div>
+                <div class="v-acc" style="color:#94a3b8; font-size:0.92rem;">Συλλογή (${sData.count} δείγμ.)</div>
+                <div class="v-mae">Σύνθεση ISAMAR38 + ICON + ECMWF</div>
+              </div>
+            `;
+          } else {
+            const precipLine = !isNaN(sData.precipPct) ? ` • Υετός: <b>${sData.precipPct}%</b>` : '';
+            cardSecondaryHtml = `
+              <div class="v-card v-secondary">
+                <div class="v-horizon">${secondaryLabel} (${sData.count} ώρες)</div>
+                <div class="v-acc" style="color:#cbd5e1;">${sData.accPct}% Ακρίβεια</div>
+                <div class="v-mae">Απόκλιση: <b>±${sData.mae.toFixed(2)}°C</b>${precipLine}</div>
+              </div>
+            `;
+          }
+        }
+
+        if (cardPrimaryHtml || cardSecondaryHtml) {
+          grid.innerHTML = cardPrimaryHtml + cardSecondaryHtml;
+          const extra12 = statsMap["+12h_HYB"] ? ` • Υβριδικό +12h: ${statsMap["+12h_HYB"].accPct}%` : '';
+          const mosBadge = mosState.ready ? ' • MOS ✓' : '';
+          document.getElementById('verifySample').innerText = `ISAMAR38 + ICON + ECMWF${extra12}${mosBadge}`;
+          return true;
+        }
+        return false;
+      };
+
+      try {
+        const cachedCsv = localStorage.getItem('isamar38_stats_csv');
+        if (cachedCsv) renderFromCsv(cachedCsv);
+      } catch (e) {}
+
+      try {
+        const res = await fetch(STATS_CSV_URL + "&t=" + Date.now(), { cache: "no-store" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const csvText = await res.text();
+        if (csvText.includes("<!DOCTYPE") || csvText.includes("<html")) {
+          document.getElementById('verifySample').innerText = "Έλεγχος δημοσίευσης Stats";
+          return;
+        }
+
+        if (renderFromCsv(csvText)) {
+          try { localStorage.setItem('isamar38_stats_csv', csvText); } catch (e) {}
+        }
+      } catch (err) {
+        if (retryCount < 2) {
+          setTimeout(() => loadVerificationStats(retryCount + 1), 4000);
+        } else if (!localStorage.getItem('isamar38_stats_csv')) {
+          document.getElementById('verifySample').innerText = "ISAMAR38 + ICON + ECMWF";
+        }
+      }
+    }
+
+    async function fetchModelsWithCache() {
+      const cacheKey = "isamar38_models_cache_v3";
+      try {
+        const rawCache = localStorage.getItem(cacheKey);
+        if (rawCache) {
+          const parsed = JSON.parse(rawCache);
+          if (Date.now() - parsed.ts < CLIENT_CACHE_TTL_MS && (parsed.icon || parsed.ecmwf)) {
+            return { iconHourly: parsed.icon, ecmwfHourly: parsed.ecmwf, source: "client-cache" };
+          }
+        }
+      } catch (e) {}
+
+      if (WORKER_CACHE_URL) {
+        try {
+          const wRes = await fetch(WORKER_CACHE_URL);
+          if (wRes.ok) {
+            const wData = await wRes.json();
+            if (wData.icon || wData.ecmwf) {
+              try {
+                localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), icon: wData.icon, ecmwf: wData.ecmwf }));
+              } catch (e) {}
+              return { iconHourly: wData.icon, ecmwfHourly: wData.ecmwf, source: "worker-cache" };
+            }
+          }
+        } catch (e) {}
+      }
+
+      const [iconRes, ecmwfRes] = await Promise.allSettled([
+        fetchModelHourly("icon_seamless"),
+        fetchModelHourly("ecmwf_ifs025")
+      ]);
+      const iconHourly = iconRes.status === 'fulfilled' ? iconRes.value : null;
+      const ecmwfHourly = ecmwfRes.status === 'fulfilled' ? ecmwfRes.value : null;
+
+      if (iconHourly || ecmwfHourly) {
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), icon: iconHourly, ecmwf: ecmwfHourly }));
+        } catch (e) {}
+      }
+
+      return { iconHourly, ecmwfHourly, source: "live-api" };
+    }
+
+    async function fetchModelHourly(modelName) {
+      const params = new URLSearchParams({
+        latitude: LAT,
+        longitude: LON,
+        elevation: ELEV,
+        models: modelName,
+        hourly: "temperature_2m,dew_point_2m,relative_humidity_2m,precipitation,snowfall,cloud_cover,wind_speed_10m,wind_gusts_10m,wind_direction_10m,pressure_msl",
+        wind_speed_unit: "kmh",
+        timezone: "Europe/Athens",
+        forecast_days: "4"
+      });
+      const url = `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`${modelName} HTTP ${res.status}`);
+      const data = await res.json();
+      if (!data.hourly || !Array.isArray(data.hourly.time)) throw new Error(`${modelName} missing hourly`);
+      return data.hourly;
+    }
+
+    function getModelHourAt(hourly, targetDate) {
+      if (!hourly || !hourly.time) return null;
+      const y = targetDate.getFullYear();
+      const m = String(targetDate.getMonth() + 1).padStart(2, '0');
+      const d = String(targetDate.getDate()).padStart(2, '0');
+      const h = String(targetDate.getHours()).padStart(2, '0');
+      const key = `${y}-${m}-${d}T${h}:00`;
+      const idx = hourly.time.indexOf(key);
+      if (idx === -1) return null;
+
+      return {
+        temp: hourly.temperature_2m?.[idx],
+        dew: hourly.dew_point_2m?.[idx],
+        hum: hourly.relative_humidity_2m?.[idx],
+        precip: hourly.precipitation?.[idx] ?? 0,
+        snowfall: hourly.snowfall?.[idx] ?? 0,
+        cloud: hourly.cloud_cover?.[idx] ?? 0,
+        wind: hourly.wind_speed_10m?.[idx],
+        gust: hourly.wind_gusts_10m?.[idx],
+        dir: hourly.wind_direction_10m?.[idx],
+        press: hourly.pressure_msl?.[idx]
+      };
+    }
+
+    function avgValid(vals, fallback) {
+      const valid = vals.filter(v => typeof v === 'number' && !isNaN(v));
+      if (valid.length === 0) return fallback;
+      return valid.reduce((a, b) => a + b, 0) / valid.length;
+    }
+
+    function combineHourForecast(hrs, targetDate, station, iconH, ecmwfH) {
+      const now = new Date();
+      const currentHour = now.getHours() + (now.getMinutes() / 60);
+      const targetHour = targetDate.getHours();
+      const isNight = (targetHour >= 20 || targetHour < 7);
+
+      if (hrs === 0) {
+        const tw0 = calcWetBulb(station.temp, station.hum);
+        const p0 = Number((station.rate || 0).toFixed(1));
+        const s0 = (tw0 <= 0.8 && p0 > 0) ? Number((p0 * (tw0 <= -4 ? 1.5 : tw0 <= -1.5 ? 1.2 : 0.85)).toFixed(1)) : 0;
+        const cloud0 = Math.round(avgValid([iconH?.cloud, ecmwfH?.cloud], station.hum >= 85 ? 80 : 30));
+        let icon0 = isNight ? '🌙' : '🌤️';
+        if (s0 > 0 || (p0 > 0 && tw0 <= 0.8)) icon0 = '❄️';
+        else if (p0 > 0) icon0 = '🌧️';
+        else if ((station.temp - station.dew) <= 1.5 && station.hum >= 90) icon0 = '🌫️';
+        else if (station.temp <= 0) icon0 = '🥶';
+        else if (cloud0 >= 65 || station.press < 1012) icon0 = '⛅';
+
+        return {
+          hrs: 0,
+          time: now.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' }),
+          isNight,
+          icon: icon0,
+          temp: Number(station.temp.toFixed(1)),
+          chill: Number(station.chill.toFixed(1)),
+          wetBulb: tw0,
+          dew: Number(station.dew.toFixed(1)),
+          hum: Math.round(station.hum),
+          dir: station.dir,
+          dirText: degToCompass(station.dir),
+          wind: Math.round(station.wind),
+          gust: Math.round(station.gust),
+          press: Number(station.press.toFixed(1)),
+          precip: p0,
+          snow: s0,
+          cloud: cloud0,
+          fl: Math.round(1450 + (station.temp / 6.5) * 1000),
+          prob: 100
+        };
+      }
+
+      const baseStationW = Math.max(0.05, 0.75 - hrs * 0.03);
+      const mosAdjust = mosState.ready ? mosState.stationWeightBias * Math.max(0, 1 - hrs / 18) : 0;
+      const stationWeight = hrs > 24 ? 0.05 : Math.max(0.12, Math.min(0.85, baseStationW + mosAdjust));
+      const modelWeight = 1 - stationWeight;
+
+      const spread = station.temp - station.dew;
+      const diurnalFactor = (h) => -Math.cos(((h - 4) / 24) * 2 * Math.PI);
+      const baseSwing = (spread > 4 && station.wind < 12) ? 3.8 : 2.2;
+      const diurnalDelta = (diurnalFactor(targetHour) - diurnalFactor(currentHour)) * baseSwing;
+      const isNortherly = (station.dir >= 315 || station.dir <= 65);
+      const isSoutherly = (station.dir >= 135 && station.dir <= 250);
+      let advectionDelta = 0;
+      if (isNortherly && station.wind > 5) advectionDelta = -0.12 * Math.min(station.wind, 35) * (hrs / 12);
+      else if (isSoutherly && station.wind > 5) advectionDelta = 0.08 * Math.min(station.wind, 35) * (hrs / 12);
+      const pressTempDelta = station.trend * 0.25 * (hrs / 12);
+      const localT = station.temp + diurnalDelta + advectionDelta + pressTempDelta;
+
+      const modelT = avgValid([iconH?.temp, ecmwfH?.temp], localT);
+      const predT = Number((localT * stationWeight + modelT * modelWeight).toFixed(1));
+
+      const localDew = Math.min(predT - 0.2, station.dew + (diurnalDelta * 0.45) + (station.trend < -1 ? 0.6 : 0));
+      const modelDew = avgValid([iconH?.dew, ecmwfH?.dew], localDew);
+      const predDew = Number(Math.min(predT - 0.2, localDew * stationWeight + modelDew * modelWeight).toFixed(1));
+
+      const localHum = Math.max(25, Math.min(100, Math.round(station.hum - (predT - station.temp) * 3.2 + (station.trend < -1 ? 6 : 0))));
+      const modelHum = avgValid([iconH?.hum, ecmwfH?.hum], localHum);
+      const predHum = Math.max(25, Math.min(100, Math.round(localHum * stationWeight + modelHum * modelWeight)));
+
+      const predTw = calcWetBulb(predT, predHum);
+
+      const localPress = station.press + (station.trend / 3) * Math.min(hrs, 12) * 0.65;
+      const modelPress = avgValid([iconH?.press, ecmwfH?.press], localPress);
+      const predPress = Number((localPress * stationWeight + modelPress * modelWeight).toFixed(1));
+
+      const windDiurnal = Math.sin(((targetHour - 6) / 24) * 2 * Math.PI) * 3.5;
+      const localWind = Math.max(0, station.wind + windDiurnal + (station.trend <= -1.5 ? 4 : 0));
+      const modelWind = avgValid([iconH?.wind, ecmwfH?.wind], localWind);
+      const predWind = Math.max(0, Math.round(localWind * stationWeight + modelWind * modelWeight));
+
+      const gustRatio = station.wind > 0 ? Math.max(1.3, (station.gust || station.wind * 1.4) / station.wind) : 1.4;
+      const localGust = Math.max(predWind, Math.round(predWind * gustRatio));
+      const modelGust = avgValid([iconH?.gust, ecmwfH?.gust], localGust);
+      const predGust = Math.max(predWind, Math.round(localGust * stationWeight + modelGust * modelWeight));
+
+      const localDir = (station.dir + Math.round(hrs * 1.5)) % 360;
+      const modelDir = avgAngles([iconH?.dir, ecmwfH?.dir], localDir);
+      const predDir = avgAngles([localDir, modelDir], localDir);
+
+      const modelPrecipVals = [iconH?.precip, ecmwfH?.precip].filter(v => typeof v === 'number' && !isNaN(v));
+      const modelPrecip = modelPrecipVals.length > 0 ? modelPrecipVals.reduce((a, b) => a + b, 0) / modelPrecipVals.length : null;
+      const modelCloudVals = [iconH?.cloud, ecmwfH?.cloud].filter(v => typeof v === 'number' && !isNaN(v));
+      const modelCloud = modelCloudVals.length > 0 ? modelCloudVals.reduce((a, b) => a + b, 0) / modelCloudVals.length : 50;
+
+      let precipScore = 0;
+      if (predPress <= 1004) precipScore += 45;
+      else if (predPress <= 1010) precipScore += 30;
+      else if (predPress <= 1015) precipScore += 15;
+      else if (predPress >= 1022) precipScore -= 25;
+
+      if (station.trend <= -2.5) precipScore += 40;
+      else if (station.trend <= -1.2) precipScore += 25;
+      else if (station.trend <= -0.5) precipScore += 10;
+      else if (station.trend >= 1.2) precipScore -= 25;
+
+      const currentSpread = predT - predDew;
+      if (currentSpread <= 1.5) precipScore += 25;
+      else if (currentSpread <= 3.0) precipScore += 12;
+      else if (currentSpread > 6.5) precipScore -= 20;
+
+      if (isSoutherly || (predDir >= 250 && predDir <= 300)) precipScore += 12;
+
+      const timeDecay = Math.max(0.75, 1 - (hrs / 120));
+      precipScore = Math.round(precipScore * timeDecay);
+
+      let localPrecip = 0;
+      if (precipScore >= 65) {
+        localPrecip = Number(((precipScore - 55) * 0.07).toFixed(1));
+      }
+
+      let predPr = 0;
+      if (modelPrecip !== null) {
+        if (modelPrecip < 0.1) {
+          predPr = (hrs === 1 && station.rate > 0) ? Number((station.rate * 0.5).toFixed(1)) : 0;
+        } else {
+          const orographicBoost = (precipScore >= 65) ? mosState.orographicScale : 1.0;
+          predPr = Number((modelPrecip * orographicBoost).toFixed(1));
+        }
+      } else {
+        predPr = localPrecip;
+      }
+
+      let stepSnowCm = 0;
+      const modelSnowVals = [iconH?.snowfall, ecmwfH?.snowfall].filter(v => typeof v === 'number' && !isNaN(v));
+      const modelSnow = modelSnowVals.length > 0 ? modelSnowVals.reduce((a, b) => a + b, 0) / modelSnowVals.length : null;
+      if (predTw <= 0.8 && predPr > 0) {
+        let ratio = 0.85;
+        if (predTw <= -4.0) ratio = 1.5;
+        else if (predTw <= -1.5) ratio = 1.2;
+        const localSnow = Number((predPr * ratio).toFixed(1));
+        stepSnowCm = modelSnow !== null ? Number((modelSnow * 0.65 + localSnow * 0.35).toFixed(1)) : localSnow;
+      }
+
+      const modelsAgree = (iconH && ecmwfH) ? (Math.abs(iconH.temp - ecmwfH.temp) < 2.5) : false;
+      let prob = (modelsAgree ? 94 : 88) - (hrs * 0.55);
+      if (Math.abs(station.trend) >= 1.8 && hrs <= 24) prob -= 5;
+      else if (predPress >= 1018 && Math.abs(station.trend) < 0.8) prob += 3;
+      if (mosState.ready && mosState.mae3h !== null && mosState.mae3h <= 1.3) prob += 2;
+      prob = Math.max(55, Math.min(97, Math.round(prob)));
+
+      let icon = isNight ? '🌙' : '🌤️';
+      if (stepSnowCm > 0 || (predPr > 0 && predTw <= 0.8)) icon = '❄️';
+      else if (predPr > 0) icon = '🌧️';
+      else if (currentSpread <= 1.5 && predHum >= 90) icon = '🌫️';
+      else if (predT <= 0) icon = '🥶';
+      else if (modelCloud >= 65 || predPress < 1012) icon = '⛅';
+
+      return {
+        hrs,
+        time: targetDate.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' }),
+        isNight,
+        icon,
+        temp: predT,
+        chill: calcWindChill(predT, predWind),
+        wetBulb: predTw,
+        dew: predDew,
+        hum: predHum,
+        dir: predDir,
+        dirText: degToCompass(predDir),
+        wind: predWind,
+        gust: predGust,
+        press: predPress,
+        precip: predPr,
+        snow: stepSnowCm,
+        cloud: Math.round(modelCloud),
+        fl: Math.round(1450 + (predT / 6.5) * 1000),
+        prob
+      };
+    }
+
+    function toggleDayDetail(idx) {
+      const box = document.getElementById('dayDetailBox');
+      if (selectedDayIdx === idx && box.classList.contains('open')) {
+        closeDayDetail();
+        return;
+      }
+
+      selectedDayIdx = idx;
+      document.querySelectorAll('.d-card').forEach((card, i) => {
+        card.classList.toggle('d-selected', i === idx);
+      });
+
+      const dayObj = threeDayDataStore[idx];
+      if (!dayObj) return;
+
+      document.getElementById('dayDetailTitle').innerText = `⏱️ Ωριαία ανάλυση: ${dayObj.dayName} (${dayObj.dateStr})`;
+
+      const hours = dayObj.hours;
+      const headHtml = `<th>Ώρα</th>` + hours.map(h => `<th>${String(h.hour).padStart(2, '0')}:00</th>`).join('');
+      const iconHtml = `<td><b>Κατάσταση</b></td>` + hours.map(h => `<td style="font-size:1.1rem;">${h.icon}</td>`).join('');
+      const tempHtml = `<td><b>Θερμ.</b></td>` + hours.map(h => `<td style="color:${h.temp <= 0 ? '#7dd3fc' : '#f87171'}; font-weight:700;">${h.temp.toFixed(1)}°</td>`).join('');
+      const twHtml = `<td><b>Υγρό Θερμ. (Tw)</b></td>` + hours.map(h => `<td style="color:${h.wetBulb <= 0.8 ? '#38bdf8' : '#34d399'};">${h.wetBulb.toFixed(1)}°</td>`).join('');
+      const precipHtml = `<td><b>Υετός (mm)</b></td>` + hours.map(h => `<td style="color:${h.precip > 0 ? '#38bdf8' : '#64748b'};">${h.precip > 0 ? h.precip.toFixed(1) : '-'}</td>`).join('');
+      const snowHtml = `<td><b>Χιόνι (cm)</b></td>` + hours.map(h => `<td style="color:${h.snow > 0 ? '#e0f2fe' : '#64748b'}; font-weight:${h.snow > 0 ? '700' : '400'};">${h.snow > 0 ? h.snow.toFixed(1) : '-'}</td>`).join('');
+      const windHtml = `<td><b>Άνεμος / Ριπή</b></td>` + hours.map(h => `<td style="color:#cbd5e1;">${h.wind}/${h.gust} <span style="font-size:0.68rem; color:#94a3b8;">${h.dirText}</span></td>`).join('');
+
+      document.getElementById('dayDetailContent').innerHTML = `
+        <table class="day-detail-table">
+          <thead><tr>${headHtml}</tr></thead>
+          <tbody>
+            <tr>${iconHtml}</tr>
+            <tr>${tempHtml}</tr>
+            <tr>${twHtml}</tr>
+            <tr>${precipHtml}</tr>
+            <tr>${snowHtml}</tr>
+            <tr>${windHtml}</tr>
+          </tbody>
+        </table>
+      `;
+
+      box.classList.add('open');
+    }
+
+    function closeDayDetail() {
+      selectedDayIdx = null;
+      document.querySelectorAll('.d-card').forEach(c => c.classList.remove('d-selected'));
+      document.getElementById('dayDetailBox').classList.remove('open');
+    }
+
+    function renderThreeDayForecast(stationState, iconHourly, ecmwfHourly) {
+      const grid = document.getElementById('threeDayGrid');
+      const summaryEl = document.getElementById('threeDaySummary');
+      const dayNames = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
+
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+
+      let cardsHtml = '';
+      let totalSnow3d = 0;
+      threeDayDataStore = [];
+
+      for (let dayOffset = 1; dayOffset <= 3; dayOffset++) {
+        const dayDate = new Date(startOfToday.getTime() + dayOffset * 24 * 3600 * 1000);
+        const dayName = dayOffset === 1 ? "Αύριο • " + dayNames[dayDate.getDay()] : dayNames[dayDate.getDay()];
+        const dateStr = `${String(dayDate.getDate()).padStart(2, '0')}/${String(dayDate.getMonth() + 1).padStart(2, '0')}`;
+
+        let minT = Infinity;
+        let maxT = -Infinity;
+        let sumPrecip = 0;
+        let sumSnow = 0;
+        let maxGust = 0;
+        let maxCloud = 0;
+        let snowHours = [];
+        let dayHoursList = [];
+
+        for (let h = 0; h < 24; h++) {
+          const slotDate = new Date(dayDate.getTime() + h * 3600 * 1000);
+          const hrsFromNow = Math.max(1, Math.round((slotDate.getTime() - now.getTime()) / 3600000));
+          const iconH = getModelHourAt(iconHourly, slotDate);
+          const ecmwfH = getModelHourAt(ecmwfHourly, slotDate);
+
+          const pred = combineHourForecast(hrsFromNow, slotDate, stationState, iconH, ecmwfH);
+          pred.hour = h;
+          dayHoursList.push(pred);
+
+          if (pred.temp < minT) minT = pred.temp;
+          if (pred.temp > maxT) maxT = pred.temp;
+          sumPrecip += pred.precip;
+          sumSnow += pred.snow;
+          if (pred.gust > maxGust) maxGust = pred.gust;
+          if (pred.cloud > maxCloud) maxCloud = pred.cloud;
+          if (pred.snow >= 0.1) snowHours.push(String(h).padStart(2, '0') + ':00');
+        }
+
+        const idx = dayOffset - 1;
+        threeDayDataStore.push({ dayName, dateStr, hours: dayHoursList });
+
+        totalSnow3d += sumSnow;
+        const hasSnow = sumSnow >= 0.3;
+
+        let icon = '☀️';
+        let desc = 'Αίθριος καιρός';
+        if (sumSnow >= 3.0) { icon = '❄️'; desc = 'Πυκνή χιονόπτωση'; }
+        else if (hasSnow) { icon = '🌨️'; desc = 'Χιονόπτωση / Χιονόνερο'; }
+        else if (sumPrecip >= 10) { icon = '⛈️'; desc = 'Ισχυρές βροχές'; }
+        else if (sumPrecip >= 1.5) { icon = '🌧️'; desc = 'Βροχοπτώσεις'; }
+        else if (sumPrecip >= 0.3) { icon = '🌦️'; desc = 'Τοπικές βροχές'; }
+        else if (maxCloud >= 65) { icon = '⛅'; desc = 'Νεφώσεις'; }
+
+        const snowPeakText = snowHours.length > 0
+          ? `Ώρες χιονιού: ${snowHours[0]}–${snowHours[snowHours.length - 1]}`
+          : (sumPrecip >= 0.3 ? `Συνολικός υετός: ${sumPrecip.toFixed(1)} mm` : 'Χωρίς φαινόμενα');
+
+        const badgeHtml = hasSnow
+          ? `<div class="d-snow-badge">❄️ Χιόνι: ~${sumSnow.toFixed(1)} cm</div>`
+          : `<div class="d-rain-badge">${sumPrecip >= 0.3 ? '🌧️ Βροχή: ' + sumPrecip.toFixed(1) + ' mm' : '☀️ Ξηρό'}</div>`;
+
+        cardsHtml += `
+          <div class="d-card ${hasSnow ? 'd-snow' : ''} ${selectedDayIdx === idx ? 'd-selected' : ''}" onclick="toggleDayDetail(${idx})">
+            <div class="d-head">
+              <span>${dayName}</span>
+              <span class="d-date">${dateStr}</span>
+            </div>
+            <div class="d-icon">${icon}</div>
+            <div class="d-desc">${desc}</div>
+            <div class="d-temps">
+              <span class="d-min">↓ ${minT.toFixed(1)}°</span>
+              <span style="color:#475569;">/</span>
+              <span class="d-max">↑ ${maxT.toFixed(1)}°</span>
+            </div>
+            ${badgeHtml}
+            <div class="d-meta">
+              ${snowPeakText}<br>
+              💨 Ριπές έως ${maxGust} km/h
+            </div>
+            <div class="d-toggle-hint">▼ Ωριαία ανάλυση</div>
+          </div>
+        `;
+      }
+
+      grid.innerHTML = cardsHtml;
+      summaryEl.innerText = totalSnow3d >= 0.5
+        ? `❄️ Σύνολο 3ημέρου: ~${totalSnow3d.toFixed(1)} cm χιόνι (Κλικ για ώρες)`
+        : `ICON + ECMWF (Κλικ για ώρες)`;
+
+      if (selectedDayIdx !== null && document.getElementById('dayDetailBox').classList.contains('open')) {
+        const keptIdx = selectedDayIdx;
+        selectedDayIdx = null;
+        toggleDayDetail(keptIdx);
+      }
+    }
+
+    function renderMeteogram(series, step) {
+      const filtered = series.filter((_, idx) => idx % step === 0);
+      const colWidth = step === 1 ? 62 : 120;
+      const totalWidth = Math.max(920, 155 + filtered.length * colWidth);
+
+      document.getElementById('mgChartBox').style.minWidth = totalWidth + 'px';
+      document.getElementById('meteogramTable').style.minWidth = totalWidth + 'px';
+
+      const headRow = document.getElementById('mgHeadRow');
+      headRow.innerHTML = `<th class="mg-sticky-col">Ώρα (Σύνθεση)</th>` + filtered.map((d, i) => {
+        const isNow = i === 0;
+        return `<th class="${isNow ? 'mg-now' : ''}">${isNow ? 'ΤΩΡΑ (' + d.time + ')' : d.time}<br><span style="font-weight:400; font-size:0.68rem; color:#64748b;">+${d.hrs}h</span></th>`;
+      }).join('');
+
+      const getTempClass = (t) => {
+        if (t <= 0) return 't-freeze';
+        if (t <= 5) return 't-cold';
+        if (t <= 12) return 't-mild';
+        return 't-warm';
+      };
+
+      const getWindClass = (w) => {
+        if (w >= 35) return 'w-strong';
+        if (w >= 18) return 'w-mod';
+        return 'w-calm';
+      };
+
+      const rowIcons = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="font-size:1.25rem;">${d.icon}</td>`).join('');
+      const rowTemp = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}"><span class="mg-pill ${getTempClass(d.temp)}">${d.temp.toFixed(1)}°</span></td>`).join('');
+      const rowChill = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}"><span class="mg-pill ${getTempClass(d.chill)}">${d.chill.toFixed(1)}°</span></td>`).join('');
+      const rowWetBulb = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:${d.wetBulb <= 0.8 ? '#38bdf8' : '#34d399'}; font-weight:${d.wetBulb <= 0.8 ? '700' : '400'};">${d.wetBulb.toFixed(1)}°</td>`).join('');
+      const rowDew = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:#c4b5fd;">${d.dew.toFixed(1)}°</td>`).join('');
+      const rowHum = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:#93c5fd;">${d.hum}%</td>`).join('');
+      const rowWind = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}"><span class="wind-arrow" style="transform:rotate(${(d.dir + 180) % 360}deg);">↑</span> ${d.dirText}</td>`).join('');
+      const rowWindSpd = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}"><span class="${getWindClass(d.wind)}">${d.wind} / ${d.gust}</span></td>`).join('');
+      const rowPress = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:#facc15; font-weight:600;">${d.press.toFixed(1)}</td>`).join('');
+      const rowPrecip = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:${d.precip > 0 ? '#38bdf8' : '#64748b'}; font-weight:${d.precip > 0 ? '700' : '400'};">${d.precip > 0 ? d.precip.toFixed(1) : '-'}</td>`).join('');
+      const rowSnow = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:${d.snow > 0 ? '#e0f2fe' : '#64748b'}; font-weight:${d.snow > 0 ? '700' : '400'};">${d.snow > 0 ? d.snow.toFixed(1) + ' cm' : '-'}</td>`).join('');
+      const rowFl = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:#94a3b8;">${d.fl} μ.</td>`).join('');
+      const rowProb = filtered.map(d => `<td class="${d.isNight ? 'mg-night' : 'mg-day'}" style="color:${d.prob >= 80 ? '#34d399' : '#fbbf24'};">${d.prob}%</td>`).join('');
+
+      document.getElementById('mgBody').innerHTML = `
+        <tr><td class="mg-sticky-col">☁️ Κατάσταση</td>${rowIcons}</tr>
+        <tr><td class="mg-sticky-col">🌡️ Θερμοκρασία (°C)</td>${rowTemp}</tr>
+        <tr><td class="mg-sticky-col">🥶 Αίσθηση Ψύχους (°C)</td>${rowChill}</tr>
+        <tr><td class="mg-sticky-col">🌡️ Υγρό Θερμ. Tw (°C)</td>${rowWetBulb}</tr>
+        <tr><td class="mg-sticky-col">💧 Σημείο Δρόσου (°C)</td>${rowDew}</tr>
+        <tr><td class="mg-sticky-col">💦 Υγρασία (%)</td>${rowHum}</tr>
+        <tr><td class="mg-sticky-col">🧭 Διεύθυνση Ανέμου</td>${rowWind}</tr>
+        <tr><td class="mg-sticky-col">💨 Άνεμος / Ριπή (km/h)</td>${rowWindSpd}</tr>
+        <tr><td class="mg-sticky-col" style="color:#fde047;">⏲️ Πίεση (hPa)</td>${rowPress}</tr>
+        <tr><td class="mg-sticky-col">🌧️ Υετός (mm/h)</td>${rowPrecip}</tr>
+        <tr><td class="mg-sticky-col">❄️ Νέο Χιόνι (cm)</td>${rowSnow}</tr>
+        <tr><td class="mg-sticky-col">🏔️ Επίπεδο Παγοποίησης</td>${rowFl}</tr>
+        <tr><td class="mg-sticky-col">🎯 Βεβαιότητα Σύνθ.</td>${rowProb}</tr>
+      `;
+
+      const pressValues = filtered.map(d => d.press);
+      const pMin = Math.floor(Math.min(...pressValues) - 1);
+      const pMax = Math.ceil(Math.max(...pressValues) + 1);
+      const snowValues = filtered.map(d => d.snow);
+      const maxSnow = Math.max(3, Math.ceil(Math.max(...snowValues) + 1));
+
+      const mgCtx = document.getElementById('meteogramLineChart').getContext('2d');
+      if (meteogramChartInstance) meteogramChartInstance.destroy();
+      meteogramChartInstance = new Chart(mgCtx, {
+        type: 'line',
+        data: {
+          labels: filtered.map(d => d.time),
+          datasets: [
+            {
+              label: 'Θερμοκρασία (°C)',
+              data: filtered.map(d => d.temp),
+              yAxisID: 'y',
+              borderColor: '#f87171',
+              backgroundColor: 'rgba(248, 113, 113, 0.12)',
+              borderWidth: 2.5,
+              tension: 0.35,
+              pointRadius: 3,
+              order: 1
+            },
+            {
+              label: 'Αίσθηση Ψύχους (°C)',
+              data: filtered.map(d => d.chill),
+              yAxisID: 'y',
+              borderColor: '#38bdf8',
+              borderDash: [4, 3],
+              borderWidth: 2,
+              tension: 0.35,
+              pointRadius: 2,
+              order: 2
+            },
+            {
+              label: 'Υγρό Θερμόμετρο Tw (°C)',
+              data: filtered.map(d => d.wetBulb),
+              yAxisID: 'y',
+              borderColor: '#34d399',
+              borderDash: [3, 3],
+              borderWidth: 1.8,
+              tension: 0.35,
+              pointRadius: 2,
+              order: 3
+            },
+            {
+              label: 'Σημείο Δρόσου (°C)',
+              data: filtered.map(d => d.dew),
+              yAxisID: 'y',
+              borderColor: '#a78bfa',
+              borderDash: [2, 2],
+              borderWidth: 1.8,
+              tension: 0.35,
+              pointRadius: 2,
+              order: 4
+            },
+            {
+              label: 'Πίεση (hPa)',
+              data: pressValues,
+              yAxisID: 'yPressure',
+              borderColor: '#facc15',
+              backgroundColor: 'rgba(250, 204, 21, 0.12)',
+              borderWidth: 2.6,
+              tension: 0.35,
+              pointRadius: 3,
+              pointBackgroundColor: '#facc15',
+              pointBorderColor: '#0b1324',
+              pointBorderWidth: 1,
+              order: 5
+            },
+            {
+              label: '0°C',
+              data: filtered.map(() => 0),
+              yAxisID: 'y',
+              borderColor: '#ef4444',
+              borderWidth: 1.6,
+              borderDash: [6, 4],
+              pointRadius: 0,
+              order: 0
+            },
+            {
+              type: 'bar',
+              label: 'Νέο Χιόνι (cm)',
+              data: snowValues,
+              yAxisID: 'ySnow',
+              backgroundColor: 'rgba(224, 242, 254, 0.42)',
+              borderColor: '#7dd3fc',
+              borderWidth: 1,
+              borderRadius: 3,
+              barPercentage: 0.55,
+              order: 6
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              filter: function(item) {
+                return item.dataset.label !== '0°C' && !(item.dataset.yAxisID === 'ySnow' && item.parsed.y <= 0);
+              },
+              callbacks: {
+                label: function(ctx) {
+                  const val = ctx.parsed.y;
+                  if (ctx.dataset.yAxisID === 'yPressure') {
+                    return ` ${ctx.dataset.label}: ${val.toFixed(1)} hPa`;
+                  }
+                  if (ctx.dataset.yAxisID === 'ySnow') {
+                    return ` ❄️ Νέο Χιόνι: ${val.toFixed(1)} cm`;
+                  }
+                  return ` ${ctx.dataset.label}: ${val.toFixed(1)}°C`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { display: false },
+            y: {
+              type: 'linear',
+              position: 'left',
+              min: Math.min(-2, Math.floor(Math.min(...filtered.map(d => d.chill)) - 1)),
+              ticks: {
+                color: '#94a3b8',
+                font: { size: 10 },
+                callback: (v) => v + '°'
+              },
+              grid: {
+                color: (ctx) => ctx.tick && ctx.tick.value === 0 ? 'rgba(239, 68, 68, 0.75)' : 'rgba(51, 65, 85, 0.35)',
+                lineWidth: (ctx) => ctx.tick && ctx.tick.value === 0 ? 1.8 : 1
+              }
+            },
+            ySnow: {
+              type: 'linear',
+              position: 'right',
+              display: false,
+              min: 0,
+              max: maxSnow,
+              grid: { drawOnChartArea: false }
+            },
+            yPressure: {
+              type: 'linear',
+              position: 'right',
+              min: pMin,
+              max: pMax,
+              ticks: {
+                color: '#facc15',
+                font: { size: 10, weight: 'bold' },
+                maxTicksLimit: 5,
+                callback: (v) => Math.round(v) + ' hPa'
+              },
+              grid: { drawOnChartArea: false }
+            }
+          }
+        }
+      });
+
+      requestAnimationFrame(updateAllScrollButtons);
+    }
+
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clock').innerText = now.toLocaleDateString('el-GR') + ' ' + now.toLocaleTimeString('el-GR');
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    setInterval(() => {
+      const img = document.getElementById('liveCamImg');
+      img.src = 'https://www.forecastweather.gr/images/photo_camera/photo_41.jpg?v=' + Date.now();
+    }, 15000);
+
+    async function updateDashboard() {
+      try {
+        const wuUrl = `https://api.weather.com/v2/pws/observations/current?stationId=${WU_STATION_ID}&format=json&units=m&numericPrecision=decimal&apiKey=${WU_API_KEY}`;
+        const wuRes = await fetch(wuUrl);
+        if (!wuRes.ok) throw new Error(`Σταθμός WU HTTP ${wuRes.status}`);
+        const wuData = await wuRes.json();
+        const obs = wuData?.observations?.[0];
+        if (!obs || !obs.metric) throw new Error("Δεν υπάρχουν διαθέσιμες μετρήσεις από τον σταθμό ISAMAR38");
+
+        const temp = obs.metric.temp ?? 0;
+        const dew = obs.metric.dewpt ?? temp;
+        const press = obs.metric.pressure ?? 1013;
+        const hum = obs.humidity ?? 50;
+        const wind = obs.metric.windSpeed ?? 0;
+        const gust = obs.metric.windGust ?? wind;
+        const dir = obs.winddir ?? 0;
+        const rain = obs.metric.precipTotal ?? 0;
+        const rate = obs.metric.precipRate ?? 0;
+        const chill = obs.metric.windChill ?? calcWindChill(temp, wind);
+        const wetBulbNow = calcWetBulb(temp, hum);
+        const spread = temp - dew;
+
+        let trend = 0;
+        let trendLabel = "--";
+        try {
+          let hist = JSON.parse(localStorage.getItem('isamar38_p') || '[]');
+          const nowTs = Date.now();
+          hist.push({ t: nowTs, p: press });
+          hist = hist.filter(x => (nowTs - x.t) <= 3 * 3600 * 1000);
+          localStorage.setItem('isamar38_p', JSON.stringify(hist));
+          const elapsedHrs = (nowTs - hist[0].t) / (3600 * 1000);
+          if (elapsedHrs >= 0.25) {
+            trend = ((press - hist[0].p) / elapsedHrs) * 3;
+            trendLabel = `${trend >= 0 ? '+' : ''}${trend.toFixed(1)} hPa`;
+          } else {
+            trend = 0;
+            trendLabel = "σταθερή";
+          }
+        } catch (err) {
+          trend = 0;
+          trendLabel = "--";
+        }
+
+        document.getElementById('stTemp').innerText = `${temp.toFixed(1)}°C`;
+        document.getElementById('stDew').innerText = `Σημ. Δρόσου: ${dew.toFixed(1)}°C`;
+        document.getElementById('stPress').innerText = `${press.toFixed(1)} hPa`;
+        document.getElementById('stTrend').innerText = `Τάση 3ωρου: ${trendLabel}`;
+        document.getElementById('stHum').innerText = `${hum}%`;
+        document.getElementById('stSpread').innerText = `Απόσταση: ${spread.toFixed(1)}°C`;
+        document.getElementById('stWind').innerText = `${wind} km/h`;
+        document.getElementById('stDir').innerText = `Διεύθ.: ${degToCompass(dir)} (${dir}°)`;
+        document.getElementById('stRain').innerText = `${rain} mm`;
+        document.getElementById('stRate').innerText = `Ρυθμός: ${rate} mm/h`;
+        document.getElementById('stChill').innerText = `${chill.toFixed(1)}°C`;
+        document.getElementById('stFl').innerText = `Υγρό Θερμ.: ${wetBulbNow.toFixed(1)}°C`;
+        document.getElementById('lastUpdate').innerText = `Ενημ.: ${new Date().toLocaleTimeString('el-GR', {hour:'2-digit', minute:'2-digit'})}`;
+
+        let minDayT = temp, maxDayT = temp, maxDayGust = gust;
+        let minDayTime = "", maxDayTime = "";
+        try {
+          const dayUrl = `https://api.weather.com/v2/pws/observations/all/1day?stationId=${WU_STATION_ID}&format=json&units=m&numericPrecision=decimal&apiKey=${WU_API_KEY}`;
+          const dayRes = await fetch(dayUrl);
+          if (dayRes.ok) {
+            const dayData = await dayRes.json();
+            if (Array.isArray(dayData?.observations) && dayData.observations.length > 0) {
+              minDayT = Infinity; maxDayT = -Infinity; maxDayGust = 0;
+              dayData.observations.forEach(o => {
+                if (!o.metric) return;
+                const tVal = o.metric.tempLow ?? o.metric.tempAvg ?? temp;
+                const tHigh = o.metric.tempHigh ?? o.metric.tempAvg ?? temp;
+                const gVal = o.metric.windgustHigh ?? o.metric.windspeedHigh ?? 0;
+                const timeLabel = o.obsTimeLocal ? o.obsTimeLocal.slice(11, 16) : "";
+                if (tVal < minDayT) { minDayT = tVal; minDayTime = timeLabel ? ` (${timeLabel})` : ""; }
+                if (tHigh > maxDayT) { maxDayT = tHigh; maxDayTime = timeLabel ? ` (${timeLabel})` : ""; }
+                if (gVal > maxDayGust) { maxDayGust = gVal; }
+              });
+              if (!isFinite(minDayT)) minDayT = temp;
+              if (!isFinite(maxDayT)) maxDayT = temp;
+            }
+          }
+        } catch (err) {}
+
+        const { iconHourly, ecmwfHourly } = await fetchModelsWithCache();
+
+        const stationState = { temp, dew, press, hum, wind, gust, dir, rain, rate, chill, trend };
+        const hourlySeries = [];
+
+        let totalPrecip24 = 0;
+        let estSnowCm24 = 0;
+        let minTemp24 = temp;
+        let minChill24 = chill;
+
+        const baseDate = new Date();
+        baseDate.setMinutes(0, 0, 0);
+
+        for (let hrs = 0; hrs <= 24; hrs++) {
+          const futureDate = new Date(baseDate.getTime() + hrs * 3600 * 1000);
+          const iconH = getModelHourAt(iconHourly, futureDate);
+          const ecmwfH = getModelHourAt(ecmwfHourly, futureDate);
+
+          const item = combineHourForecast(hrs, futureDate, stationState, iconH, ecmwfH);
+
+          if (hrs > 0) {
+            totalPrecip24 += item.precip;
+            estSnowCm24 += item.snow;
+          }
+          if (item.temp < minTemp24) minTemp24 = item.temp;
+          if (item.chill < minChill24) minChill24 = item.chill;
+
+          hourlySeries.push(item);
+        }
+
+        latestHourlySeries = hourlySeries;
+        renderMeteogram(latestHourlySeries, meteogramStepHours);
+        renderThreeDayForecast(stationState, iconHourly, ecmwfHourly);
+
+        document.getElementById('dailyExtremes').innerHTML = `
+          <span>📉 Ελάχ. Ημέρας: <b>${minDayT.toFixed(1)}°C</b>${minDayTime}</span>
+          <span>📈 Μέγ. Ημέρας: <b>${maxDayT.toFixed(1)}°C</b>${maxDayTime}</span>
+          <span>💨 Μέγ. Ριπή: <b>${maxDayGust} km/h</b></span>
+          <span>❄️ Εκτιμ. Νέο Χιόνι (24h): <b>${estSnowCm24.toFixed(1)} cm</b></span>
+        `;
+
+        const grid = document.getElementById('forecastGrid');
+        grid.innerHTML = '';
+
+        for (let hrs = 3; hrs <= 24; hrs += 3) {
+          const item = hourlySeries[hrs];
+          const probClass = item.prob >= 85 ? 'prob-high' : (item.prob >= 72 ? 'prob-med' : 'prob-low');
+
+          grid.innerHTML += `
+            <div class="f-card">
+              <div class="f-time">${item.time} (+${hrs}h)</div>
+              <div class="f-icon">${item.icon}</div>
+              <div class="f-temp">${item.temp.toFixed(1)}°C</div>
+              <div class="f-snow">${item.snow > 0 ? 'Χιόνι: ' + item.snow + 'cm' : (item.precip > 0 ? 'Υετός: ' + item.precip + 'mm' : 'Ξηρό')}</div>
+              <div class="f-prob ${probClass}" title="Βεβαιότητα σύνθεσης ISAMAR38 + ICON + ECMWF">Βεβαιότ.: ${item.prob}%</div>
+            </div>
+          `;
+        }
+
+        requestAnimationFrame(updateAllScrollButtons);
+
+        const roadEl = document.getElementById('roadStatus');
+        roadEl.className = 'alert-box';
+        if (estSnowCm24 >= 2.0 || (rate > 0 && wetBulbNow <= 0.8)) {
+          roadEl.classList.add('road-danger');
+          roadEl.innerText = '⛓️ Δρόμος: Απαραίτητες αλυσίδες';
+        } else if (temp <= 0.5 && (hum >= 80 || rain > 0 || totalPrecip24 > 0.5)) {
+          roadEl.classList.add('road-danger');
+          roadEl.innerText = '🧊 Δρόμος: Υψηλός κίνδυνος πάγου';
+        } else if (temp <= 2.5 || minTemp24 <= 0.5 || minChill24 <= -1.0) {
+          roadEl.classList.add('road-warn');
+          roadEl.innerText = '⚠️ Δρόμος: Πιθανός παγετός τη νύχτα';
+        } else {
+          roadEl.classList.add('road-ok');
+          roadEl.innerText = '🛣️ Δρόμος: Καθαρό οδόστρωμα';
+        }
+
+        const isSoutherly = (dir >= 135 && dir <= 250);
+        const topAlert = document.getElementById('topAlert');
+        topAlert.className = 'alert-box';
+        const modelsStatus = `${iconHourly ? 'ICON ✓' : 'ICON —'} / ${ecmwfHourly ? 'ECMWF ✓' : 'ECMWF —'}`;
+        let diagText = '';
+
+        if (estSnowCm24 >= 0.5 || (rate > 0 && wetBulbNow <= 0.8)) {
           topAlert.classList.add('alert-snow');
           topAlert.innerText = `❄️ ΣΥΝΑΓΕΡΜΟΣ ΧΙΟΝΟΠΤΩΣΗΣ (24h)`;
           diagText = `❄️ <b>Συνθήκες χιονιού (${modelsStatus}):</b> Ο σταθμός ISAMAR38 μετρά ${temp.toFixed(1)}°C (Υγρό Θερμ. Tw ${wetBulbNow.toFixed(1)}°C) και η σύνθεση με ICON/ECMWF εκτιμά νέο χιόνι ~${estSnowCm24.toFixed(1)} cm το επόμενο 24ωρο (ελάχ. ${minTemp24.toFixed(1)}°C).`;
@@ -1857,23 +1882,23 @@
           diagText = `☀️ <b>Αίθριες / ήπιες συνθήκες (${modelsStatus}):</b> Ο σταθμός ISAMAR38 μετρά ${temp.toFixed(1)}°C και πίεση ${press.toFixed(1)} hPa, με περιορισμένο/μηδενικό υετό στη σύνθεση ICON & ECMWF. ${minTemp24 <= 0.5 || minChill24 <= -1.0 ? 'Προσοχή σε τοπικό παγετό τη νύχτα/πρωί (ελάχ. ' + minTemp24.toFixed(1) + '°C, αισθητή ' + minChill24.toFixed(1) + '°C).' : 'Ήπιες συνθήκες για το επόμενο 24ωρο.'}`;
         }
 
- document.getElementById('smartDiagnosis').innerHTML = diagText;
+        document.getElementById('smartDiagnosis').innerHTML = diagText;
 
- } catch (e) {
- document.getElementById('smartDiagnosis').innerText = "Σφάλμα ανάγνωσης: " + e.message;
- }
- }
+      } catch (e) {
+        document.getElementById('smartDiagnosis').innerText = "Σφάλμα ανάγνωσης: " + e.message;
+      }
+    }
 
- setupScrollHelpers('forecastGrid', 'btnForecastPrev', 'btnForecastNext');
- setupScrollHelpers('stationScroll', 'btnStationPrev', 'btnStationNext');
- setupScrollHelpers('mgScrollContainer', 'btnMgPrev', 'btnMgNext');
- window.addEventListener('resize', updateAllScrollButtons);
+    setupScrollHelpers('forecastGrid', 'btnForecastPrev', 'btnForecastNext');
+    setupScrollHelpers('stationScroll', 'btnStationPrev', 'btnStationNext');
+    setupScrollHelpers('mgScrollContainer', 'btnMgPrev', 'btnMgNext');
+    window.addEventListener('resize', updateAllScrollButtons);
 
- loadVerificationStats().finally(() => {
- updateDashboard();
- });
- setInterval(updateDashboard, 300000);
- setInterval(loadVerificationStats, 600000);
- </script>
+    loadVerificationStats().finally(() => {
+      updateDashboard();
+    });
+    setInterval(updateDashboard, 300000);
+    setInterval(loadVerificationStats, 600000);
+  </script>
 </body>
 </html>
