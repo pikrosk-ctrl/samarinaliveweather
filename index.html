@@ -368,7 +368,7 @@
  }
  .mg-chart-box {
  min-width: 1480px;
- height: 170px;
+ height: 185px;
  padding: 8px 12px 4px 155px;
  background: #0b1324;
  border-bottom: 1px solid #334155;
@@ -386,14 +386,14 @@
  border-right: 2px solid #334155;
  height: 100%;
  vertical-align: top;
- font-size: 0.74rem;
- line-height: 1.45;
+ font-size: 0.72rem;
+ line-height: 1.38;
  color: #94a3b8;
  }
  .mg-chart-canvas-wrap {
  display: inline-block;
  width: calc(100% - 4px);
- height: 152px;
+ height: 168px;
  vertical-align: top;
  }
  .ventusky-frame {
@@ -548,6 +548,8 @@
  <span style="color:#38bdf8;">┄</span> Αισθητή (°C)<br>
  <span style="color:#34d399;">┄</span> Υγρό Θερμ. (Tw)<br>
  <span style="color:#a78bfa;">┄</span> Σημ. Δρόσου<br>
+ <span style="color:#ef4444; font-weight:bold;">┄</span> Όριο 0°C<br>
+ <span style="color:#e0f2fe;">▮</span> Χιόνι (cm)<br>
  <span style="color:#facc15; font-weight:bold;">━</span> Πίεση (hPa)
  </div>
  <div class="mg-chart-canvas-wrap">
@@ -1185,6 +1187,8 @@
  const pressValues = filtered.map(d => d.press);
  const pMin = Math.floor(Math.min(...pressValues) - 1);
  const pMax = Math.ceil(Math.max(...pressValues) + 1);
+ const snowValues = filtered.map(d => d.snow);
+ const maxSnow = Math.max(3, Math.ceil(Math.max(...snowValues) + 1));
 
  const mgCtx = document.getElementById('meteogramLineChart').getContext('2d');
  if (meteogramChartInstance) meteogramChartInstance.destroy();
@@ -1201,7 +1205,8 @@
  backgroundColor: 'rgba(248, 113, 113, 0.12)',
  borderWidth: 2.5,
  tension: 0.35,
- pointRadius: 3
+ pointRadius: 3,
+ order: 1
  },
  {
  label: 'Αίσθηση Ψύχους (°C)',
@@ -1211,7 +1216,8 @@
  borderDash: [4, 3],
  borderWidth: 2,
  tension: 0.35,
- pointRadius: 2
+ pointRadius: 2,
+ order: 2
  },
  {
  label: 'Υγρό Θερμόμετρο Tw (°C)',
@@ -1221,7 +1227,8 @@
  borderDash: [3, 3],
  borderWidth: 1.8,
  tension: 0.35,
- pointRadius: 2
+ pointRadius: 2,
+ order: 3
  },
  {
  label: 'Σημείο Δρόσου (°C)',
@@ -1231,7 +1238,8 @@
  borderDash: [2, 2],
  borderWidth: 1.8,
  tension: 0.35,
- pointRadius: 2
+ pointRadius: 2,
+ order: 4
  },
  {
  label: 'Πίεση (hPa)',
@@ -1244,16 +1252,30 @@
  pointRadius: 3,
  pointBackgroundColor: '#facc15',
  pointBorderColor: '#0b1324',
- pointBorderWidth: 1
+ pointBorderWidth: 1,
+ order: 5
  },
  {
  label: '0°C',
  data: filtered.map(() => 0),
  yAxisID: 'y',
- borderColor: 'rgba(239, 68, 68, 0.5)',
+ borderColor: '#ef4444',
+ borderWidth: 1.6,
+ borderDash: [6, 4],
+ pointRadius: 0,
+ order: 0
+ },
+ {
+ type: 'bar',
+ label: 'Νέο Χιόνι (cm)',
+ data: snowValues,
+ yAxisID: 'ySnow',
+ backgroundColor: 'rgba(224, 242, 254, 0.42)',
+ borderColor: '#7dd3fc',
  borderWidth: 1,
- borderDash: [5, 5],
- pointRadius: 0
+ borderRadius: 3,
+ barPercentage: 0.55,
+ order: 6
  }
  ]
  },
@@ -1271,6 +1293,9 @@
  if (ctx.dataset.yAxisID === 'yPressure') {
  return ` ${ctx.dataset.label}: ${val.toFixed(1)} hPa`;
  }
+ if (ctx.dataset.yAxisID === 'ySnow') {
+ return val > 0 ? ` ❄️ Νέο Χιόνι: ${val.toFixed(1)} cm` : null;
+ }
  return ` ${ctx.dataset.label}: ${val.toFixed(1)}°C`;
  }
  }
@@ -1286,7 +1311,18 @@
  font: { size: 10 },
  callback: (v) => v + '°'
  },
- grid: { color: 'rgba(51, 65, 85, 0.35)' }
+ grid: {
+ color: (ctx) => ctx.tick && ctx.tick.value === 0 ? 'rgba(239, 68, 68, 0.65)' : 'rgba(51, 65, 85, 0.35)',
+ lineWidth: (ctx) => ctx.tick && ctx.tick.value === 0 ? 1.5 : 1
+ }
+ },
+ ySnow: {
+ type: 'linear',
+ position: 'right',
+ display: false,
+ min: 0,
+ max: maxSnow,
+ grid: { drawOnChartArea: false }
  },
  yPressure: {
  type: 'linear',
