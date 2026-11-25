@@ -369,32 +369,33 @@
  .mg-chart-box {
  min-width: 1480px;
  height: 185px;
- padding: 8px 12px 4px 155px;
+ padding: 8px 12px 6px 155px;
  background: #0b1324;
- border-bottom: 1px solid #334155;
+ border-bottom: 2px solid #334155;
  position: relative;
+ overflow: hidden;
+ display: block;
  }
  .mg-chart-label {
  position: sticky;
  left: 0;
  z-index: 4;
- display: inline-block;
+ float: left;
  width: 155px;
  margin-left: -155px;
  padding: 6px 10px;
  background: #131c31;
  border-right: 2px solid #334155;
- height: 100%;
- vertical-align: top;
+ height: 170px;
  font-size: 0.72rem;
  line-height: 1.38;
  color: #94a3b8;
  }
  .mg-chart-canvas-wrap {
- display: inline-block;
- width: calc(100% - 4px);
+ position: relative;
+ width: 100%;
  height: 168px;
- vertical-align: top;
+ overflow: hidden;
  }
  .ventusky-frame {
  width: 100%;
@@ -1306,14 +1307,15 @@
  y: {
  type: 'linear',
  position: 'left',
+ min: Math.min(-2, Math.floor(Math.min(...filtered.map(d => d.chill)) - 1)),
  ticks: {
  color: '#94a3b8',
  font: { size: 10 },
  callback: (v) => v + '°'
  },
  grid: {
- color: (ctx) => ctx.tick && ctx.tick.value === 0 ? 'rgba(239, 68, 68, 0.65)' : 'rgba(51, 65, 85, 0.35)',
- lineWidth: (ctx) => ctx.tick && ctx.tick.value === 0 ? 1.5 : 1
+ color: (ctx) => ctx.tick && ctx.tick.value === 0 ? 'rgba(239, 68, 68, 0.75)' : 'rgba(51, 65, 85, 0.35)',
+ lineWidth: (ctx) => ctx.tick && ctx.tick.value === 0 ? 1.8 : 1
  }
  },
  ySnow: {
