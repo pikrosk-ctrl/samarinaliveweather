@@ -1104,6 +1104,36 @@
       }
     }
 
+    function parseGreekTimestamp(ts) {
+      if (!ts) return null;
+      const m = ts.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(π\.μ\.|μ\.μ\.)?/i);
+      if (!m) return null;
+      const day = parseInt(m[1], 10);
+      const month = parseInt(m[2], 10) - 1;
+      const year = parseInt(m[3], 10);
+      let hour = parseInt(m[4], 10);
+      const min = parseInt(m[5], 10);
+      const sec = m[6] ? parseInt(m[6], 10) : 0;
+      const ampm = (m[7] || "").toLowerCase();
+      if (ampm === "μ.μ." && hour < 12) hour += 12;
+      if (ampm === "π.μ." && hour === 12) hour = 0;
+      return new Date(year, month, day, hour, min, sec);
+    }
+
+    function findClosestForecastRow(rows, targetMs, maxDiffMs = 90 * 60 * 1000) {
+      let best = null;
+      let bestDiff = Infinity;
+      for (const r of rows) {
+        if (!r.dateObj) continue;
+        const diff = Math.abs(r.dateObj.getTime() - targetMs);
+        if (diff < bestDiff && diff <= maxDiffMs) {
+          bestDiff = diff;
+          best = r.cols;
+        }
+      }
+      return best;
+    }
+
     async function renderPrecipVerificationChart() {
       if (!LOG_CSV_URL) return;
 
@@ -1117,37 +1147,37 @@
         }
 
         const lines = csvText.trim().split(/\r?\n/);
-        const dataRows = lines.slice(1).map(line => parseCSVLine(line));
+        const parsedRows = lines.slice(1).map(line => {
+          const cols = parseCSVLine(line);
+          return { cols, dateObj: parseGreekTimestamp(cols[0] || "") };
+        }).filter(r => r.dateObj !== null);
 
-        // Συγκρίνουμε τις τελευταίες 14 ώρες πραγματικού υετού (Στήλη C) με την πρόγνωση +24h (Στήλη G) από 24 σειρές πριν
-        const count = Math.min(14, Math.max(0, dataRows.length - 24));
+        const recentRows = parsedRows.slice(-14);
         const labels = [];
         const actualData = [];
-        const predData = [];
+        const pred24Data = [];
         let sumActual = 0;
-        let sumPred = 0;
+        let sumPred24 = 0;
 
-        for (let i = dataRows.length - count; i < dataRows.length; i++) {
-          const actualCols = dataRows[i];
-          const forecastCols = dataRows[i - 24];
+        for (const row of recentRows) {
+          const actualCols = row.cols;
+          const tMs = row.dateObj.getTime();
+          const f24Cols = findClosestForecastRow(parsedRows, tMs - 24 * 3600 * 1000);
 
-          const timestamp = actualCols[0] || "";
-          const timeMatch = timestamp.match(/(\d{1,2}):\d{2}/);
-          if (!timeMatch) continue;
-
-          const hourLabel = timeMatch[1].padStart(2, '0') + ":00";
+          const hourLabel = String(row.dateObj.getHours()).padStart(2, '0') + ":00";
           const actualMm = parseFloat((actualCols[2] || "0").replace(",", ".")) || 0;
-          const predMm = parseFloat((forecastCols[6] || "0").replace(",", ".")) || 0;
+          // Στήλη S (index 18) = Υβριδικός Υετός +24h
+          const pred24Mm = f24Cols ? (parseFloat((f24Cols[18] || "0").replace(",", ".")) || 0) : 0;
 
           labels.push(hourLabel);
           actualData.push(actualMm);
-          predData.push(predMm);
+          pred24Data.push(pred24Mm);
           sumActual += actualMm;
-          sumPred += predMm;
+          sumPred24 += pred24Mm;
         }
 
         document.getElementById('precipVerifySummary').innerText =
-          `Πρόβλεψη (+24h): ${sumPred.toFixed(1)} mm | Σταθμός: ${sumActual.toFixed(1)} mm`;
+          `Πρόβλεψη Υβριδικού +24H: ${sumPred24.toFixed(1)} mm | Πραγματική μέτρηση: ${sumActual.toFixed(1)} mm`;
 
         const ctx = document.getElementById('precipVerifyChart').getContext('2d');
         if (precipChartInstance) precipChartInstance.destroy();
@@ -1158,18 +1188,18 @@
             labels,
             datasets: [
               {
-                label: 'Πραγματικός Υετός ISAMAR38 (mm/h)',
-                data: actualData,
-                backgroundColor: 'rgba(16, 185, 129, 0.8)',
-                borderColor: '#34d399',
+                label: 'Πρόβλεψη Υβριδικού +24H',
+                data: pred24Data,
+                backgroundColor: 'rgba(56, 189, 248, 0.65)',
+                borderColor: '#38bdf8',
                 borderWidth: 1,
                 borderRadius: 4
               },
               {
-                label: 'Πρόβλεψη Μοντέλου +24h (mm/h)',
-                data: predData,
-                backgroundColor: 'rgba(56, 189, 248, 0.45)',
-                borderColor: '#38bdf8',
+                label: 'Πραγματική μέτρηση',
+                data: actualData,
+                backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                borderColor: '#34d399',
                 borderWidth: 1,
                 borderRadius: 4
               }
@@ -1180,7 +1210,12 @@
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
-              legend: { labels: { color: '#cbd5e1', font: { size: 11 } } }
+              legend: { labels: { color: '#cbd5e1', font: { size: 11 } } },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)} mm`
+                }
+              }
             },
             scales: {
               x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
