@@ -767,12 +767,12 @@
   <div class="panel">
     <div class="panel-header">
       <span>🗺️ ΧΑΡΤΗΣ ΥΕΤΟΥ 3ΩΡΟΥ (VENTUSKY • ECMWF HRES)</span>
-      <a href="https://www.ventusky.com/el/%CF%85%CE%B5%CF%84%CF%8C%CF%82-%CF%87%CE%AC%CF%81%CF%84%CE%B7%82/3-%CF%8E%CF%81%CE%B5%CF%82#p=40.10;21.02;8&m=ecmwf_hres" target="_blank" rel="noopener" class="mg-btn" style="text-decoration:none;">Άνοιγμα σε πλήρη οθόνη ↗</a>
+      <a href="https://www.ventusky.com/el/%CF%85%CE%B5%CF%84%CF%8C%CF%82-%CF%87%CE%AC%CF%81%CF%84%CE%B7%CF%82/3-%CF%8E%CF%81%CE%B5%CF%82#p=40.10;21.02;8&m=ecmwf_hres" target="_blank" rel="noopener" class="mg-btn" style="text-decoration:none;">Άνοιγμα σε πλήρη οθόνη ↗</a>
     </div>
     <iframe
       id="ventuskyMap"
       class="ventusky-frame"
-      src="https://www.ventusky.com/el/%CF%85%CE%B5%CF%84%CF%8C%CF%82-%CF%87%CE%AC%CF%81%CF%84%CE%B7%82/3-%CF%8E%CF%81%CE%B5%CF%82#p=40.10;21.02;8&m=ecmwf_hres"
+      src="https://www.ventusky.com/el/%CF%85%CE%B5%CF%84%CF%8C%CF%82-%CF%87%CE%AC%CF%81%CF%84%CE%B7%CF%82/3-%CF%8E%CF%81%CE%B5%CF%82#p=40.10;21.02;8&m=ecmwf_hres"
       loading="lazy"
       title="Χάρτης Υετού Ventusky (ECMWF)">
     </iframe>
@@ -1032,7 +1032,6 @@
           }
         }
 
-        // Σύγκριση ECMWF vs ICON (προτεραιότητα στο +12h, αλλιώς +6h)
         let cardModelsHtml = '';
         const use12h = (statsMap["+12h_ECMWF"]?.count >= 1 && statsMap["+12h_ICON"]?.count >= 1);
         const hLabel = use12h ? "+12h" : "+6h";
@@ -1118,32 +1117,37 @@
         }
 
         const lines = csvText.trim().split(/\r?\n/);
-        const recentRows = lines.slice(1).slice(-14);
+        const dataRows = lines.slice(1).map(line => parseCSVLine(line));
+
+        // Συγκρίνουμε τις τελευταίες 14 ώρες πραγματικού υετού (Στήλη C) με την πρόγνωση +24h (Στήλη G) από 24 σειρές πριν
+        const count = Math.min(14, Math.max(0, dataRows.length - 24));
         const labels = [];
         const actualData = [];
         const predData = [];
         let sumActual = 0;
         let sumPred = 0;
 
-        recentRows.forEach(line => {
-          const cols = parseCSVLine(line);
-          const timestamp = cols[0] || "";
+        for (let i = dataRows.length - count; i < dataRows.length; i++) {
+          const actualCols = dataRows[i];
+          const forecastCols = dataRows[i - 24];
+
+          const timestamp = actualCols[0] || "";
           const timeMatch = timestamp.match(/(\d{1,2}):\d{2}/);
-          if (!timeMatch) return;
+          if (!timeMatch) continue;
 
           const hourLabel = timeMatch[1].padStart(2, '0') + ":00";
-          const actualMm = parseFloat((cols[2] || "0").replace(",", ".")) || 0;
-          const predMm = parseFloat((cols[5] || cols[6] || "0").replace(",", ".")) || 0;
+          const actualMm = parseFloat((actualCols[2] || "0").replace(",", ".")) || 0;
+          const predMm = parseFloat((forecastCols[6] || "0").replace(",", ".")) || 0;
 
           labels.push(hourLabel);
           actualData.push(actualMm);
           predData.push(predMm);
           sumActual += actualMm;
           sumPred += predMm;
-        });
+        }
 
         document.getElementById('precipVerifySummary').innerText =
-          `Πρόβλεψη: ${sumPred.toFixed(1)} mm | Σταθμός: ${sumActual.toFixed(1)} mm`;
+          `Πρόβλεψη (+24h): ${sumPred.toFixed(1)} mm | Σταθμός: ${sumActual.toFixed(1)} mm`;
 
         const ctx = document.getElementById('precipVerifyChart').getContext('2d');
         if (precipChartInstance) precipChartInstance.destroy();
@@ -1162,7 +1166,7 @@
                 borderRadius: 4
               },
               {
-                label: 'Πρόβλεψη Μοντέλου (mm/h)',
+                label: 'Πρόβλεψη Μοντέλου +24h (mm/h)',
                 data: predData,
                 backgroundColor: 'rgba(56, 189, 248, 0.45)',
                 borderColor: '#38bdf8',
