@@ -238,6 +238,26 @@
     .v-card.v-secondary {
       opacity: 0.88;
     }
+    .v-card.v-models {
+      grid-column: 1 / -1;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-left: 4px solid #38bdf8;
+      padding: 9px 12px;
+    }
+    .model-duel-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+      font-size: 0.82rem;
+    }
+    .model-winner {
+      color: #34d399;
+      font-weight: 700;
+    }
     .v-top-row {
       display: flex;
       justify-content: space-between;
@@ -667,6 +687,12 @@
             <div class="v-acc" style="color:#94a3b8; font-size:0.9rem;">Συλλογή δεδομένων...</div>
             <div class="v-mae">Σύνθεση ISAMAR38 + ICON + ECMWF</div>
           </div>
+          <div class="v-card v-models">
+            <div class="v-top-row">
+              <div class="v-horizon">⚔️ Μάχη Μοντέλων: ECMWF vs ICON</div>
+              <span style="font-size:0.75rem; color:#94a3b8;">Αναμονή πρώτων επαληθεύσεων...</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -731,12 +757,12 @@
   <div class="panel">
     <div class="panel-header">
       <span>🗺️ ΧΑΡΤΗΣ ΥΕΤΟΥ 3ΩΡΟΥ (VENTUSKY • ECMWF HRES)</span>
-      <a href="https://www.ventusky.com/el/%CF%85%CE%B5%CF%84%CF%8C%CF%82-%CF%87%CE%AC%CF%81%CF%84%CE%B7%82/3-%CF%8E%CF%81%CE%B5%CF%82#p=40.10;21.02;8&m=ecmwf_hres" target="_blank" rel="noopener" class="mg-btn" style="text-decoration:none;">Άνοιγμα σε πλήρη οθόνη ↗</a>
+      <a href="https://www.ventusky.com/el/%CF%85%CE%B5%CF%84%CF%8C%CF%82-%CF%87%CE%AC%CF%81%CF%84%CE%B7%CF%82/3-%CF%8E%CF%81%CE%B5%CF%82#p=40.10;21.02;8&m=ecmwf_hres" target="_blank" rel="noopener" class="mg-btn" style="text-decoration:none;">Άνοιγμα σε πλήρη οθόνη ↗</a>
     </div>
     <iframe
       id="ventuskyMap"
       class="ventusky-frame"
-      src="https://www.ventusky.com/el/%CF%85%CE%B5%CF%84%CF%8C%CF%82-%CF%87%CE%AC%CF%81%CF%84%CE%B7%82/3-%CF%8E%CF%81%CE%B5%CF%82#p=40.10;21.02;8&m=ecmwf_hres"
+      src="https://www.ventusky.com/el/%CF%85%CE%B5%CF%84%CF%8C%CF%82-%CF%87%CE%AC%CF%81%CF%84%CE%B7%CF%82/3-%CF%8E%CF%81%CE%B5%CF%82#p=40.10;21.02;8&m=ecmwf_hres"
       loading="lazy"
       title="Χάρτης Υετού Ventusky (ECMWF)">
     </iframe>
@@ -994,8 +1020,45 @@
           }
         }
 
+        // Σύγκριση ECMWF vs ICON (προτεραιότητα στο +12h, αλλιώς +6h)
+        let cardModelsHtml = '';
+        const use12h = (statsMap["+12h_ECMWF"]?.count >= 1 && statsMap["+12h_ICON"]?.count >= 1);
+        const hLabel = use12h ? "+12h" : "+6h";
+        const ecmwfM = use12h ? statsMap["+12h_ECMWF"] : statsMap["+6h_ECMWF"];
+        const iconM = use12h ? statsMap["+12h_ICON"] : statsMap["+6h_ICON"];
+
+        if (ecmwfM && iconM && ecmwfM.count >= 1 && iconM.count >= 1 && !isNaN(ecmwfM.mae) && !isNaN(iconM.mae)) {
+          const ecmwfWins = ecmwfM.mae < iconM.mae;
+          const iconWins = iconM.mae < ecmwfM.mae;
+          const winnerBadge = ecmwfWins
+            ? '<span class="model-winner">🏆 Προηγείται ECMWF</span>'
+            : (iconWins ? '<span class="model-winner">🏆 Προηγείται ICON</span>' : '<span style="color:#fbbf24;">🤝 Ισοπαλία</span>');
+
+          cardModelsHtml = `
+            <div class="v-card v-models">
+              <div class="v-top-row">
+                <div class="v-horizon">⚔️ Μάχη Μοντέλων (${hLabel} • ${ecmwfM.count} δείγμ.)</div>
+                ${winnerBadge}
+              </div>
+              <div class="model-duel-row">
+                <span class="${ecmwfWins ? 'model-winner' : ''}">🇪🇺 ECMWF: <b>${ecmwfM.accPct}%</b> (±${ecmwfM.mae.toFixed(2)}°C)</span>
+                <span class="${iconWins ? 'model-winner' : ''}">🇩🇪 ICON: <b>${iconM.accPct}%</b> (±${iconM.mae.toFixed(2)}°C)</span>
+              </div>
+            </div>
+          `;
+        } else {
+          cardModelsHtml = `
+            <div class="v-card v-models">
+              <div class="v-top-row">
+                <div class="v-horizon">⚔️ Μάχη Μοντέλων: ECMWF vs ICON</div>
+                <span style="font-size:0.75rem; color:#94a3b8;">Αναμονή πρώτων επαληθεύσεων...</span>
+              </div>
+            </div>
+          `;
+        }
+
         if (cardPrimaryHtml || cardSecondaryHtml) {
-          grid.innerHTML = cardPrimaryHtml + cardSecondaryHtml;
+          grid.innerHTML = cardPrimaryHtml + cardSecondaryHtml + cardModelsHtml;
           const extra12 = statsMap["+12h_HYB"] ? ` • Υβριδικό +12h: ${statsMap["+12h_HYB"].accPct}%` : '';
           const mosBadge = mosState.ready ? ' • MOS ✓' : '';
           document.getElementById('verifySample').innerText = `ISAMAR38 + ICON + ECMWF${extra12}${mosBadge}`;
