@@ -1606,12 +1606,28 @@
 
         let icon = '☀️';
         let desc = 'Αίθριος καιρός';
-        if (sumSnow >= 3.0) { icon = '❄️'; desc = 'Πυκνή χιονόπτωση'; }
-        else if (hasSnow) { icon = '🌨️'; desc = 'Χιονόπτωση / Χιονόνερο'; }
-        else if (sumPrecip >= 10) { icon = '⛈️'; desc = 'Ισχυρές βροχές'; }
-        else if (sumPrecip >= 1.5) { icon = '🌧️'; desc = 'Βροχοπτώσεις'; }
-        else if (sumPrecip >= 0.3) { icon = '🌦️'; desc = 'Τοπικές βροχές'; }
-        else if (maxCloud >= 65) { icon = '⛅'; desc = 'Νεφώσεις'; }
+        if (sumSnow >= 15.0) {
+          icon = '❄️';
+          desc = 'Πυκνή χιονόπτωση';
+        } else if (sumSnow >= 3.0) {
+          icon = '❄️';
+          desc = maxT > 1.5 ? 'Χιονόπτωση / Χιονόνερο' : 'Χιονόπτωση';
+        } else if (hasSnow) {
+          icon = '🌨️';
+          desc = 'Ασθενής χιονόπτωση / Χιονόνερο';
+        } else if (sumPrecip >= 10) {
+          icon = '⛈️';
+          desc = 'Ισχυρές βροχές';
+        } else if (sumPrecip >= 1.5) {
+          icon = '🌧️';
+          desc = 'Βροχοπτώσεις';
+        } else if (sumPrecip >= 0.3) {
+          icon = '🌦️';
+          desc = 'Τοπικές βροχές';
+        } else if (maxCloud >= 65) {
+          icon = '⛅';
+          desc = 'Νεφώσεις';
+        }
 
         const snowPeakText = snowHours.length > 0
           ? `Ώρες χιονιού: ${snowHours[0]}–${snowHours[snowHours.length - 1]}`
