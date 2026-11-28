@@ -738,7 +738,7 @@
   <div class="top-bar">
     <div class="title">
       <h1>🏔️ ΣΑΜΑΡΙΝΑ ΓΡΕΒΕΝΩΝ (1.450μ.) — LIVE WEATHER</h1>
-      <span>Σταθμός: Bresser 5-in-1 (ISAMAR38) | Κάμερα: Σαμαρίνα Χωριό | Σύνθεση: ISAMAR38 + ICON + ECMWF (MOS & Wet-Bulb)</span>
+      <span>Σταθμός: Bresser 5-in-1 (ISAMAR38) | Κάμερες: Σαμαρίνα Βουνό & Χωριό | Σύνθεση: ISAMAR38 + ICON + ECMWF (MOS & Wet-Bulb)</span>
     </div>
     <div class="top-badges">
       <div id="roadStatus" class="alert-box">🛣️ Έλεγχος δρόμου...</div>
@@ -753,13 +753,18 @@
     <div class="panel">
       <div class="panel-header">
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-          <span><span class="live-badge">● LIVE</span> ΚΑΜΕΡΑ ΣΑΜΑΡΙΝΑ ΧΩΡΙΟ</span>
+          <span><span class="live-badge" id="camLiveDot">● LIVE</span> <span id="camTitleLabel">ΚΑΜΕΡΑ ΣΑΜΑΡΙΝΑ ΒΟΥΝΟ</span></span>
+          <button type="button" class="mg-btn active" id="btnCamVouno" onclick="switchCam('vouno')">⛰️ Βουνό</button>
+          <button type="button" class="mg-btn" id="btnCamChorio" onclick="switchCam('chorio')">🏘️ Χωριό</button>
           <a href="smolikas-3d.html" target="_blank" style="display:inline-flex; align-items:center; gap:5px; padding:2px 9px; background:rgba(56,189,248,0.16); border:1px solid rgba(56,189,248,0.45); color:#7dd3fc; border-radius:6px; text-decoration:none; font-size:0.74rem; font-weight:700;">🏔️ 3D ΣΜΟΛΙΚΑΣ</a>
         </div>
-        <span id="clock" style="font-size:0.82rem; color:#94a3b8;"></span>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span id="camFreezeBadge" style="display:none; font-size:0.74rem; font-weight:700; color:#fbbf24; background:rgba(251,191,36,0.15); border:1px solid rgba(251,191,36,0.4); padding:2px 7px; border-radius:5px;">⚠️ Πιθανό πάγωμα ροής</span>
+          <span id="clock" style="font-size:0.82rem; color:#94a3b8;"></span>
+        </div>
       </div>
       <div class="cam-wrapper">
-        <img id="liveCamImg" class="cam-img" src="https://www.forecastweather.gr/images/photo_camera/photo_41.jpg" alt="Κάμερα Σαμαρίνα Χωριό">
+        <img id="liveCamImg" class="cam-img" src="https://www.forecastweather.gr/images/photo_camera/photo_303.jpg" alt="Κάμερα Σαμαρίνα Βουνό">
       </div>
     </div>
 
@@ -1045,6 +1050,61 @@
     };
 
     /* ============================================================
+       ΔΙΑΧΕΙΡΙΣΗ LIVE ΚΑΜΕΡΩΝ (ΒΟΥΝΟ / ΧΩΡΙΟ + ΕΛΕΓΧΟΣ ΠΑΓΩΜΑΤΟΣ)
+       ============================================================ */
+    const CAMS = {
+      vouno: {
+        title: "ΚΑΜΕΡΑ ΣΑΜΑΡΙΝΑ ΒΟΥΝΟ",
+        url: "https://www.forecastweather.gr/images/photo_camera/photo_303.jpg"
+      },
+      chorio: {
+        title: "ΚΑΜΕΡΑ ΣΑΜΑΡΙΝΑ ΧΩΡΙΟ",
+        url: "https://www.forecastweather.gr/images/photo_camera/photo_41.jpg"
+      }
+    };
+
+    let activeCamKey = 'vouno';
+    let lastCamByteLength = 0;
+    let unchangedCount = 0;
+
+    function refreshLiveCam() {
+      const img = document.getElementById('liveCamImg');
+      if (!img) return;
+      const baseUrl = CAMS[activeCamKey].url;
+      img.src = `${baseUrl}?v=${Date.now()}`;
+    }
+
+    function switchCam(key) {
+      if (!CAMS[key]) return;
+      activeCamKey = key;
+      unchangedCount = 0;
+      lastCamByteLength = 0;
+      document.getElementById('camFreezeBadge').style.display = 'none';
+      document.getElementById('camTitleLabel').innerText = CAMS[key].title;
+      document.getElementById('btnCamVouno').classList.toggle('active', key === 'vouno');
+      document.getElementById('btnCamChorio').classList.toggle('active', key === 'chorio');
+      refreshLiveCam();
+    }
+
+    const camImgEl = document.getElementById('liveCamImg');
+    if (camImgEl) {
+      camImgEl.addEventListener('load', () => {
+        const resEntries = performance.getEntriesByName(camImgEl.src);
+        const size = resEntries.length ? resEntries[resEntries.length - 1].encodedBodySize : 0;
+        if (size > 0 && size === lastCamByteLength) {
+          unchangedCount++;
+        } else {
+          unchangedCount = 0;
+          if (size > 0) lastCamByteLength = size;
+        }
+        const freezeEl = document.getElementById('camFreezeBadge');
+        if (freezeEl) {
+          freezeEl.style.display = unchangedCount >= 40 ? 'inline-block' : 'none';
+        }
+      });
+    }
+
+    /* ============================================================
        ΒΕΛΤΙΩΜΕΝΟΣ ΤΟΠΙΚΟΣ ΔΥΝΑΜΙΚΟΣ ΧΑΡΤΗΣ (ΟΜΑΛΕΣ ΔΙΑΒΑΘΜΙΣΕΙΣ)
        ============================================================ */
     const SNOW_MAP_LAT = 40.1008;
@@ -1152,20 +1212,19 @@
       };
 
       const valleyCm = item.cumSnow || 0;
-      const realValleyCm = Number((valleyCm * 0.36).toFixed(1)); // Εμπειρική διόρθωση σταθμού (~1/3)
+      const realValleyCm = Number((valleyCm * 0.36).toFixed(1));
       const mountainCm = valleyCm > 0
         ? Number((valleyCm * 1.45 + 1.5).toFixed(1))
         : (item.precip > 0 && item.wetBulb <= 2.4 ? Number((item.precip * 0.95).toFixed(1)) : 0);
       const lowerExitCm = valleyCm > 0 ? Number((valleyCm * 0.55).toFixed(1)) : 0;
 
-      // 3. ΟΜΑΛΟ ΥΨΟΜΕΤΡΙΚΟ ΠΕΔΙΟ ΧΙΟΝΙΟΥ ΣΕ ΟΛΟ ΤΟ ΚΑΔΡΟ (Χωρίς σκληρές γραμμές)
+      // 3. ΟΜΑΛΟ ΥΨΟΜΕΤΡΙΚΟ ΠΕΔΙΟ ΧΙΟΝΙΟΥ ΣΕ ΟΛΟ ΤΟ ΚΑΔΡΟ
       const opMountain = snowOpacity(mountainCm);
       const opValley = snowOpacity(valleyCm);
       const opLower = snowOpacity(lowerExitCm);
 
       if (opMountain > 0 || opValley > 0) {
         ctx.save();
-        // Α. Γενική υψομετρική κλίση (από ψηλά Δυτικά/ΒΔ προς χαμηλότερα Ανατολικά/ΝΑ)
         const baseGrad = ctx.createLinearGradient(W * 0.08, H * 0.65, W * 0.95, H * 0.35);
         baseGrad.addColorStop(0.00, `rgba(241, 248, 255, ${opMountain})`);
         baseGrad.addColorStop(0.32, `rgba(224, 242, 254, ${(opMountain + opValley) * 0.48})`);
@@ -1175,7 +1234,6 @@
         ctx.fillStyle = baseGrad;
         ctx.fillRect(0, 0, W, H);
 
-        // Β. Ορογραφική ενίσχυση στις κορυφογραμμές Σμόλικα (κάτω-αριστερά) & Λαΐσκου (πάνω-αριστερά)
         const ridgeSpots = [
           { x: W * 0.16, y: H * 0.78, r: Math.max(W, H) * 0.48, op: opMountain * 0.55 },
           { x: W * 0.22, y: H * 0.14, r: Math.max(W, H) * 0.40, op: opMountain * 0.42 },
@@ -1194,7 +1252,7 @@
         ctx.restore();
       }
 
-      // 4. Διακριτικό, ημιδιαφανές περίγραμμα εμβέλειας σταθμού (χωρίς «κόψιμο» του χιονιού)
+      // 4. Διακριτικό περίγραμμα εμβέλειας σταθμού
       const rx = Math.min(W * 0.38, 340);
       const ry = Math.min(H * 0.41, 200);
 
@@ -1206,7 +1264,6 @@
       ctx.strokeStyle = "rgba(56, 189, 248, 0.55)";
       ctx.stroke();
 
-      // Εσωτερικός πυρήνας οικισμού
       ctx.beginPath();
       ctx.arc(cx, cy, Math.min(W, H) * 0.115, 0, Math.PI * 2);
       ctx.lineWidth = 1.3;
@@ -1264,7 +1321,7 @@
 
       ctx.restore();
 
-      // 7. Ενημέρωση HUD με Ωμή vs Ρεαλιστική εκτίμηση σταθμού
+      // 7. Ενημέρωση HUD
       const hud = document.getElementById('localMapHud');
       if (hud) {
         hud.innerHTML = `
@@ -2029,7 +2086,6 @@
       const dayObj = threeDayDataStore[idx];
       if (!dayObj) return;
 
-      // Συγχρονισμός του Τοπικού Χάρτη Χιονοκάλυψης με τη μεσημεριανή αιχμή της επιλεγμένης ημέρας
       if (typeof dayObj.middayHrs === 'number') {
         jumpSnowMapToHour(dayObj.middayHrs);
       }
@@ -2417,10 +2473,8 @@
     updateClock();
     setInterval(updateClock, 1000);
 
-    setInterval(() => {
-      const img = document.getElementById('liveCamImg');
-      img.src = 'https://www.forecastweather.gr/images/photo_camera/photo_41.jpg?v=' + Date.now();
-    }, 15000);
+    refreshLiveCam();
+    setInterval(refreshLiveCam, 15000);
 
     async function updateDashboard() {
       try {
@@ -2530,7 +2584,6 @@
             if (item.snow > 0) {
               runningCumSnow += item.snow;
             } else if (runningCumSnow > 0) {
-              // Διατήρηση + ρεαλιστική καθίζηση και τήξη όταν η θερμοκρασία ανεβαίνει
               if (item.temp > 1.5) {
                 const meltLoss = (item.temp - 1.5) * 0.35 + (item.precip > 0 ? item.precip * 0.25 : 0);
                 runningCumSnow = Math.max(0, runningCumSnow - meltLoss);
