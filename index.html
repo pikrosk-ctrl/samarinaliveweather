@@ -578,6 +578,16 @@
       height: 100%;
       display: block;
     }
+    .local-map-hud,
+    .local-map-time-pill {
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+    .map-overlays-hidden .local-map-hud,
+    .map-overlays-hidden .local-map-time-pill {
+      opacity: 0;
+      transform: translateY(-6px);
+      pointer-events: none;
+    }
     .local-map-hud {
       position: absolute;
       top: 12px;
@@ -594,6 +604,7 @@
       pointer-events: none;
       max-width: 315px;
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+      z-index: 2;
     }
     .local-map-hud b { color: #38bdf8; }
     .local-map-top-right {
@@ -605,6 +616,7 @@
       align-items: flex-end;
       gap: 7px;
       pointer-events: none;
+      z-index: 3;
     }
     .local-map-time-pill {
       background: rgba(15, 23, 42, 0.90);
@@ -616,6 +628,18 @@
       font-weight: 700;
       color: #e0f2fe;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+    @media (max-width: 768px) {
+      .local-map-hud {
+        max-width: 205px;
+        padding: 8px 10px;
+        font-size: 0.71rem;
+        line-height: 1.38;
+      }
+      .local-map-time-pill {
+        font-size: 0.67rem;
+        padding: 4px 8px;
+      }
     }
     .local-map-zoom-reset {
       pointer-events: auto;
@@ -981,7 +1005,7 @@
       </div>
     </div>
 
-    <div class="local-snow-map-wrap">
+    <div class="local-snow-map-wrap" id="localSnowMapWrap">
       <canvas id="localSnowCanvas" class="local-snow-canvas"></canvas>
 
       <div class="local-map-hud" id="localMapHud">
@@ -1158,6 +1182,29 @@
     }
 
     /* ============================================================
+       ΑΥΤΟΜΑΤΗ ΑΠΟΚΡΥΨΗ ΕΝΔΕΙΞΕΩΝ ΧΑΡΤΗ ΜΕΤΑ ΑΠΟ 2 ΔΕΥΤΕΡΟΛΕΠΤΑ (ΚΙΝΗΤΟ & PC)
+       ============================================================ */
+    let mapOverlayHideTimer = null;
+
+    function pulseMapOverlays(delayMs = 2000) {
+      const wrap = document.getElementById('localSnowMapWrap');
+      if (!wrap) return;
+
+      wrap.classList.remove('map-overlays-hidden');
+      clearTimeout(mapOverlayHideTimer);
+      mapOverlayHideTimer = setTimeout(() => {
+        wrap.classList.add('map-overlays-hidden');
+      }, delayMs);
+    }
+
+    const snowMapWrapEl = document.getElementById('localSnowMapWrap');
+    if (snowMapWrapEl) {
+      snowMapWrapEl.addEventListener('touchstart', () => pulseMapOverlays(2000), { passive: true });
+      snowMapWrapEl.addEventListener('click', () => pulseMapOverlays(2000));
+      snowMapWrapEl.addEventListener('mousemove', () => pulseMapOverlays(2000), { passive: true });
+    }
+
+    /* ============================================================
        ΒΕΛΤΙΩΜΕΝΟΣ ΤΟΠΙΚΟΣ ΔΥΝΑΜΙΚΟΣ ΧΑΡΤΗΣ (ZOOM + ZOOM 15 TILES + ΣΩΜΑΤΙΔΙΑ)
        ============================================================ */
     const SNOW_MAP_LAT = 40.1008;
@@ -1172,12 +1219,10 @@
     let snowMapPlayTimer = null;
     let currentSnowHourIdx = 0;
 
-    // Μεταβλητές κατάστασης ζουμ (δίπλα στις currentSnowHourIdx κ.λπ.)
     let snowMapZoom = 1;
     let snowMapCenterOnSamarina = false;
     let samarinaLabelBox = { x: 0, y: 0, w: 0, h: 0 };
 
-    // Ατμοσφαιρικά σωματίδια (έως 84 για δυναμική κλιμάκωση ανάλογα με την ένταση)
     const WEATHER_PARTICLES = Array.from({ length: 84 }, (_, i) => ({
       x: ((i * 97) % 1000) / 1000,
       y: ((i * 53) % 1000) / 1000,
@@ -1217,7 +1262,7 @@
             loadedCount++;
             if (loadedCount >= 8) {
               snowMapTilesReady = true;
-              drawLocalSnowMap(currentSnowHourIdx);
+              drawLocalSnowMap(currentSnowHourIdx, true);
             }
           };
           snowMapTiles.push({ img, dx, dy, fracX, fracY });
@@ -1225,7 +1270,6 @@
       }
     }
 
-    // Φόρτωση πλακιδίων zoom 15 όταν γίνεται ζουμ > 1.4
     function ensureHiResSnowMapTiles() {
       if (snowMapHiResRequested) return;
       snowMapHiResRequested = true;
@@ -1246,7 +1290,7 @@
           img.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${SNOW_MAP_HI_ZOOM}/${ty}/${tx}`;
           img.onload = () => {
             if (snowMapZoom > 1.4) {
-              drawLocalSnowMap(currentSnowHourIdx);
+              drawLocalSnowMap(currentSnowHourIdx, false);
             }
           };
           snowMapHiResTiles.push({ img, dx, dy, fracX, fracY });
@@ -1280,7 +1324,7 @@
         ensureHiResSnowMapTiles();
       }
       updateZoomUI();
-      drawLocalSnowMap(currentSnowHourIdx);
+      drawLocalSnowMap(currentSnowHourIdx, true);
     }
 
     function toggleSamarinaZoom() {
@@ -1295,7 +1339,6 @@
       setSamarinaZoom(1);
     }
 
-    // Περιορισμένη μέγιστη αδιαφάνεια (έως ~0.70) ώστε να διατηρείται το ανάγλυφο του εδάφους
     function snowOpacity(cm) {
       if (cm <= 0.1) return 0;
       if (cm < 1.5) return 0.18;
@@ -1305,7 +1348,7 @@
       return 0.70;
     }
 
-    function drawLocalSnowMap(hourIdx) {
+    function drawLocalSnowMap(hourIdx, triggerOverlayPulse = true) {
       const canvas = document.getElementById('localSnowCanvas');
       if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
@@ -1326,13 +1369,11 @@
       const cx = W * 0.50;
       const cy = H * 0.50;
 
-      // Μετασχηματισμός ζουμ γύρω από το κέντρο (cx, cy)
       ctx.save();
       ctx.translate(cx, cy);
       ctx.scale(snowMapZoom, snowMapZoom);
       ctx.translate(-cx, -cy);
 
-      // 1. Δορυφορικά πλακίδια (Esri World Imagery - Zoom 14 & Zoom 15 όταν ζουμάρεις > 1.4)
       ctx.fillStyle = "#0f172a";
       ctx.fillRect(0, 0, W, H);
 
@@ -1346,7 +1387,7 @@
       }
 
       if (snowMapZoom > 1.4 && snowMapHiResTiles.length > 0) {
-        const hiTileSize = 128; // Κάθε πλακίδιο zoom 15 καλύπτει το μισό πλάτος/ύψος του zoom 14
+        const hiTileSize = 128;
         for (const t of snowMapHiResTiles) {
           if (t.img.complete && t.img.naturalWidth > 0) {
             const drawX = cx + (t.dx - t.fracX) * hiTileSize;
@@ -1356,11 +1397,9 @@
         }
       }
 
-      // Ελαφριά ατμοσφαιρική σκίαση βάσης
       ctx.fillStyle = "rgba(11, 17, 32, 0.22)";
       ctx.fillRect(0, 0, W, H);
 
-      // 2. Δεδομένα επιλεγμένης ώρας (με αυστηρό Math.max(0, ...) ώστε να μην υπάρχουν αρνητικές τιμές)
       const item = latest72hSeries[hourIdx] || {
         hrs: hourIdx,
         time: "--:--",
@@ -1379,7 +1418,6 @@
         : (item.precip > 0 && item.wetBulb <= 2.4 ? Number((item.precip * 0.95).toFixed(1)) : 0));
       const lowerExitCm = Math.max(0, valleyCm > 0 ? Number((valleyCm * 0.55).toFixed(1)) : 0);
 
-      // 3. ΑΝΑΓΛΥΦΟ ΥΨΟΜΕΤΡΙΚΟ ΠΕΔΙΟ ΧΙΟΝΙΟΥ (Με διατήρηση κοιλάδων/δασών)
       const opMountain = snowOpacity(mountainCm);
       const opValley = snowOpacity(valleyCm);
       const opLower = snowOpacity(lowerExitCm);
@@ -1414,14 +1452,12 @@
         ctx.restore();
       }
 
-      // Ομαλή περιμετρική βινιέτα (#0f172a) ΠΡΙΝ σχεδιαστούν οι ετικέτες και ο δείκτης σταθμού
       const edgeVignette = ctx.createRadialGradient(cx, cy, Math.min(W, H) * 0.34, cx, cy, Math.max(W, H) * 0.72);
       edgeVignette.addColorStop(0, "rgba(15, 23, 42, 0)");
       edgeVignette.addColorStop(1, "rgba(15, 23, 42, 0.52)");
       ctx.fillStyle = edgeVignette;
       ctx.fillRect(0, 0, W, H);
 
-      // 4. Δυναμική κίνηση σωματιδίων ανάλογα με την ένταση (snow cm/h ή precip mm/h)
       if (item.snow > 0 || item.precip > 0) {
         const isSnowing = item.snow > 0 || item.wetBulb <= 0.8;
         const rateVal = isSnowing ? Math.max(0.2, item.snow) : Math.max(0.2, item.precip);
@@ -1452,7 +1488,6 @@
         ctx.restore();
       }
 
-      // 5. ΤΕΛΙΚΟ ΣΤΡΩΜΑ: Ζώνη ακρίβειας, διακριτικός κόκκινος κύκλος, ετικέτες & σταθμός (πάνω από κάθε overlay/βινιέτα)
       const rx = Math.min(W * 0.38, 340);
       const ry = Math.min(H * 0.41, 200);
 
@@ -1464,7 +1499,6 @@
       ctx.strokeStyle = "rgba(56, 189, 248, 0.72)";
       ctx.stroke();
 
-      // Πιο διακριτικό κόκκινο περίγραμμα με απαλό halo για αρμονία με το τοπίο
       ctx.shadowColor = "rgba(15, 23, 42, 0.78)";
       ctx.shadowBlur = 5;
       ctx.beginPath();
@@ -1475,7 +1509,6 @@
       ctx.stroke();
       ctx.restore();
 
-      // 6. Ετικέτες φυσικών ορίων στον χάρτη (τελικό στρώμα)
       ctx.font = "600 11px 'Segoe UI', sans-serif";
       ctx.textAlign = "center";
 
@@ -1503,7 +1536,6 @@
       drawMapTag(cx + rx * 0.78, cy + ry * 0.25, `Έξοδος προς Γρεβενά (~${lowerExitCm.toFixed(1)} cm)`);
       drawMapTag(Math.max(105, W * 0.15), H * 0.76, `Πλαγιές Σμόλικα (~${mountainCm.toFixed(1)} cm)`);
 
-      // 7. Σήμανση Σταθμού Αναφοράς: ΣΑΜΑΡΙΝΑ (1450m) + αποθήκευση περιοχής κλικ (samarinaLabelBox)
       ctx.save();
       ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
       ctx.shadowBlur = 8;
@@ -1535,11 +1567,9 @@
       ctx.fillText(stLabel, cx + 20, cy + 4);
       ctx.restore();
 
-      // Κλείσιμο zoom transform & dpr scale
       ctx.restore();
       ctx.restore();
 
-      // 8. Ενημέρωση HUD & χρονικής σήμανσης βήματος μέσα στον χάρτη
       const hud = document.getElementById('localMapHud');
       if (hud) {
         hud.innerHTML = `
@@ -1572,9 +1602,12 @@
         const el = document.getElementById('tick' + tk);
         if (el) el.classList.toggle('active-tick', tk === closestTick);
       });
+
+      if (triggerOverlayPulse) {
+        pulseMapOverlays(2000);
+      }
     }
 
-    // Ακρόαση κλικ & ροδέλας ποντικιού στο canvas (localSnowCanvas) για ζουμ στη Σαμαρίνα
     const snowCanvasEl = document.getElementById('localSnowCanvas');
     if (snowCanvasEl) {
       snowCanvasEl.addEventListener('mousemove', (e) => {
@@ -1641,7 +1674,7 @@
           if (p.x < 0) p.x += 1;
           if (p.x > 1) p.x -= 1;
         }
-        drawLocalSnowMap(currentSnowHourIdx);
+        drawLocalSnowMap(currentSnowHourIdx, false);
       }
       requestAnimationFrame(animateWeatherParticles);
     }
@@ -1649,7 +1682,7 @@
 
     function onSnowSliderChange(val) {
       currentSnowHourIdx = parseInt(val, 10) || 0;
-      drawLocalSnowMap(currentSnowHourIdx);
+      drawLocalSnowMap(currentSnowHourIdx, true);
     }
 
     function jumpSnowMapToHour(targetHrs) {
@@ -1658,7 +1691,7 @@
       currentSnowHourIdx = clamped;
       const slider = document.getElementById('snowTimeSlider');
       if (slider) slider.value = clamped;
-      drawLocalSnowMap(clamped);
+      drawLocalSnowMap(clamped, true);
     }
 
     function toggleSnowMapPlay() {
@@ -1667,15 +1700,17 @@
         clearInterval(snowMapPlayTimer);
         snowMapPlayTimer = null;
         btn.innerText = '▶';
+        pulseMapOverlays(2000);
         return;
       }
       btn.innerText = '⏸';
+      pulseMapOverlays(2000);
       snowMapPlayTimer = setInterval(() => {
         const maxIdx = Math.max(0, latest72hSeries.length - 1);
         currentSnowHourIdx = currentSnowHourIdx >= maxIdx ? 0 : currentSnowHourIdx + 1;
         const slider = document.getElementById('snowTimeSlider');
         if (slider) slider.value = currentSnowHourIdx;
-        drawLocalSnowMap(currentSnowHourIdx);
+        drawLocalSnowMap(currentSnowHourIdx, false);
       }, 650);
     }
 
@@ -2910,7 +2945,7 @@
         latest72hSeries = series72h;
         renderMeteogram(latestHourlySeries, meteogramStepHours);
         renderThreeDayForecast(stationState, iconHourly, ecmwfHourly);
-        drawLocalSnowMap(currentSnowHourIdx);
+        drawLocalSnowMap(currentSnowHourIdx, true);
 
         document.getElementById('dailyExtremes').innerHTML = `
           <span>📉 Ελάχ. Ημέρας: <b>${minDayT.toFixed(1)}°C</b>${minDayTime}</span>
@@ -3004,12 +3039,12 @@
     setupScrollHelpers('mgScrollContainer', 'btnMgPrev', 'btnMgNext');
     window.addEventListener('resize', () => {
       updateAllScrollButtons();
-      drawLocalSnowMap(currentSnowHourIdx);
+      drawLocalSnowMap(currentSnowHourIdx, false);
     });
 
     initSnowMapTiles();
     updateZoomUI();
-    drawLocalSnowMap(0);
+    drawLocalSnowMap(0, true);
 
     loadVerificationStats().finally(() => {
       updateDashboard();
