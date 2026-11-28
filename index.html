@@ -995,6 +995,7 @@
     </div>
   </div>
 
+  <!-- ΤΟΠΙΚΟΣ ΔΥΝΑΜΙΚΟΣ ΧΑΡΤΗΣ ΧΙΟΝΟΚΑΛΥΨΗΣ ΣΑΜΑΡΙΝΑΣ -->
   <div class="panel">
     <div class="panel-header">
       <span>❄️ ΤΟΠΙΚΟΣ ΔΥΝΑΜΙΚΟΣ ΧΑΡΤΗΣ ΧΙΟΝΟΚΑΛΥΨΗΣ: ΣΑΜΑΡΙΝΑ (1.450μ.)</span>
@@ -1094,7 +1095,7 @@
 
   <script>
     const WU_STATION_ID = "ISAMAR38";
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwWA6Ttv0VfLJYFi4yMbhNDAFf_16H0vCOkJHlUWDMlXsVu2xYab15UzObfvhjZ9UTJKw/exec";
+    const WU_API_KEY = "5c94ee0c13f240ec94ee0c13f2b0ecd9";
     const STATS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ_y9OVAjf5gRIJN7ZKm_OuR_fP5UFcu2YWX3XNU7PRxSouu3L2-kPh6Rk1u3VP-pdBjOTIo22t3mN/pub?gid=409751746&single=true&output=csv";
     const LOG_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQ_y9OVAjf5gRIJN7ZKm_OuR_fP5UFcu2YWX3XNU7PRxSouu3L2-kPh6Rk1u3VP-pdBjOTIo22t3mN/pub?gid=0&single=true&output=csv";
 
@@ -1125,12 +1126,9 @@
       orographicScale: 1.15
     };
 
-    function safeNum(val, fallback = 0) {
-      if (val === null || val === undefined || val === "") return fallback;
-      const n = Number(String(val).replace(",", "."));
-      return Number.isFinite(n) ? n : fallback;
-    }
-
+    /* ============================================================
+       ΔΙΑΧΕΙΡΙΣΗ LIVE ΚΑΜΕΡΩΝ (ΒΟΥΝΟ / ΧΩΡΙΟ + ΕΛΕΓΧΟΣ ΠΑΓΩΜΑΤΟΣ)
+       ============================================================ */
     const CAMS = {
       vouno: {
         title: "ΚΑΜΕΡΑ ΣΑΜΑΡΙΝΑ ΒΟΥΝΟ",
@@ -1183,6 +1181,9 @@
       });
     }
 
+    /* ============================================================
+       ΑΥΤΟΜΑΤΗ ΑΠΟΚΡΥΨΗ ΕΝΔΕΙΞΕΩΝ ΧΑΡΤΗ ΜΕΤΑ ΑΠΟ 2 ΔΕΥΤΕΡΟΛΕΠΤΑ (ΚΙΝΗΤΟ & PC)
+       ============================================================ */
     let mapOverlayHideTimer = null;
 
     function pulseMapOverlays(delayMs = 2000) {
@@ -1203,6 +1204,9 @@
       snowMapWrapEl.addEventListener('mousemove', () => pulseMapOverlays(2000), { passive: true });
     }
 
+    /* ============================================================
+       ΒΕΛΤΙΩΜΕΝΟΣ ΤΟΠΙΚΟΣ ΔΥΝΑΜΙΚΟΣ ΧΑΡΤΗΣ (ZOOM + ZOOM 15 TILES + ΣΩΜΑΤΙΔΙΑ)
+       ============================================================ */
     const SNOW_MAP_LAT = 40.1008;
     const SNOW_MAP_LON = 21.0155;
     const SNOW_MAP_ZOOM = 14;
@@ -1780,8 +1784,7 @@
 
     function degToCompass(num) {
       if (num === null || num === undefined || isNaN(num)) return "--";
-      const norm = ((Number(num) % 360) + 360) % 360;
-      const val = Math.floor((norm / 22.5) + 0.5);
+      const val = Math.floor((num / 22.5) + 0.5);
       const arr = ["Β", "ΒΒΑ", "ΒΑ", "ΑΒΑ", "Α", "ΑΝΑ", "ΝΑ", "ΝΝΑ", "Ν", "ΝΝΔ", "ΝΔ", "ΔΝΔ", "Δ", "ΔΒΔ", "ΒΔ", "ΒΒΔ"];
       return arr[(val % 16)];
     }
@@ -2807,101 +2810,87 @@
 
     async function updateDashboard() {
       try {
-        const liveUrl = `${GAS_WEB_APP_URL}?mode=live&t=${Date.now()}`;
-        const liveRes = await fetch(liveUrl, { cache: "no-store" });
-        if (!liveRes.ok) throw new Error(`Endpoint Live HTTP ${liveRes.status}`);
-        const liveData = await liveRes.json();
-        const obs = liveData?.observation;
-        if (!obs || !obs.metric) {
-          throw new Error(liveData?.error || "Δεν υπάρχουν διαθέσιμες μετρήσεις από τον σταθμό ISAMAR38");
-        }
+        const wuUrl = `https://api.weather.com/v2/pws/observations/current?stationId=${WU_STATION_ID}&format=json&units=m&numericPrecision=decimal&apiKey=${WU_API_KEY}`;
+        const wuRes = await fetch(wuUrl);
+        if (!wuRes.ok) throw new Error(`Σταθμός WU HTTP ${wuRes.status}`);
+        const wuData = await wuRes.json();
+        const obs = wuData?.observations?.[0];
+        if (!obs || !obs.metric) throw new Error("Δεν υπάρχουν διαθέσιμες μετρήσεις από τον σταθμό ISAMAR38");
 
-        const m = obs.metric;
-        const temp = safeNum(m.temp, 0);
-        const dew = safeNum(m.dewpt, temp);
-        const press = safeNum(m.pressure, 1013);
-        const hum = safeNum(obs.humidity ?? m.humidity, 50);
-        const wind = safeNum(m.windSpeed, 0);
-        const gust = safeNum(m.windGust, wind);
-        const dir = safeNum(obs.winddir ?? m.winddir, 0);
-        const rain = safeNum(m.precipTotal, 0);
-        const rate = safeNum(m.precipRate, 0);
-        const chill = safeNum(m.windChill, calcWindChill(temp, wind));
+        const temp = obs.metric.temp ?? 0;
+        const dew = obs.metric.dewpt ?? temp;
+        const press = obs.metric.pressure ?? 1013;
+        const hum = obs.humidity ?? 50;
+        const wind = obs.metric.windSpeed ?? 0;
+        const gust = obs.metric.windGust ?? wind;
+        const dir = obs.winddir ?? 0;
+        const rain = obs.metric.precipTotal ?? 0;
+        const rate = obs.metric.precipRate ?? 0;
+        const chill = obs.metric.windChill ?? calcWindChill(temp, wind);
         const wetBulbNow = calcWetBulb(temp, hum);
         const spread = temp - dew;
 
         let trend = 0;
         let trendLabel = "--";
-        if (typeof liveData.trend3h === "number" && !isNaN(liveData.trend3h) && liveData.trend3h !== 0) {
-          trend = liveData.trend3h;
-          trendLabel = `${trend >= 0 ? '+' : ''}${trend.toFixed(1)} hPa`;
-        } else {
-          try {
-            let hist = JSON.parse(localStorage.getItem('isamar38_p') || '[]');
-            const nowTs = Date.now();
-            hist.push({ t: nowTs, p: press });
-            hist = hist.filter(x => (nowTs - x.t) <= 3 * 3600 * 1000);
-            localStorage.setItem('isamar38_p', JSON.stringify(hist));
-            const elapsedHrs = (nowTs - hist[0].t) / (3600 * 1000);
-            if (elapsedHrs >= 0.25) {
-              trend = ((press - hist[0].p) / elapsedHrs) * 3;
-              trendLabel = `${trend >= 0 ? '+' : ''}${trend.toFixed(1)} hPa`;
-            } else {
-              trend = 0;
-              trendLabel = "σταθερή";
-            }
-          } catch (err) {
+        try {
+          let hist = JSON.parse(localStorage.getItem('isamar38_p') || '[]');
+          const nowTs = Date.now();
+          hist.push({ t: nowTs, p: press });
+          hist = hist.filter(x => (nowTs - x.t) <= 3 * 3600 * 1000);
+          localStorage.setItem('isamar38_p', JSON.stringify(hist));
+          const elapsedHrs = (nowTs - hist[0].t) / (3600 * 1000);
+          if (elapsedHrs >= 0.25) {
+            trend = ((press - hist[0].p) / elapsedHrs) * 3;
+            trendLabel = `${trend >= 0 ? '+' : ''}${trend.toFixed(1)} hPa`;
+          } else {
             trend = 0;
-            trendLabel = "--";
+            trendLabel = "σταθερή";
           }
+        } catch (err) {
+          trend = 0;
+          trendLabel = "--";
         }
 
         document.getElementById('stTemp').innerText = `${temp.toFixed(1)}°C`;
         document.getElementById('stDew').innerText = `Σημ. Δρόσου: ${dew.toFixed(1)}°C`;
         document.getElementById('stPress').innerText = `${press.toFixed(1)} hPa`;
         document.getElementById('stTrend').innerText = `Τάση 3ωρου: ${trendLabel}`;
-        document.getElementById('stHum').innerText = `${Math.round(hum)}%`;
+        document.getElementById('stHum').innerText = `${hum}%`;
         document.getElementById('stSpread').innerText = `Απόσταση: ${spread.toFixed(1)}°C`;
-        document.getElementById('stWind').innerText = `${Math.round(wind)} km/h`;
-        document.getElementById('stDir').innerText = `Διεύθ.: ${degToCompass(dir)} (${Math.round(dir)}°)`;
+        document.getElementById('stWind').innerText = `${wind} km/h`;
+        document.getElementById('stDir').innerText = `Διεύθ.: ${degToCompass(dir)} (${dir}°)`;
         document.getElementById('stRain').innerText = `${rain} mm`;
         document.getElementById('stRate').innerText = `Ρυθμός: ${rate} mm/h`;
         document.getElementById('stChill').innerText = `${chill.toFixed(1)}°C`;
         document.getElementById('stFl').innerText = `Υγρό Θερμ.: ${wetBulbNow.toFixed(1)}°C`;
-
-        const obsTimeStr = obs.obsTimeLocal
-          ? String(obs.obsTimeLocal).slice(11, 16)
-          : new Date().toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
-        const offlineSuffix = liveData.online === false ? ` • Εκτός (${liveData.ageMinutes || '?'}')` : '';
-        document.getElementById('lastUpdate').innerText = `Ενημ.: ${obsTimeStr}${offlineSuffix}`;
+        document.getElementById('lastUpdate').innerText = `Ενημ.: ${new Date().toLocaleTimeString('el-GR', {hour:'2-digit', minute:'2-digit'})}`;
 
         let minDayT = temp, maxDayT = temp, maxDayGust = gust;
         let minDayTime = "", maxDayTime = "";
-        if (Array.isArray(liveData.dayObservations) && liveData.dayObservations.length > 0) {
-          minDayT = Infinity; maxDayT = -Infinity; maxDayGust = 0;
-          liveData.dayObservations.forEach(o => {
-            if (!o.metric) return;
-            const tVal = safeNum(o.metric.tempLow ?? o.metric.tempAvg, temp);
-            const tHigh = safeNum(o.metric.tempHigh ?? o.metric.tempAvg, temp);
-            const gVal = safeNum(o.metric.windgustHigh ?? o.metric.windspeedHigh, 0);
-            const timeLabel = o.obsTimeLocal ? String(o.obsTimeLocal).slice(11, 16) : "";
-            if (tVal < minDayT) { minDayT = tVal; minDayTime = timeLabel ? ` (${timeLabel})` : ""; }
-            if (tHigh > maxDayT) { maxDayT = tHigh; maxDayTime = timeLabel ? ` (${timeLabel})` : ""; }
-            if (gVal > maxDayGust) { maxDayGust = gVal; }
-          });
-          if (!isFinite(minDayT)) minDayT = temp;
-          if (!isFinite(maxDayT)) maxDayT = temp;
-        }
-
-        let iconHourly = null;
-        let ecmwfHourly = null;
         try {
-          const modelsRes = await fetchModelsWithCache();
-          iconHourly = modelsRes.iconHourly;
-          ecmwfHourly = modelsRes.ecmwfHourly;
-        } catch (modelErr) {
-          console.warn("Αποτυχία λήψης εξωτερικών μοντέλων:", modelErr);
-        }
+          const dayUrl = `https://api.weather.com/v2/pws/observations/all/1day?stationId=${WU_STATION_ID}&format=json&units=m&numericPrecision=decimal&apiKey=${WU_API_KEY}`;
+          const dayRes = await fetch(dayUrl);
+          if (dayRes.ok) {
+            const dayData = await dayRes.json();
+            if (Array.isArray(dayData?.observations) && dayData.observations.length > 0) {
+              minDayT = Infinity; maxDayT = -Infinity; maxDayGust = 0;
+              dayData.observations.forEach(o => {
+                if (!o.metric) return;
+                const tVal = o.metric.tempLow ?? o.metric.tempAvg ?? temp;
+                const tHigh = o.metric.tempHigh ?? o.metric.tempAvg ?? temp;
+                const gVal = o.metric.windgustHigh ?? o.metric.windspeedHigh ?? 0;
+                const timeLabel = o.obsTimeLocal ? o.obsTimeLocal.slice(11, 16) : "";
+                if (tVal < minDayT) { minDayT = tVal; minDayTime = timeLabel ? ` (${timeLabel})` : ""; }
+                if (tHigh > maxDayT) { maxDayT = tHigh; maxDayTime = timeLabel ? ` (${timeLabel})` : ""; }
+                if (gVal > maxDayGust) { maxDayGust = gVal; }
+              });
+              if (!isFinite(minDayT)) minDayT = temp;
+              if (!isFinite(maxDayT)) maxDayT = temp;
+            }
+          }
+        } catch (err) {}
+
+        const { iconHourly, ecmwfHourly } = await fetchModelsWithCache();
 
         const stationState = { temp, dew, press, hum, wind, gust, dir, rain, rate, chill, trend };
         const hourlySeries = [];
@@ -2961,7 +2950,7 @@
         document.getElementById('dailyExtremes').innerHTML = `
           <span>📉 Ελάχ. Ημέρας: <b>${minDayT.toFixed(1)}°C</b>${minDayTime}</span>
           <span>📈 Μέγ. Ημέρας: <b>${maxDayT.toFixed(1)}°C</b>${maxDayTime}</span>
-          <span>💨 Μέγ. Ριπή: <b>${Math.round(maxDayGust)} km/h</b></span>
+          <span>💨 Μέγ. Ριπή: <b>${maxDayGust} km/h</b></span>
           <span>❄️ Εκτιμ. Νέο Χιόνι (24h): <b>${estSnowCm24.toFixed(1)} cm</b></span>
         `;
 
@@ -3025,7 +3014,7 @@
           diagText = `🌦️ <b>Ασταθής καιρός με τοπικές βροχές (${modelsStatus}):</b> Ο σταθμός ISAMAR38 μετρά ${temp.toFixed(1)}°C και πίεση ${press.toFixed(1)} hPa, με ασθενή/παροδικό υετό ~${totalPrecip24.toFixed(1)} mm στη σύνθεση ICON & ECMWF. ${minTemp24 <= 0.5 ? 'Προσοχή σε παγετό τη νύχτα (ελάχ. ' + minTemp24.toFixed(1) + '°C).' : ''}`;
         } else if (spread <= 1.5 && wind < 6 && hum >= 90) {
           topAlert.innerText = `🌫️ ΟΜΙΧΛΗ / ΧΑΜΗΛΗ ΝΕΦΩΣΗ`;
-          diagText = `🌫️ <b>Υψηλή υγρασία κοντά σε κορεσμό (${modelsStatus}):</b> Θερμοκρασία ${temp.toFixed(1)}°C και Σημείο Δρόσου ${dew.toFixed(1)}°C (απόσταση ${spread.toFixed(1)}°C) με υγρασία ${Math.round(hum)}%.`;
+          diagText = `🌫️ <b>Υψηλή υγρασία κοντά σε κορεσμό (${modelsStatus}):</b> Θερμοκρασία ${temp.toFixed(1)}°C και Σημείο Δρόσου ${dew.toFixed(1)}°C (απόσταση ${spread.toFixed(1)}°C) με υγρασία ${hum}%.`;
         } else if (gust >= 55) {
           topAlert.classList.add('alert-storm');
           topAlert.innerText = `💨 ΙΣΧΥΡΟΙ ΑΝΕΜΟΙ (${Math.round(gust)} km/h)`;
