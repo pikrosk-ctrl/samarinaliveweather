@@ -1126,6 +1126,12 @@
       orographicScale: 1.15
     };
 
+    function safeNum(val, fallback = 0) {
+      if (val === null || val === undefined || val === "") return fallback;
+      const n = Number(String(val).replace(",", "."));
+      return Number.isFinite(n) ? n : fallback;
+    }
+
     /* ============================================================
        ΔΙΑΧΕΙΡΙΣΗ LIVE ΚΑΜΕΡΩΝ (ΒΟΥΝΟ / ΧΩΡΙΟ + ΕΛΕΓΧΟΣ ΠΑΓΩΜΑΤΟΣ)
        ============================================================ */
@@ -2818,16 +2824,17 @@
         const obs = liveData?.observation;
         if (!obs || !obs.metric) throw new Error("Δεν υπάρχουν διαθέσιμες μετρήσεις από τον σταθμό ISAMAR38");
 
-        const temp = Number(obs.metric.temp ?? 0);
-        const dew = Number(obs.metric.dewpt ?? temp);
-        const press = Number(obs.metric.pressure ?? 1013);
-        const hum = Number(obs.humidity ?? 50);
-        const wind = Number(obs.metric.windSpeed ?? 0);
-        const gust = Number(obs.metric.windGust ?? wind);
-        const dir = Number(obs.winddir ?? 0);
-        const rain = Number(obs.metric.precipTotal ?? 0);
-        const rate = Number(obs.metric.precipRate ?? 0);
-        const chill = Number(obs.metric.windChill ?? calcWindChill(temp, wind));
+        const m = obs.metric;
+        const temp = safeNum(m.temp, 0);
+        const dew = safeNum(m.dewpt, temp);
+        const press = safeNum(m.pressure, 1013);
+        const hum = safeNum(obs.humidity ?? m.humidity, 50);
+        const wind = safeNum(m.windSpeed, 0);
+        const gust = safeNum(m.windGust, wind);
+        const dir = safeNum(obs.winddir ?? m.winddir, 0);
+        const rain = safeNum(m.precipTotal, 0);
+        const rate = safeNum(m.precipRate, 0);
+        const chill = safeNum(m.windChill, calcWindChill(temp, wind));
         const wetBulbNow = calcWetBulb(temp, hum);
         const spread = temp - dew;
 
@@ -2857,14 +2864,15 @@
           }
         }
 
+        // Άμεση ενημέρωση των live πλακιδίων του σταθμού ISAMAR38
         document.getElementById('stTemp').innerText = `${temp.toFixed(1)}°C`;
         document.getElementById('stDew').innerText = `Σημ. Δρόσου: ${dew.toFixed(1)}°C`;
         document.getElementById('stPress').innerText = `${press.toFixed(1)} hPa`;
         document.getElementById('stTrend').innerText = `Τάση 3ωρου: ${trendLabel}`;
-        document.getElementById('stHum').innerText = `${hum}%`;
+        document.getElementById('stHum').innerText = `${Math.round(hum)}%`;
         document.getElementById('stSpread').innerText = `Απόσταση: ${spread.toFixed(1)}°C`;
-        document.getElementById('stWind').innerText = `${wind} km/h`;
-        document.getElementById('stDir').innerText = `Διεύθ.: ${degToCompass(dir)} (${dir}°)`;
+        document.getElementById('stWind').innerText = `${Math.round(wind)} km/h`;
+        document.getElementById('stDir').innerText = `Διεύθ.: ${degToCompass(dir)} (${Math.round(dir)}°)`;
         document.getElementById('stRain').innerText = `${rain} mm`;
         document.getElementById('stRate').innerText = `Ρυθμός: ${rate} mm/h`;
         document.getElementById('stChill').innerText = `${chill.toFixed(1)}°C`;
@@ -2882,10 +2890,10 @@
           minDayT = Infinity; maxDayT = -Infinity; maxDayGust = 0;
           liveData.dayObservations.forEach(o => {
             if (!o.metric) return;
-            const tVal = o.metric.tempLow ?? o.metric.tempAvg ?? temp;
-            const tHigh = o.metric.tempHigh ?? o.metric.tempAvg ?? temp;
-            const gVal = o.metric.windgustHigh ?? o.metric.windspeedHigh ?? 0;
-            const timeLabel = o.obsTimeLocal ? o.obsTimeLocal.slice(11, 16) : "";
+            const tVal = safeNum(o.metric.tempLow ?? o.metric.tempAvg, temp);
+            const tHigh = safeNum(o.metric.tempHigh ?? o.metric.tempAvg, temp);
+            const gVal = safeNum(o.metric.windgustHigh ?? o.metric.windspeedHigh, 0);
+            const timeLabel = o.obsTimeLocal ? String(o.obsTimeLocal).slice(11, 16) : "";
             if (tVal < minDayT) { minDayT = tVal; minDayTime = timeLabel ? ` (${timeLabel})` : ""; }
             if (tHigh > maxDayT) { maxDayT = tHigh; maxDayTime = timeLabel ? ` (${timeLabel})` : ""; }
             if (gVal > maxDayGust) { maxDayGust = gVal; }
@@ -2894,7 +2902,16 @@
           if (!isFinite(maxDayT)) maxDayT = temp;
         }
 
-        const { iconHourly, ecmwfHourly } = await fetchModelsWithCache();
+        // Ανεξάρτητη λήψη μοντέλων ώστε να μην χαθούν τα live δεδομένα αν πέσει το Open-Meteo
+        let iconHourly = null;
+        let ecmwfHourly = null;
+        try {
+          const modelsRes = await fetchModelsWithCache();
+          iconHourly = modelsRes.iconHourly;
+          ecmwfHourly = modelsRes.ecmwfHourly;
+        } catch (modelErr) {
+          console.warn("Αποτυχία λήψης εξωτερικών μοντέλων:", modelErr);
+        }
 
         const stationState = { temp, dew, press, hum, wind, gust, dir, rain, rate, chill, trend };
         const hourlySeries = [];
@@ -2954,7 +2971,7 @@
         document.getElementById('dailyExtremes').innerHTML = `
           <span>📉 Ελάχ. Ημέρας: <b>${minDayT.toFixed(1)}°C</b>${minDayTime}</span>
           <span>📈 Μέγ. Ημέρας: <b>${maxDayT.toFixed(1)}°C</b>${maxDayTime}</span>
-          <span>💨 Μέγ. Ριπή: <b>${maxDayGust} km/h</b></span>
+          <span>💨 Μέγ. Ριπή: <b>${Math.round(maxDayGust)} km/h</b></span>
           <span>❄️ Εκτιμ. Νέο Χιόνι (24h): <b>${estSnowCm24.toFixed(1)} cm</b></span>
         `;
 
@@ -3018,7 +3035,7 @@
           diagText = `🌦️ <b>Ασταθής καιρός με τοπικές βροχές (${modelsStatus}):</b> Ο σταθμός ISAMAR38 μετρά ${temp.toFixed(1)}°C και πίεση ${press.toFixed(1)} hPa, με ασθενή/παροδικό υετό ~${totalPrecip24.toFixed(1)} mm στη σύνθεση ICON & ECMWF. ${minTemp24 <= 0.5 ? 'Προσοχή σε παγετό τη νύχτα (ελάχ. ' + minTemp24.toFixed(1) + '°C).' : ''}`;
         } else if (spread <= 1.5 && wind < 6 && hum >= 90) {
           topAlert.innerText = `🌫️ ΟΜΙΧΛΗ / ΧΑΜΗΛΗ ΝΕΦΩΣΗ`;
-          diagText = `🌫️ <b>Υψηλή υγρασία κοντά σε κορεσμό (${modelsStatus}):</b> Θερμοκρασία ${temp.toFixed(1)}°C και Σημείο Δρόσου ${dew.toFixed(1)}°C (απόσταση ${spread.toFixed(1)}°C) με υγρασία ${hum}%.`;
+          diagText = `🌫️ <b>Υψηλή υγρασία κοντά σε κορεσμό (${modelsStatus}):</b> Θερμοκρασία ${temp.toFixed(1)}°C και Σημείο Δρόσου ${dew.toFixed(1)}°C (απόσταση ${spread.toFixed(1)}°C) με υγρασία ${Math.round(hum)}%.`;
         } else if (gust >= 55) {
           topAlert.classList.add('alert-storm');
           topAlert.innerText = `💨 ΙΣΧΥΡΟΙ ΑΝΕΜΟΙ (${Math.round(gust)} km/h)`;
