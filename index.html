@@ -558,6 +558,163 @@
       color: #94a3b8;
       font-weight: 700;
     }
+
+    /* ΤΟΠΙΚΟΣ ΔΥΝΑΜΙΚΟΣ ΧΑΡΤΗΣ ΧΙΟΝΟΚΑΛΥΨΗΣ ΣΑΜΑΡΙΝΑΣ */
+    .local-snow-map-wrap {
+      position: relative;
+      width: 100%;
+      height: 500px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #0f172a;
+      border: 1px solid #334155;
+    }
+    @media (max-width: 768px) {
+      .local-snow-map-wrap { height: 370px; }
+    }
+    .local-snow-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .local-map-hud {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(6px);
+      border: 1px solid #334155;
+      border-left: 4px solid #38bdf8;
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      color: #e2e8f0;
+      pointer-events: none;
+      max-width: 300px;
+    }
+    .local-map-hud b { color: #38bdf8; }
+    .local-map-scale {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid #475569;
+      padding: 3px 8px;
+      border-radius: 5px;
+      font-size: 0.7rem;
+      color: #cbd5e1;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .scale-bar-line {
+      width: 58px;
+      height: 5px;
+      border-left: 2px solid #e2e8f0;
+      border-right: 2px solid #e2e8f0;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .local-map-controls {
+      margin-top: 10px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: grid;
+      grid-template-columns: auto 1.4fr auto 1.15fr;
+      gap: 14px;
+      align-items: center;
+    }
+    @media (max-width: 960px) {
+      .local-map-controls { grid-template-columns: 1fr; gap: 10px; }
+    }
+    .play-snow-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #0284c7;
+      border: 2px solid #38bdf8;
+      color: #ffffff;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+    .play-snow-btn:hover { background: #0369a1; transform: scale(1.05); }
+    .snow-slider-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .snow-slider-title {
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: #cbd5e1;
+      letter-spacing: 0.3px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .snow-range {
+      width: 100%;
+      accent-color: #38bdf8;
+      cursor: pointer;
+      height: 6px;
+    }
+    .snow-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+    .snow-ticks span.active-tick {
+      background: #0284c7;
+      color: #fff;
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+    .snow-time-box {
+      background: #131c31;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 7px 12px;
+      text-align: center;
+      min-width: 145px;
+    }
+    .snow-time-box .st-lbl { font-size: 0.68rem; color: #94a3b8; font-weight: 600; }
+    .snow-time-box .st-val { font-size: 0.96rem; color: #38bdf8; font-weight: 700; margin-top: 2px; }
+    .snow-legend-box {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .snow-legend-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #cbd5e1;
+      text-align: center;
+    }
+    .snow-legend-bars {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      text-align: center;
+      font-size: 0.66rem;
+      color: #cbd5e1;
+      line-height: 1.25;
+    }
+    .sl-bar {
+      height: 8px;
+      border-radius: 3px;
+      margin-bottom: 3px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
     .ventusky-frame {
       width: 100%;
       height: 540px;
@@ -764,6 +921,78 @@
     </div>
   </div>
 
+  <!-- ΤΟΠΙΚΟΣ ΔΥΝΑΜΙΚΟΣ ΧΑΡΤΗΣ ΧΙΟΝΟΚΑΛΥΨΗΣ ΣΑΜΑΡΙΝΑΣ -->
+  <div class="panel">
+    <div class="panel-header">
+      <span>❄️ ΤΟΠΙΚΟΣ ΔΥΝΑΜΙΚΟΣ ΧΑΡΤΗΣ ΧΙΟΝΟΚΑΛΥΨΗΣ: ΣΑΜΑΡΙΝΑ (1.450μ.)</span>
+      <span id="localSnowMapStatus" style="font-size:0.78rem; color:#38bdf8;">Ορίζοντας 72 ωρών • Ζώνη Ακρίβειας Σταθμού (~2,5 χλμ.)</span>
+    </div>
+
+    <div class="local-snow-map-wrap">
+      <canvas id="localSnowCanvas" class="local-snow-canvas"></canvas>
+
+      <div class="local-map-hud" id="localMapHud">
+        <b>📡 ΣΑΜΑΡΙΝΑ (1.450μ.)</b><br>
+        Πρόβλεψη Μοντέλων: <b>0.0 cm</b><br>
+        Ρεαλιστικό Σταθμού (~1/3): <b style="color:#34d399;">~0.0 cm</b><br>
+        Ρυθμός ώρας: <b>0.0 cm/h</b> • Tw: <b>--°C</b><br>
+        <span style="color:#94a3b8; font-size:0.71rem;">Πλαγιές Σμόλικα (1.750μ.): ~0.0 cm</span>
+      </div>
+
+      <div class="local-map-scale">
+        <span>500 μ.</span>
+        <div class="scale-bar-line"></div>
+      </div>
+    </div>
+
+    <div class="local-map-controls">
+      <button type="button" class="play-snow-btn" id="btnPlaySnowMap" onclick="toggleSnowMapPlay()" title="Αναπαραγωγή / Παύση">▶</button>
+
+      <div class="snow-slider-wrap">
+        <div class="snow-slider-title">
+          <span>ΧΡΟΝΙΚΗ ΕΞΕΛΙΞΗ ΧΙΟΝΟΚΑΛΥΨΗΣ (72H)</span>
+          <span id="snowStepBadge" style="color:#38bdf8;">+0h (ΤΩΡΑ)</span>
+        </div>
+        <input type="range" id="snowTimeSlider" class="snow-range" min="0" max="72" value="0" oninput="onSnowSliderChange(this.value)">
+        <div class="snow-ticks">
+          <span id="tick0" class="active-tick">00:00</span>
+          <span id="tick12">+12h</span>
+          <span id="tick24">+24h</span>
+          <span id="tick48">+48h</span>
+          <span id="tick72">+72h</span>
+        </div>
+      </div>
+
+      <div class="snow-time-box">
+        <div class="st-lbl">🕒 ΕΠΙΛΕΓΜΕΝΗ ΩΡΑ</div>
+        <div class="st-val" id="snowSelectedTime">--:--</div>
+        <div class="st-lbl" id="snowSelectedDay" style="margin-top:2px;">Σήμερα</div>
+      </div>
+
+      <div class="snow-legend-box">
+        <div class="snow-legend-title">ΧΙΟΝΟΣΤΡΩΣΗ</div>
+        <div class="snow-legend-bars">
+          <div>
+            <div class="sl-bar" style="background:rgba(148,163,184,0.22);"></div>
+            ΜΗΔΕΝΙΚΗ<br>(0 cm)
+          </div>
+          <div>
+            <div class="sl-bar" style="background:rgba(125,211,252,0.58);"></div>
+            ΧΑΜΗΛΗ<br>(1–3 cm)
+          </div>
+          <div>
+            <div class="sl-bar" style="background:rgba(224,242,254,0.82);"></div>
+            ΜΕΣΑΙΑ<br>(4–7 cm)
+          </div>
+          <div>
+            <div class="sl-bar" style="background:#ffffff; box-shadow:0 0 6px #7dd3fc;"></div>
+            ΥΨΗΛΗ<br>(8+ cm)
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="panel">
     <div class="panel-header">
       <span>🗺️ ΧΑΡΤΗΣ ΥΕΤΟΥ 3ΩΡΟΥ (VENTUSKY • ECMWF HRES)</span>
@@ -798,6 +1027,7 @@
     let meteogramChartInstance = null;
     let precipChartInstance = null;
     let latestHourlySeries = [];
+    let latest72hSeries = [];
     let meteogramStepHours = 1;
     let threeDayDataStore = [];
     let selectedDayIdx = null;
@@ -813,6 +1043,287 @@
       stationWeightBias: 0,
       orographicScale: 1.15
     };
+
+    /* ============================================================
+       ΒΕΛΤΙΩΜΕΝΟΣ ΤΟΠΙΚΟΣ ΔΥΝΑΜΙΚΟΣ ΧΑΡΤΗΣ (ΟΜΑΛΕΣ ΔΙΑΒΑΘΜΙΣΕΙΣ)
+       ============================================================ */
+    const SNOW_MAP_LAT = 40.1008;
+    const SNOW_MAP_LON = 21.0155;
+    const SNOW_MAP_ZOOM = 14;
+    let snowMapTiles = [];
+    let snowMapTilesReady = false;
+    let snowMapPlayTimer = null;
+    let currentSnowHourIdx = 0;
+
+    function latLonToTile(lat, lon, zoom) {
+      const n = Math.pow(2, zoom);
+      const x = ((lon + 180) / 360) * n;
+      const latRad = (lat * Math.PI) / 180;
+      const y = ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n;
+      return { x, y };
+    }
+
+    function initSnowMapTiles() {
+      const centerTile = latLonToTile(SNOW_MAP_LAT, SNOW_MAP_LON, SNOW_MAP_ZOOM);
+      const baseTx = Math.floor(centerTile.x);
+      const baseTy = Math.floor(centerTile.y);
+      const fracX = centerTile.x - baseTx;
+      const fracY = centerTile.y - baseTy;
+
+      snowMapTiles = [];
+      let loadedCount = 0;
+
+      for (let dx = -3; dx <= 3; dx++) {
+        for (let dy = -2; dy <= 2; dy++) {
+          const tx = baseTx + dx;
+          const ty = baseTy + dy;
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${SNOW_MAP_ZOOM}/${ty}/${tx}`;
+          img.onload = () => {
+            loadedCount++;
+            if (loadedCount >= 8) {
+              snowMapTilesReady = true;
+              drawLocalSnowMap(currentSnowHourIdx);
+            }
+          };
+          snowMapTiles.push({ img, dx, dy, fracX, fracY });
+        }
+      }
+    }
+
+    function snowOpacity(cm) {
+      if (cm <= 0.1) return 0;
+      if (cm < 1.5) return 0.22;
+      if (cm < 4.0) return 0.40;
+      if (cm < 8.0) return 0.58;
+      if (cm < 15.0) return 0.72;
+      return 0.84;
+    }
+
+    function drawLocalSnowMap(hourIdx) {
+      const canvas = document.getElementById('localSnowCanvas');
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      if (canvas.width !== Math.round(rect.width * dpr) || canvas.height !== Math.round(rect.height * dpr)) {
+        canvas.width = Math.round(rect.width * dpr);
+        canvas.height = Math.round(rect.height * dpr);
+      }
+
+      const ctx = canvas.getContext('2d');
+      ctx.save();
+      ctx.scale(dpr, dpr);
+
+      const W = rect.width;
+      const H = rect.height;
+      const cx = W * 0.50;
+      const cy = H * 0.50;
+
+      // 1. Δορυφορικά πλακίδια (Esri World Imagery)
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(0, 0, W, H);
+
+      const tileSize = 256;
+      for (const t of snowMapTiles) {
+        if (t.img.complete && t.img.naturalWidth > 0) {
+          const drawX = cx + (t.dx - t.fracX) * tileSize;
+          const drawY = cy + (t.dy - t.fracY) * tileSize;
+          ctx.drawImage(t.img, drawX, drawY, tileSize, tileSize);
+        }
+      }
+
+      // Ελαφριά σκίαση για αντίθεση
+      ctx.fillStyle = "rgba(11, 17, 32, 0.24)";
+      ctx.fillRect(0, 0, W, H);
+
+      // 2. Δεδομένα επιλεγμένης ώρας
+      const item = latest72hSeries[hourIdx] || {
+        hrs: hourIdx,
+        time: "--:--",
+        dayName: "Σήμερα",
+        temp: 0,
+        wetBulb: 0,
+        snow: 0,
+        cumSnow: 0,
+        precip: 0
+      };
+
+      const valleyCm = item.cumSnow || 0;
+      const realValleyCm = Number((valleyCm * 0.36).toFixed(1)); // Εμπειρική διόρθωση σταθμού (~1/3)
+      const mountainCm = valleyCm > 0
+        ? Number((valleyCm * 1.45 + 1.5).toFixed(1))
+        : (item.precip > 0 && item.wetBulb <= 2.4 ? Number((item.precip * 0.95).toFixed(1)) : 0);
+      const lowerExitCm = valleyCm > 0 ? Number((valleyCm * 0.55).toFixed(1)) : 0;
+
+      // 3. ΟΜΑΛΟ ΥΨΟΜΕΤΡΙΚΟ ΠΕΔΙΟ ΧΙΟΝΙΟΥ ΣΕ ΟΛΟ ΤΟ ΚΑΔΡΟ (Χωρίς σκληρές γραμμές)
+      const opMountain = snowOpacity(mountainCm);
+      const opValley = snowOpacity(valleyCm);
+      const opLower = snowOpacity(lowerExitCm);
+
+      if (opMountain > 0 || opValley > 0) {
+        ctx.save();
+        // Α. Γενική υψομετρική κλίση (από ψηλά Δυτικά/ΒΔ προς χαμηλότερα Ανατολικά/ΝΑ)
+        const baseGrad = ctx.createLinearGradient(W * 0.08, H * 0.65, W * 0.95, H * 0.35);
+        baseGrad.addColorStop(0.00, `rgba(241, 248, 255, ${opMountain})`);
+        baseGrad.addColorStop(0.32, `rgba(224, 242, 254, ${(opMountain + opValley) * 0.48})`);
+        baseGrad.addColorStop(0.55, `rgba(224, 242, 254, ${opValley})`);
+        baseGrad.addColorStop(0.82, `rgba(186, 230, 253, ${(opValley + opLower) * 0.45})`);
+        baseGrad.addColorStop(1.00, `rgba(148, 197, 235, ${opLower * 0.85})`);
+        ctx.fillStyle = baseGrad;
+        ctx.fillRect(0, 0, W, H);
+
+        // Β. Ορογραφική ενίσχυση στις κορυφογραμμές Σμόλικα (κάτω-αριστερά) & Λαΐσκου (πάνω-αριστερά)
+        const ridgeSpots = [
+          { x: W * 0.16, y: H * 0.78, r: Math.max(W, H) * 0.48, op: opMountain * 0.55 },
+          { x: W * 0.22, y: H * 0.14, r: Math.max(W, H) * 0.40, op: opMountain * 0.42 },
+          { x: W * 0.46, y: H * 0.88, r: Math.max(W, H) * 0.35, op: opValley * 0.35 }
+        ];
+
+        for (const spot of ridgeSpots) {
+          if (spot.op <= 0.01) continue;
+          const rGrad = ctx.createRadialGradient(spot.x, spot.y, spot.r * 0.08, spot.x, spot.y, spot.r);
+          rGrad.addColorStop(0, `rgba(255, 255, 255, ${spot.op})`);
+          rGrad.addColorStop(0.55, `rgba(224, 242, 254, ${spot.op * 0.45})`);
+          rGrad.addColorStop(1, "rgba(224, 242, 254, 0)");
+          ctx.fillStyle = rGrad;
+          ctx.fillRect(0, 0, W, H);
+        }
+        ctx.restore();
+      }
+
+      // 4. Διακριτικό, ημιδιαφανές περίγραμμα εμβέλειας σταθμού (χωρίς «κόψιμο» του χιονιού)
+      const rx = Math.min(W * 0.38, 340);
+      const ry = Math.min(H * 0.41, 200);
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx, ry, -0.18, 0, Math.PI * 2);
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 6]);
+      ctx.strokeStyle = "rgba(56, 189, 248, 0.55)";
+      ctx.stroke();
+
+      // Εσωτερικός πυρήνας οικισμού
+      ctx.beginPath();
+      ctx.arc(cx, cy, Math.min(W, H) * 0.115, 0, Math.PI * 2);
+      ctx.lineWidth = 1.3;
+      ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = "rgba(248, 113, 113, 0.75)";
+      ctx.stroke();
+      ctx.restore();
+
+      // 5. Ετικέτες φυσικών ορίων στον χάρτη
+      ctx.font = "600 11px 'Segoe UI', sans-serif";
+      ctx.textAlign = "center";
+
+      const drawMapTag = (x, y, text) => {
+        const padX = 8;
+        const w = ctx.measureText(text).width + padX * 2;
+        ctx.fillStyle = "rgba(15, 23, 42, 0.80)";
+        ctx.strokeStyle = "rgba(148, 163, 184, 0.40)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(x - w / 2, y - 10, w, 20, 5);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = "#e2e8f0";
+        ctx.fillText(text, x, y + 4);
+      };
+
+      drawMapTag(cx - rx * 0.66, cy - ry * 0.65, "Αυχένας Λαΐσκου (1.700μ.)");
+      drawMapTag(cx + rx * 0.78, cy + ry * 0.25, `Έξοδος προς Γρεβενά (~${lowerExitCm.toFixed(1)} cm)`);
+      drawMapTag(Math.max(105, W * 0.15), H * 0.76, `Πλαγιές Σμόλικα (~${mountainCm.toFixed(1)} cm)`);
+
+      // 6. Σήμανση Σταθμού Αναφοράς: ΣΑΜΑΡΙΝΑ (1450m)
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, 6.5, 0, Math.PI * 2);
+      ctx.fillStyle = "#0284c7";
+      ctx.fill();
+      ctx.lineWidth = 2.2;
+      ctx.strokeStyle = "#ffffff";
+      ctx.stroke();
+
+      const stLabel = "ΣΑΜΑΡΙΝΑ (1450m)";
+      ctx.font = "700 12px 'Segoe UI', sans-serif";
+      const lblW = ctx.measureText(stLabel).width + 16;
+      ctx.fillStyle = "rgba(15, 23, 42, 0.90)";
+      ctx.strokeStyle = "#38bdf8";
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.roundRect(cx + 12, cy - 12, lblW, 24, 6);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#ffffff";
+      ctx.textAlign = "left";
+      ctx.fillText(stLabel, cx + 20, cy + 4);
+      ctx.restore();
+
+      ctx.restore();
+
+      // 7. Ενημέρωση HUD με Ωμή vs Ρεαλιστική εκτίμηση σταθμού
+      const hud = document.getElementById('localMapHud');
+      if (hud) {
+        hud.innerHTML = `
+          <b>📡 ΣΑΜΑΡΙΝΑ (1.450μ.)</b><br>
+          Πρόβλεψη Μοντέλων: <b>${valleyCm.toFixed(1)} cm</b><br>
+          Ρεαλιστικό Σταθμού (~1/3): <b style="color:#34d399;">~${realValleyCm.toFixed(1)} cm</b><br>
+          Ρυθμός ώρας: <b>${item.snow.toFixed(1)} cm/h</b> • Tw: <b>${item.wetBulb.toFixed(1)}°C</b><br>
+          <span style="color:#7dd3fc; font-size:0.71rem;">Πλαγιές Σμόλικα (1.750μ.): ~${mountainCm.toFixed(1)} cm</span>
+        `;
+      }
+
+      document.getElementById('snowStepBadge').innerText = item.hrs === 0 ? '+0h (ΤΩΡΑ)' : `+${item.hrs}h`;
+      document.getElementById('snowSelectedTime').innerText = item.time;
+      document.getElementById('snowSelectedDay').innerText = item.dayName || 'Σήμερα';
+
+      const ticks = [0, 12, 24, 48, 72];
+      let closestTick = 0;
+      let minDiff = Infinity;
+      for (const tk of ticks) {
+        const diff = Math.abs(hourIdx - tk);
+        if (diff < minDiff) { minDiff = diff; closestTick = tk; }
+      }
+      ticks.forEach(tk => {
+        const el = document.getElementById('tick' + tk);
+        if (el) el.classList.toggle('active-tick', tk === closestTick);
+      });
+    }
+
+    function onSnowSliderChange(val) {
+      currentSnowHourIdx = parseInt(val, 10) || 0;
+      drawLocalSnowMap(currentSnowHourIdx);
+    }
+
+    function jumpSnowMapToHour(targetHrs) {
+      if (!latest72hSeries || latest72hSeries.length === 0) return;
+      const clamped = Math.max(0, Math.min(latest72hSeries.length - 1, Math.round(targetHrs)));
+      currentSnowHourIdx = clamped;
+      const slider = document.getElementById('snowTimeSlider');
+      if (slider) slider.value = clamped;
+      drawLocalSnowMap(clamped);
+    }
+
+    function toggleSnowMapPlay() {
+      const btn = document.getElementById('btnPlaySnowMap');
+      if (snowMapPlayTimer) {
+        clearInterval(snowMapPlayTimer);
+        snowMapPlayTimer = null;
+        btn.innerText = '▶';
+        return;
+      }
+      btn.innerText = '⏸';
+      snowMapPlayTimer = setInterval(() => {
+        const maxIdx = Math.max(0, latest72hSeries.length - 1);
+        currentSnowHourIdx = currentSnowHourIdx >= maxIdx ? 0 : currentSnowHourIdx + 1;
+        const slider = document.getElementById('snowTimeSlider');
+        if (slider) slider.value = currentSnowHourIdx;
+        drawLocalSnowMap(currentSnowHourIdx);
+      }, 650);
+    }
 
     function syncScrollButtons(containerId, prevBtnId, nextBtnId) {
       const el = document.getElementById(containerId);
@@ -1166,7 +1677,6 @@
 
           const hourLabel = String(row.dateObj.getHours()).padStart(2, '0') + ":00";
           const actualMm = parseFloat((actualCols[2] || "0").replace(",", ".")) || 0;
-          // Στήλη S (index 18) = Υβριδικός Υετός +24h
           const pred24Mm = f24Cols ? (parseFloat((f24Cols[18] || "0").replace(",", ".")) || 0) : 0;
 
           labels.push(hourLabel);
@@ -1519,6 +2029,11 @@
       const dayObj = threeDayDataStore[idx];
       if (!dayObj) return;
 
+      // Συγχρονισμός του Τοπικού Χάρτη Χιονοκάλυψης με τη μεσημεριανή αιχμή της επιλεγμένης ημέρας
+      if (typeof dayObj.middayHrs === 'number') {
+        jumpSnowMapToHour(dayObj.middayHrs);
+      }
+
       document.getElementById('dayDetailTitle').innerText = `⏱️ Ωριαία ανάλυση: ${dayObj.dayName} (${dayObj.dateStr})`;
 
       const hours = dayObj.hours;
@@ -1578,10 +2093,13 @@
         let maxCloud = 0;
         let snowHours = [];
         let dayHoursList = [];
+        let middayHrs = dayOffset * 24;
 
         for (let h = 0; h < 24; h++) {
           const slotDate = new Date(dayDate.getTime() + h * 3600 * 1000);
           const hrsFromNow = Math.max(1, Math.round((slotDate.getTime() - now.getTime()) / 3600000));
+          if (h === 12) middayHrs = hrsFromNow;
+
           const iconH = getModelHourAt(iconHourly, slotDate);
           const ecmwfH = getModelHourAt(ecmwfHourly, slotDate);
 
@@ -1599,7 +2117,7 @@
         }
 
         const idx = dayOffset - 1;
-        threeDayDataStore.push({ dayName, dateStr, hours: dayHoursList });
+        threeDayDataStore.push({ dayName, dateStr, hours: dayHoursList, middayHrs });
 
         totalSnow3d += sumSnow;
         const hasSnow = sumSnow >= 0.3;
@@ -1655,7 +2173,7 @@
               ${snowPeakText}<br>
               💨 Ριπές έως ${maxGust} km/h
             </div>
-            <div class="d-toggle-hint">▼ Ωριαία ανάλυση</div>
+            <div class="d-toggle-hint">▼ Ωριαία ανάλυση & χάρτης</div>
           </div>
         `;
       }
@@ -1990,35 +2508,59 @@
 
         const stationState = { temp, dew, press, hum, wind, gust, dir, rain, rate, chill, trend };
         const hourlySeries = [];
+        const series72h = [];
+        const dayNamesShort = ["Κυριακή", "Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο"];
 
         let totalPrecip24 = 0;
         let estSnowCm24 = 0;
+        let runningCumSnow = 0;
         let minTemp24 = temp;
         let minChill24 = chill;
 
         const baseDate = new Date();
         baseDate.setMinutes(0, 0, 0);
 
-        for (let hrs = 0; hrs <= 24; hrs++) {
+        for (let hrs = 0; hrs <= 72; hrs++) {
           const futureDate = new Date(baseDate.getTime() + hrs * 3600 * 1000);
           const iconH = getModelHourAt(iconHourly, futureDate);
           const ecmwfH = getModelHourAt(ecmwfHourly, futureDate);
 
           const item = combineHourForecast(hrs, futureDate, stationState, iconH, ecmwfH);
-
           if (hrs > 0) {
-            totalPrecip24 += item.precip;
-            estSnowCm24 += item.snow;
+            if (item.snow > 0) {
+              runningCumSnow += item.snow;
+            } else if (runningCumSnow > 0) {
+              // Διατήρηση + ρεαλιστική καθίζηση και τήξη όταν η θερμοκρασία ανεβαίνει
+              if (item.temp > 1.5) {
+                const meltLoss = (item.temp - 1.5) * 0.35 + (item.precip > 0 ? item.precip * 0.25 : 0);
+                runningCumSnow = Math.max(0, runningCumSnow - meltLoss);
+              } else if (item.temp > 0.2) {
+                runningCumSnow = Math.max(0, runningCumSnow * 0.985);
+              } else {
+                runningCumSnow = Math.max(0, runningCumSnow * 0.995);
+              }
+            }
           }
-          if (item.temp < minTemp24) minTemp24 = item.temp;
-          if (item.chill < minChill24) minChill24 = item.chill;
+          item.cumSnow = Number(runningCumSnow.toFixed(1));
+          item.dayName = `${dayNamesShort[futureDate.getDay()]} ${String(futureDate.getDate()).padStart(2, '0')}/${String(futureDate.getMonth() + 1).padStart(2, '0')}`;
+          series72h.push(item);
 
-          hourlySeries.push(item);
+          if (hrs <= 24) {
+            if (hrs > 0) {
+              totalPrecip24 += item.precip;
+              estSnowCm24 += item.snow;
+            }
+            if (item.temp < minTemp24) minTemp24 = item.temp;
+            if (item.chill < minChill24) minChill24 = item.chill;
+            hourlySeries.push(item);
+          }
         }
 
         latestHourlySeries = hourlySeries;
+        latest72hSeries = series72h;
         renderMeteogram(latestHourlySeries, meteogramStepHours);
         renderThreeDayForecast(stationState, iconHourly, ecmwfHourly);
+        drawLocalSnowMap(currentSnowHourIdx);
 
         document.getElementById('dailyExtremes').innerHTML = `
           <span>📉 Ελάχ. Ημέρας: <b>${minDayT.toFixed(1)}°C</b>${minDayTime}</span>
@@ -2110,7 +2652,13 @@
     setupScrollHelpers('forecastGrid', 'btnForecastPrev', 'btnForecastNext');
     setupScrollHelpers('stationScroll', 'btnStationPrev', 'btnStationNext');
     setupScrollHelpers('mgScrollContainer', 'btnMgPrev', 'btnMgNext');
-    window.addEventListener('resize', updateAllScrollButtons);
+    window.addEventListener('resize', () => {
+      updateAllScrollButtons();
+      drawLocalSnowMap(currentSnowHourIdx);
+    });
+
+    initSnowMapTiles();
+    drawLocalSnowMap(0);
 
     loadVerificationStats().finally(() => {
       updateDashboard();
