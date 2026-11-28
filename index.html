@@ -995,7 +995,6 @@
     </div>
   </div>
 
-  <!-- ΤΟΠΙΚΟΣ ΔΥΝΑΜΙΚΟΣ ΧΑΡΤΗΣ ΧΙΟΝΟΚΑΛΥΨΗΣ ΣΑΜΑΡΙΝΑΣ -->
   <div class="panel">
     <div class="panel-header">
       <span>❄️ ΤΟΠΙΚΟΣ ΔΥΝΑΜΙΚΟΣ ΧΑΡΤΗΣ ΧΙΟΝΟΚΑΛΥΨΗΣ: ΣΑΜΑΡΙΝΑ (1.450μ.)</span>
@@ -1132,9 +1131,6 @@
       return Number.isFinite(n) ? n : fallback;
     }
 
-    /* ============================================================
-       ΔΙΑΧΕΙΡΙΣΗ LIVE ΚΑΜΕΡΩΝ (ΒΟΥΝΟ / ΧΩΡΙΟ + ΕΛΕΓΧΟΣ ΠΑΓΩΜΑΤΟΣ)
-       ============================================================ */
     const CAMS = {
       vouno: {
         title: "ΚΑΜΕΡΑ ΣΑΜΑΡΙΝΑ ΒΟΥΝΟ",
@@ -1187,9 +1183,6 @@
       });
     }
 
-    /* ============================================================
-       ΑΥΤΟΜΑΤΗ ΑΠΟΚΡΥΨΗ ΕΝΔΕΙΞΕΩΝ ΧΑΡΤΗ ΜΕΤΑ ΑΠΟ 2 ΔΕΥΤΕΡΟΛΕΠΤΑ (ΚΙΝΗΤΟ & PC)
-       ============================================================ */
     let mapOverlayHideTimer = null;
 
     function pulseMapOverlays(delayMs = 2000) {
@@ -1210,9 +1203,6 @@
       snowMapWrapEl.addEventListener('mousemove', () => pulseMapOverlays(2000), { passive: true });
     }
 
-    /* ============================================================
-       ΒΕΛΤΙΩΜΕΝΟΣ ΤΟΠΙΚΟΣ ΔΥΝΑΜΙΚΟΣ ΧΑΡΤΗΣ (ZOOM + ZOOM 15 TILES + ΣΩΜΑΤΙΔΙΑ)
-       ============================================================ */
     const SNOW_MAP_LAT = 40.1008;
     const SNOW_MAP_LON = 21.0155;
     const SNOW_MAP_ZOOM = 14;
@@ -2822,7 +2812,9 @@
         if (!liveRes.ok) throw new Error(`Endpoint Live HTTP ${liveRes.status}`);
         const liveData = await liveRes.json();
         const obs = liveData?.observation;
-        if (!obs || !obs.metric) throw new Error("Δεν υπάρχουν διαθέσιμες μετρήσεις από τον σταθμό ISAMAR38");
+        if (!obs || !obs.metric) {
+          throw new Error(liveData?.error || "Δεν υπάρχουν διαθέσιμες μετρήσεις από τον σταθμό ISAMAR38");
+        }
 
         const m = obs.metric;
         const temp = safeNum(m.temp, 0);
@@ -2864,7 +2856,6 @@
           }
         }
 
-        // Άμεση ενημέρωση των live πλακιδίων του σταθμού ISAMAR38
         document.getElementById('stTemp').innerText = `${temp.toFixed(1)}°C`;
         document.getElementById('stDew').innerText = `Σημ. Δρόσου: ${dew.toFixed(1)}°C`;
         document.getElementById('stPress').innerText = `${press.toFixed(1)} hPa`;
@@ -2902,7 +2893,6 @@
           if (!isFinite(maxDayT)) maxDayT = temp;
         }
 
-        // Ανεξάρτητη λήψη μοντέλων ώστε να μην χαθούν τα live δεδομένα αν πέσει το Open-Meteo
         let iconHourly = null;
         let ecmwfHourly = null;
         try {
