@@ -568,6 +568,7 @@
       overflow: hidden;
       background: #0f172a;
       border: 1px solid #334155;
+      box-shadow: inset 0 0 24px rgba(11, 17, 32, 0.65);
     }
     @media (max-width: 768px) {
       .local-snow-map-wrap { height: 370px; }
@@ -581,33 +582,36 @@
       position: absolute;
       top: 12px;
       left: 12px;
-      background: rgba(15, 23, 42, 0.88);
-      backdrop-filter: blur(6px);
-      border: 1px solid #334155;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(148, 163, 184, 0.28);
       border-left: 4px solid #38bdf8;
       border-radius: 8px;
-      padding: 9px 12px;
+      padding: 10px 13px;
       font-size: 0.78rem;
-      line-height: 1.45;
+      line-height: 1.48;
       color: #e2e8f0;
       pointer-events: none;
-      max-width: 300px;
+      max-width: 315px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
     }
     .local-map-hud b { color: #38bdf8; }
     .local-map-scale {
       position: absolute;
       bottom: 12px;
       left: 12px;
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid #475569;
-      padding: 3px 8px;
+      background: rgba(15, 23, 42, 0.90);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      padding: 4px 9px;
       border-radius: 5px;
       font-size: 0.7rem;
-      color: #cbd5e1;
+      color: #e2e8f0;
       pointer-events: none;
       display: flex;
       align-items: center;
       gap: 6px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
     }
     .scale-bar-line {
       width: 58px;
@@ -623,7 +627,7 @@
       border-radius: 8px;
       padding: 10px 14px;
       display: grid;
-      grid-template-columns: auto 1.4fr auto 1.15fr;
+      grid-template-columns: auto 1.4fr auto 1.25fr;
       gap: 14px;
       align-items: center;
     }
@@ -702,17 +706,17 @@
     .snow-legend-bars {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 4px;
+      gap: 5px;
       text-align: center;
-      font-size: 0.66rem;
+      font-size: 0.65rem;
       color: #cbd5e1;
       line-height: 1.25;
     }
     .sl-bar {
-      height: 8px;
+      height: 9px;
       border-radius: 3px;
       margin-bottom: 3px;
-      border: 1px solid rgba(255,255,255,0.2);
+      border: 1px solid rgba(226, 232, 240, 0.45);
     }
 
     .ventusky-frame {
@@ -941,7 +945,7 @@
         Πρόβλεψη Μοντέλων: <b>0.0 cm</b><br>
         Ρεαλιστικό Σταθμού (~1/3): <b style="color:#34d399;">~0.0 cm</b><br>
         Ρυθμός ώρας: <b>0.0 cm/h</b> • Tw: <b>--°C</b><br>
-        <span style="color:#94a3b8; font-size:0.71rem;">Πλαγιές Σμόλικα (1.750μ.): ~0.0 cm</span>
+        <span style="color:#7dd3fc; font-size:0.71rem;">Πλαγιές Σμόλικα (1.750μ.): ~0.0 cm</span>
       </div>
 
       <div class="local-map-scale">
@@ -978,20 +982,20 @@
         <div class="snow-legend-title">ΧΙΟΝΟΣΤΡΩΣΗ</div>
         <div class="snow-legend-bars">
           <div>
-            <div class="sl-bar" style="background:rgba(148,163,184,0.22);"></div>
+            <div class="sl-bar" style="background:rgba(148,163,184,0.28);"></div>
             ΜΗΔΕΝΙΚΗ<br>(0 cm)
           </div>
           <div>
-            <div class="sl-bar" style="background:rgba(125,211,252,0.58);"></div>
+            <div class="sl-bar" style="background:rgba(186,230,253,0.65);"></div>
             ΧΑΜΗΛΗ<br>(1–3 cm)
           </div>
           <div>
-            <div class="sl-bar" style="background:rgba(224,242,254,0.82);"></div>
-            ΜΕΣΑΙΑ<br>(4–7 cm)
+            <div class="sl-bar" style="background:rgba(241,245,249,0.88);"></div>
+            ΠΥΚΝΗ<br>(4–7 cm)
           </div>
           <div>
-            <div class="sl-bar" style="background:#ffffff; box-shadow:0 0 6px #7dd3fc;"></div>
-            ΥΨΗΛΗ<br>(8+ cm)
+            <div class="sl-bar" style="background:#334155; box-shadow:0 0 6px rgba(148,163,184,0.35);"></div>
+            ΒΑΡΙΑ<br>(8+ cm)
           </div>
         </div>
       </div>
@@ -1105,7 +1109,7 @@
     }
 
     /* ============================================================
-       ΒΕΛΤΙΩΜΕΝΟΣ ΤΟΠΙΚΟΣ ΔΥΝΑΜΙΚΟΣ ΧΑΡΤΗΣ (ΟΜΑΛΕΣ ΔΙΑΒΑΘΜΙΣΕΙΣ)
+       ΒΕΛΤΙΩΜΕΝΟΣ ΤΟΠΙΚΟΣ ΔΥΝΑΜΙΚΟΣ ΧΑΡΤΗΣ (ΟΜΑΛΕΣ ΔΙΑΒΑΘΜΙΣΕΙΣ + ΣΩΜΑΤΙΔΙΑ)
        ============================================================ */
     const SNOW_MAP_LAT = 40.1008;
     const SNOW_MAP_LON = 21.0155;
@@ -1114,6 +1118,17 @@
     let snowMapTilesReady = false;
     let snowMapPlayTimer = null;
     let currentSnowHourIdx = 0;
+
+    // Ατμοσφαιρικά σωματίδια (διακριτική κίνηση νιφάδων / σταγόνων)
+    const WEATHER_PARTICLES = Array.from({ length: 42 }, (_, i) => ({
+      x: (i * 97) % 1000 / 1000,
+      y: (i * 53) % 1000 / 1000,
+      r: 0.9 + (i % 3) * 0.45,
+      speed: 0.0022 + (i % 5) * 0.0005,
+      drift: ((i % 7) - 3) * 0.00035,
+      alpha: 0.25 + (i % 4) * 0.1
+    }));
+    let lastParticleTick = performance.now();
 
     function latLonToTile(lat, lon, zoom) {
       const n = Math.pow(2, zoom);
@@ -1152,13 +1167,14 @@
       }
     }
 
+    // Περιορισμένη μέγιστη αδιαφάνεια (έως ~0.70) ώστε να διατηρείται το ανάγλυφο του εδάφους
     function snowOpacity(cm) {
       if (cm <= 0.1) return 0;
-      if (cm < 1.5) return 0.22;
-      if (cm < 4.0) return 0.40;
-      if (cm < 8.0) return 0.58;
-      if (cm < 15.0) return 0.72;
-      return 0.84;
+      if (cm < 1.5) return 0.18;
+      if (cm < 4.0) return 0.32;
+      if (cm < 8.0) return 0.46;
+      if (cm < 15.0) return 0.58;
+      return 0.70;
     }
 
     function drawLocalSnowMap(hourIdx) {
@@ -1195,8 +1211,8 @@
         }
       }
 
-      // Ελαφριά σκίαση για αντίθεση
-      ctx.fillStyle = "rgba(11, 17, 32, 0.24)";
+      // Ελαφριά ατμοσφαιρική σκίαση βάσης
+      ctx.fillStyle = "rgba(11, 17, 32, 0.22)";
       ctx.fillRect(0, 0, W, H);
 
       // 2. Δεδομένα επιλεγμένης ώρας
@@ -1218,33 +1234,36 @@
         : (item.precip > 0 && item.wetBulb <= 2.4 ? Number((item.precip * 0.95).toFixed(1)) : 0);
       const lowerExitCm = valleyCm > 0 ? Number((valleyCm * 0.55).toFixed(1)) : 0;
 
-      // 3. ΟΜΑΛΟ ΥΨΟΜΕΤΡΙΚΟ ΠΕΔΙΟ ΧΙΟΝΙΟΥ ΣΕ ΟΛΟ ΤΟ ΚΑΔΡΟ
+      // 3. ΑΝΑΓΛΥΦΟ ΥΨΟΜΕΤΡΙΚΟ ΠΕΔΙΟ ΧΙΟΝΙΟΥ (Με διατήρηση κοιλάδων/δασών & ομαλό σβήσιμο στις άκρες)
       const opMountain = snowOpacity(mountainCm);
       const opValley = snowOpacity(valleyCm);
       const opLower = snowOpacity(lowerExitCm);
 
       if (opMountain > 0 || opValley > 0) {
         ctx.save();
-        const baseGrad = ctx.createLinearGradient(W * 0.08, H * 0.65, W * 0.95, H * 0.35);
+        // Πρώτο πέρασμα: soft-light / screen ανάμειξη ώστε να φαίνονται οι κορυφογραμμές από κάτω
+        ctx.globalCompositeOperation = "screen";
+        const baseGrad = ctx.createLinearGradient(W * 0.06, H * 0.72, W * 0.96, H * 0.28);
         baseGrad.addColorStop(0.00, `rgba(241, 248, 255, ${opMountain})`);
-        baseGrad.addColorStop(0.32, `rgba(224, 242, 254, ${(opMountain + opValley) * 0.48})`);
-        baseGrad.addColorStop(0.55, `rgba(224, 242, 254, ${opValley})`);
-        baseGrad.addColorStop(0.82, `rgba(186, 230, 253, ${(opValley + opLower) * 0.45})`);
-        baseGrad.addColorStop(1.00, `rgba(148, 197, 235, ${opLower * 0.85})`);
+        baseGrad.addColorStop(0.32, `rgba(224, 242, 254, ${(opMountain + opValley) * 0.44})`);
+        baseGrad.addColorStop(0.56, `rgba(214, 238, 253, ${opValley * 0.92})`);
+        baseGrad.addColorStop(0.82, `rgba(186, 230, 253, ${(opValley + opLower) * 0.40})`);
+        baseGrad.addColorStop(1.00, `rgba(148, 197, 235, ${opLower * 0.72})`);
         ctx.fillStyle = baseGrad;
         ctx.fillRect(0, 0, W, H);
 
+        // Ακτινικές υψομετρικές εστίες χιονιού γύρω από Σμόλικα & Αυχένα
         const ridgeSpots = [
-          { x: W * 0.16, y: H * 0.78, r: Math.max(W, H) * 0.48, op: opMountain * 0.55 },
-          { x: W * 0.22, y: H * 0.14, r: Math.max(W, H) * 0.40, op: opMountain * 0.42 },
-          { x: W * 0.46, y: H * 0.88, r: Math.max(W, H) * 0.35, op: opValley * 0.35 }
+          { x: W * 0.16, y: H * 0.78, r: Math.max(W, H) * 0.46, op: opMountain * 0.52 },
+          { x: W * 0.22, y: H * 0.15, r: Math.max(W, H) * 0.38, op: opMountain * 0.40 },
+          { x: W * 0.48, y: H * 0.52, r: Math.max(W, H) * 0.36, op: opValley * 0.32 }
         ];
 
         for (const spot of ridgeSpots) {
           if (spot.op <= 0.01) continue;
           const rGrad = ctx.createRadialGradient(spot.x, spot.y, spot.r * 0.08, spot.x, spot.y, spot.r);
           rGrad.addColorStop(0, `rgba(255, 255, 255, ${spot.op})`);
-          rGrad.addColorStop(0.55, `rgba(224, 242, 254, ${spot.op * 0.45})`);
+          rGrad.addColorStop(0.55, `rgba(224, 242, 254, ${spot.op * 0.42})`);
           rGrad.addColorStop(1, "rgba(224, 242, 254, 0)");
           ctx.fillStyle = rGrad;
           ctx.fillRect(0, 0, W, H);
@@ -1252,7 +1271,38 @@
         ctx.restore();
       }
 
-      // 4. Διακριτικό περίγραμμα εμβέλειας σταθμού
+      // Ομαλή περιμετρική βινιέτα (#0f172a) ώστε ο χάρτης να δένει φυσικά με το σκούρο dashboard
+      const edgeVignette = ctx.createRadialGradient(cx, cy, Math.min(W, H) * 0.34, cx, cy, Math.max(W, H) * 0.72);
+      edgeVignette.addColorStop(0, "rgba(15, 23, 42, 0)");
+      edgeVignette.addColorStop(1, "rgba(15, 23, 42, 0.52)");
+      ctx.fillStyle = edgeVignette;
+      ctx.fillRect(0, 0, W, H);
+
+      // 4. Διακριτική, ατμοσφαιρική κίνηση σωματιδίων όταν υπάρχει ενεργή χιονόπτωση ή βροχή
+      if (item.snow > 0 || item.precip > 0) {
+        const isSnowing = item.snow > 0 || item.wetBulb <= 0.8;
+        ctx.save();
+        for (const p of WEATHER_PARTICLES) {
+          const px = p.x * W;
+          const py = p.y * H;
+          if (isSnowing) {
+            ctx.beginPath();
+            ctx.arc(px, py, p.r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha})`;
+            ctx.fill();
+          } else {
+            ctx.beginPath();
+            ctx.moveTo(px, py);
+            ctx.lineTo(px - 1.5, py + 6);
+            ctx.strokeStyle = `rgba(125, 211, 252, ${p.alpha * 0.85})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        }
+        ctx.restore();
+      }
+
+      // 5. Περίγραμμα ζώνης ακρίβειας σταθμού & εσωτερικός κόκκινος κύκλος με καθαρή αντίθεση
       const rx = Math.min(W * 0.38, 340);
       const ry = Math.min(H * 0.41, 200);
 
@@ -1261,41 +1311,52 @@
       ctx.ellipse(cx, cy, rx, ry, -0.18, 0, Math.PI * 2);
       ctx.lineWidth = 1.5;
       ctx.setLineDash([6, 6]);
-      ctx.strokeStyle = "rgba(56, 189, 248, 0.55)";
+      ctx.strokeStyle = "rgba(56, 189, 248, 0.65)";
       ctx.stroke();
 
+      // Κόκκινος κύκλος ορίων σταθμού με απαλό σκούρο halo για να ξεχωρίζει πάνω σε λευκό χιόνι
+      ctx.shadowColor = "rgba(15, 23, 42, 0.85)";
+      ctx.shadowBlur = 6;
       ctx.beginPath();
       ctx.arc(cx, cy, Math.min(W, H) * 0.115, 0, Math.PI * 2);
-      ctx.lineWidth = 1.3;
-      ctx.setLineDash([3, 3]);
-      ctx.strokeStyle = "rgba(248, 113, 113, 0.75)";
+      ctx.lineWidth = 1.8;
+      ctx.setLineDash([4, 3]);
+      ctx.strokeStyle = "#f87171";
       ctx.stroke();
       ctx.restore();
 
-      // 5. Ετικέτες φυσικών ορίων στον χάρτη
+      // 6. Ετικέτες φυσικών ορίων στον χάρτη (υψηλή αντίθεση unabhängig από το χιόνι)
       ctx.font = "600 11px 'Segoe UI', sans-serif";
       ctx.textAlign = "center";
 
       const drawMapTag = (x, y, text) => {
-        const padX = 8;
+        const padX = 9;
         const w = ctx.measureText(text).width + padX * 2;
-        ctx.fillStyle = "rgba(15, 23, 42, 0.80)";
-        ctx.strokeStyle = "rgba(148, 163, 184, 0.40)";
+        ctx.save();
+        ctx.shadowColor = "rgba(0, 0, 0, 0.55)";
+        ctx.shadowBlur = 8;
+        ctx.shadowOffsetY = 2;
+        ctx.fillStyle = "rgba(15, 23, 42, 0.90)";
+        ctx.strokeStyle = "rgba(148, 163, 184, 0.50)";
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.roundRect(x - w / 2, y - 10, w, 20, 5);
         ctx.fill();
+        ctx.shadowColor = "transparent";
         ctx.stroke();
-        ctx.fillStyle = "#e2e8f0";
+        ctx.fillStyle = "#f1f5f9";
         ctx.fillText(text, x, y + 4);
+        ctx.restore();
       };
 
       drawMapTag(cx - rx * 0.66, cy - ry * 0.65, "Αυχένας Λαΐσκου (1.700μ.)");
       drawMapTag(cx + rx * 0.78, cy + ry * 0.25, `Έξοδος προς Γρεβενά (~${lowerExitCm.toFixed(1)} cm)`);
       drawMapTag(Math.max(105, W * 0.15), H * 0.76, `Πλαγιές Σμόλικα (~${mountainCm.toFixed(1)} cm)`);
 
-      // 6. Σήμανση Σταθμού Αναφοράς: ΣΑΜΑΡΙΝΑ (1450m)
+      // 7. Σήμανση Σταθμού Αναφοράς: ΣΑΜΑΡΙΝΑ (1450m) εναρμονισμένη με το γαλάζιο/λευκό σήμα χιονιού
       ctx.save();
+      ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
+      ctx.shadowBlur = 8;
       ctx.beginPath();
       ctx.arc(cx, cy, 6.5, 0, Math.PI * 2);
       ctx.fillStyle = "#0284c7";
@@ -1304,24 +1365,25 @@
       ctx.strokeStyle = "#ffffff";
       ctx.stroke();
 
-      const stLabel = "ΣΑΜΑΡΙΝΑ (1450m)";
+      const stLabel = `ΣΑΜΑΡΙΝΑ (1450m) • ~${realValleyCm.toFixed(1)} cm`;
       ctx.font = "700 12px 'Segoe UI', sans-serif";
       const lblW = ctx.measureText(stLabel).width + 16;
-      ctx.fillStyle = "rgba(15, 23, 42, 0.90)";
+      ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
       ctx.strokeStyle = "#38bdf8";
-      ctx.lineWidth = 1.4;
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.roundRect(cx + 12, cy - 12, lblW, 24, 6);
       ctx.fill();
+      ctx.shadowColor = "transparent";
       ctx.stroke();
-      ctx.fillStyle = "#ffffff";
+      ctx.fillStyle = "#f8fafc";
       ctx.textAlign = "left";
       ctx.fillText(stLabel, cx + 20, cy + 4);
       ctx.restore();
 
       ctx.restore();
 
-      // 7. Ενημέρωση HUD
+      // 8. Ενημέρωση HUD
       const hud = document.getElementById('localMapHud');
       if (hud) {
         hud.innerHTML = `
@@ -1349,6 +1411,24 @@
         if (el) el.classList.toggle('active-tick', tk === closestTick);
       });
     }
+
+    function animateWeatherParticles(now) {
+      const dt = Math.min(50, now - lastParticleTick) / 16.67;
+      lastParticleTick = now;
+      const item = latest72hSeries[currentSnowHourIdx];
+      if (item && (item.snow > 0 || item.precip > 0)) {
+        for (const p of WEATHER_PARTICLES) {
+          p.y += p.speed * dt;
+          p.x += p.drift * dt;
+          if (p.y > 1) { p.y = 0; p.x = (p.x + 0.17) % 1; }
+          if (p.x < 0) p.x += 1;
+          if (p.x > 1) p.x -= 1;
+        }
+        drawLocalSnowMap(currentSnowHourIdx);
+      }
+      requestAnimationFrame(animateWeatherParticles);
+    }
+    requestAnimationFrame(animateWeatherParticles);
 
     function onSnowSliderChange(val) {
       currentSnowHourIdx = parseInt(val, 10) || 0;
